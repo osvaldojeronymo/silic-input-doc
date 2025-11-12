@@ -1,0 +1,27 @@
+{
+  "name": "show-input-doc",
+  "private": false,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SILIC 2.0 - Sistema de Gestão de Imóveis com TypeScript e Vite",
+  "homepage": "https://osvaldojeronymo.github.io/show-input-doc/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/osvaldojeronymo/show-input-doc.git"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "deploy": "npm run build && gh-pages -d dist"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7",
+    "gh-pages": "^6.1.0"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.24"
+  }
+}
