@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   root: '.', 
-  base: '/show-input-doc/',
+  base: '/silic-input-doc/',
   server: {
     port: 3000,
     open: true
