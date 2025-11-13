@@ -1,0 +1,55 @@
+{
+  "imoveis": [
+    {
+      "id": "726cdcaeb7cc",
+      "codigo": "10000000",
+      "endereco": "CT - AG VIÇOSA DE ALAGOAS, AL",
+      "bairro": "BOA VIAGEM",
+      "cidade": "VIÇOSA DE ALAGOAS",
+      "cep": "51021-000",
+      "estado": "AL",
+      "tipo": "comercial",
+      "status": "ocupado",
+      "area": null,
+      "valor": null,
+      "descricao": "Contrato nº 10000000 - Contrato de Locação - Imóveis",
+      "fotos": [],
+      "caracteristicas": {
+        "contratoInicio": "1997-05-12T00:00:00",
+        "contratoFim": "2027-05-12T00:00:00",
+        "tipoContrato": "Contrato de Locação - Imóveis",
+        "parceiroNegocio": "900127165"
+      },
+      "locadorId": "87c4ddf250af",
+      "dataRegistro": "1997-05-12T00:00:00",
+      "dataAtualizacao": "2025-11-12T13:33:26.837997"
+    }
+  ],
+  "locadores": [
+    {
+      "id": "87c4ddf250af",
+      "nome": "GERALDINA TOLEDO DE VASCONCELOS VASCONCELOS",
+      "tipo": "fisica",
+      "documento": "398047472",
+      "email": null,
+      "telefone": "8233773208",
+      "endereco": {
+        "logradouro": "AVENIDA BOA VIAGEM AP 802",
+        "numero": "3962",
+        "bairro": "BOA VIAGEM",
+        "cidade": "RECIFE",
+        "estado": "PE",
+        "cep": "51021-000"
+      },
+      "status": "ativo",
+      "dataRegistro": "2025-11-12T13:33:26.837912",
+      "dataAtualizacao": "2025-11-12T13:33:26.837916"
+    }
+  ],
+  "metadados": {
+    "dataImportacao": "2025-11-12T13:33:26.838012",
+    "fonte": "SAP - rel-SAP.xlsx",
+    "totalImoveis": 1,
+    "totalLocadores": 1
+  }
+}

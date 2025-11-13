@@ -8,12 +8,15 @@
 
 Este projeto é uma migração completa do sistema SILIC Input Doc original (JavaScript puro) para uma stack moderna com TypeScript e Vite. Mantém todas as funcionalidades do sistema original, mas com melhor organização de código, tipagem estática e ferramentas de desenvolvimento otimizadas.
 
+**🆕 Integrado com dados do SAP da Caixa Econômica Federal!** O sistema agora pode carregar dados reais de contratos de locação de imóveis.
+
 ## 🛠️ Tecnologias
 
 - **TypeScript** - Tipagem estática e melhor experiência de desenvolvimento
 - **Vite** - Build tool moderna e extremamente rápida
 - **CSS3** - Estilização seguindo padrões visuais da CAIXA
 - **HTML5** - Estrutura semântica e acessível
+- **Python** - Scripts de importação de dados SAP
 
 ## 📁 Estrutura do Projeto
 
@@ -26,11 +29,20 @@ show-input-doc/
 │   ├── 📂 types/           # Definições TypeScript
 │   │   └── index.ts
 │   ├── 📂 utils/           # Funções utilitárias
-│   │   └── index.ts
+│   │   ├── index.ts
+│   │   └── sapDataLoader.ts  # ⭐ Carregador de dados SAP
 │   └── 📄 main.ts          # Classe principal da aplicação
 ├── 📂 public/
-│   └── logo-caixa.svg      # Assets estáticos
-├── 📄 index.html           # Página principal
+│   ├── logo-caixa.svg      # Assets estáticos
+│   ├── rel-SAP.xlsx        # ⭐ Dados do SAP (entrada)
+│   └── dados-sap.json      # ⭐ Dados convertidos (saída)
+├── 📂 scripts/
+│   └── import-sap-data.py  # ⭐ Script de importação SAP
+├── � docs/
+│   ├── INTEGRACAO_SAP.md   # ⭐ Documentação da integração
+│   └── RESUMO_INTEGRACAO.md # ⭐ Resumo técnico
+├── �📄 index.html           # Página principal
+├── 📄 import-sap.sh        # ⭐ Script de importação facilitado
 ├── 📄 package.json
 ├── 📄 tsconfig.json
 ├── 📄 vite.config.ts
@@ -64,6 +76,15 @@ npm run preview
 npm run deploy
 ```
 
+### ⭐ Importação de Dados SAP
+```bash
+# Método 1: Script facilitado (recomendado)
+./import-sap.sh
+
+# Método 2: Direto com Python
+python3 scripts/import-sap-data.py
+```
+
 ## 📊 Funcionalidades
 
 ### ✅ **Implementadas**
@@ -72,6 +93,10 @@ npm run deploy
 - ✅ Estrutura modular TypeScript
 - ✅ Configuração para GitHub Pages
 - ✅ Build otimizado para produção
+- ✅ **Integração com dados do SAP**
+- ✅ **Carregamento inteligente de dados (SAP ou demo)**
+- ✅ **Notificações visuais**
+- ✅ **Indicador de fonte de dados**
 
 ### 🔄 **Em Desenvolvimento**  
 - 🔄 Interface completa de gestão de imóveis
@@ -79,6 +104,52 @@ npm run deploy
 - 🔄 Paginação dinâmica
 - 🔄 Modais interativos
 - 🔄 CRUD completo de locadores
+
+## 🗂️ Integração com Dados do SAP
+
+O sistema possui integração completa com dados do SAP da Caixa Econômica Federal.
+
+### Como Usar
+
+1. **Coloque o arquivo Excel do SAP** na pasta `public/`:
+   ```bash
+   cp seu-arquivo-sap.xlsx public/rel-SAP.xlsx
+   ```
+
+2. **Execute o script de importação**:
+   ```bash
+   ./import-sap.sh
+   ```
+   
+   Ou manualmente:
+   ```bash
+   python3 scripts/import-sap-data.py
+   ```
+
+3. **Inicie o protótipo**:
+   ```bash
+   npm run dev
+   ```
+
+4. **Verifique o indicador**: O sistema mostrará "🗂️ Dados do SAP" se os dados foram carregados com sucesso.
+
+### Comportamento Automático
+
+O sistema possui **carregamento inteligente**:
+- ✅ Se encontrar `public/dados-sap.json` → Carrega dados do SAP
+- ✅ Se não encontrar → Carrega dados demo automaticamente
+- ✅ Indicador visual mostra qual fonte está sendo usada
+- ✅ Notificação informa o usuário
+
+### Estrutura dos Dados SAP
+
+O arquivo Excel deve conter:
+- **Contratos**: Informações de contratos de locação
+- **Locadores**: Dados de pessoas físicas/jurídicas
+- **Endereços**: Informações completas de localização
+- **Contatos**: Telefones e e-mails
+
+**Documentação completa**: [docs/INTEGRACAO_SAP.md](docs/INTEGRACAO_SAP.md)
 
 ## 🎯 Diferenças da Versão Original
 

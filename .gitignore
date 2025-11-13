@@ -38,3 +38,9 @@ coverage/
 # OS generated files
 Thumbs.db
 .DS_Store
+
+# Local data files (do not version Excel or temporary lock files)
+*.xlsx
+~$*.xlsx
+public/.~lock*.xlsx#
+public/rel-SAP.xlsx

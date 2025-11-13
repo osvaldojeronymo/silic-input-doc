@@ -1,5 +1,6 @@
 import { Imovel, Locador, DashboardStats, VisualizationMode } from './types/index.js';
 import { Utils } from './utils/index.js';
+import { SAPDataLoader } from './utils/sapDataLoader.js';
 
 /**
  * Classe principal do Sistema SILIC 2.0
@@ -15,6 +16,7 @@ export class SistemaSILIC {
   private itemsPerPageImoveis = 10;
   
   private currentView: VisualizationMode = 'table';
+  private usandoDadosSAP = false;
 
   constructor() {
     this.inicializar();
@@ -27,12 +29,12 @@ export class SistemaSILIC {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
         this.setupEventListeners();
-        this.carregarDadosDemo();
+        this.carregarDados();
       });
     } else {
       setTimeout(() => {
         this.setupEventListeners();
-        this.carregarDadosDemo();
+        this.carregarDados();
       }, 100);
     }
   }
@@ -41,12 +43,6 @@ export class SistemaSILIC {
    * Configura todos os event listeners
    */
   private setupEventListeners(): void {
-    // Botões principais
-    this.addEventListenerSafe('btnNovoImovel', 'click', () => this.mostrarFormulario());
-    this.addEventListenerSafe('adicionarImovel', 'click', () => this.adicionarImovel());
-    this.addEventListenerSafe('limparFormulario', 'click', () => this.limparFormulario());
-    this.addEventListenerSafe('adicionarLocador', 'click', () => this.adicionarLocador());
-    
     // Toggle de visualização
     this.addEventListenerSafe('viewTable', 'click', () => this.alterarVisualizacao('table'));
     this.addEventListenerSafe('viewCards', 'click', () => this.alterarVisualizacao('cards'));
@@ -95,6 +91,121 @@ export class SistemaSILIC {
     if (element) {
       element.addEventListener(event, handler);
     }
+  }
+
+  /**
+   * Carrega dados (tenta SAP primeiro, depois dados demo)
+   */
+  private async carregarDados(): Promise<void> {
+    console.log('🔄 Iniciando carregamento de dados...');
+    
+    // Tenta carregar dados do SAP
+    const dadosSAP = await SAPDataLoader.carregarDados();
+    
+    if (dadosSAP && dadosSAP.imoveis.length > 0) {
+      // Usa dados do SAP
+      this.imoveis = dadosSAP.imoveis;
+      this.locadores = dadosSAP.locadores;
+      this.usandoDadosSAP = true;
+      
+      console.log('✅ Dados do SAP carregados!');
+      console.log(SAPDataLoader.formatarInfo(dadosSAP));
+      
+      // Mostra notificação ao usuário
+      this.mostrarNotificacao('✅ Dados do SAP carregados com sucesso!', 'success');
+    } else {
+      // Carrega dados demo
+      console.log('📋 Carregando dados de demonstração...');
+      this.carregarDadosDemo();
+      this.usandoDadosSAP = false;
+      
+      this.mostrarNotificacao('📋 Usando dados de demonstração', 'info');
+    }
+    
+    // Atualiza interface
+    this.atualizarDashboard();
+    this.atualizarTabelaImoveis();
+    this.atualizarListaLocadores();
+    this.configurarFiltrosImoveisImediato();
+    
+    // Atualiza indicador de fonte de dados
+    this.atualizarIndicadorFonteDados();
+  }
+
+  /**
+   * Atualiza indicador visual da fonte de dados
+   */
+  private atualizarIndicadorFonteDados(): void {
+    const header = document.querySelector('.title-section');
+    if (!header) return;
+    
+    // Remove indicador existente se houver
+    const indicadorExistente = header.querySelector('.data-source-indicator');
+    if (indicadorExistente) {
+      indicadorExistente.remove();
+    }
+    
+    // Cria novo indicador
+    const indicador = document.createElement('div');
+    indicador.className = 'data-source-indicator';
+    indicador.style.cssText = `
+      margin-top: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+      ${this.usandoDadosSAP 
+        ? 'background: #e8f5e9; color: #2e7d32;' 
+        : 'background: #fff3e0; color: #f57c00;'}
+    `;
+    indicador.textContent = this.usandoDadosSAP 
+      ? '🗂️ Dados do SAP' 
+      : '📋 Dados Demo';
+    
+    const subtitle = header.querySelector('.subtitle');
+    if (subtitle) {
+      subtitle.after(indicador);
+    }
+  }
+
+  /**
+   * Mostra notificação temporária
+   */
+  private mostrarNotificacao(mensagem: string, tipo: 'success' | 'info' | 'warning' | 'error'): void {
+    const cores = {
+      success: { bg: '#e8f5e9', text: '#2e7d32', border: '#4caf50' },
+      info: { bg: '#e3f2fd', text: '#1565c0', border: '#2196f3' },
+      warning: { bg: '#fff3e0', text: '#e65100', border: '#ff9800' },
+      error: { bg: '#ffebee', text: '#c62828', border: '#f44336' }
+    };
+    
+    const cor = cores[tipo];
+    
+    const notificacao = document.createElement('div');
+    notificacao.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${cor.bg};
+      color: ${cor.text};
+      border-left: 4px solid ${cor.border};
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10000;
+      max-width: 400px;
+      animation: slideIn 0.3s ease-out;
+      font-weight: 500;
+    `;
+    notificacao.textContent = mensagem;
+    
+    document.body.appendChild(notificacao);
+    
+    setTimeout(() => {
+      notificacao.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => notificacao.remove(), 300);
+    }, 5000);
   }
 
   /**
@@ -153,7 +264,7 @@ export class SistemaSILIC {
     ];
 
     const tipos: Array<Imovel['tipo']> = ['residencial', 'comercial', 'terreno', 'industrial'];
-    const status: Array<Imovel['status']> = ['disponivel', 'ocupado', 'manutencao', 'vendido'];
+    const status: Array<Imovel['status']> = ['ativo', 'prospeccao', 'mobilizacao', 'desmobilizacao'];
 
     const imoveis: Imovel[] = [];
 
@@ -363,8 +474,72 @@ export class SistemaSILIC {
     // TODO: Implementar
   }
 
+  /**
+   * Atualiza a tabela de imóveis com dados paginados
+   */
   private atualizarTabelaImoveis(): void {
-    // TODO: Implementar
+    const tbody = document.querySelector('.imoveis-table tbody');
+    if (!tbody) {
+      console.warn('Tabela de imóveis não encontrada');
+      return;
+    }
+
+    tbody.innerHTML = '';
+
+    // Calcular paginação
+    const inicio = (this.currentPageImoveis - 1) * this.itemsPerPageImoveis;
+    const fim = inicio + this.itemsPerPageImoveis;
+    const imoveisPaginados = this.imoveis.slice(inicio, fim);
+
+    // Popular tabela
+    imoveisPaginados.forEach(imovel => {
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      
+      // Status badge class
+      const badgeClass = `badge badge-${imovel.status}`;
+      
+      // Data de vigência (se disponível)
+      const vigencia = imovel.dataRegistro 
+        ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR')
+        : '-';
+
+      tr.innerHTML = `
+        <td>${imovel.codigo}</td>
+        <td>${imovel.endereco}, ${imovel.bairro}</td>
+        <td>${imovel.cidade} - ${imovel.estado}</td>
+        <td style="text-transform: capitalize;">${imovel.tipo}</td>
+        <td><span class="${badgeClass}">${this.formatarStatus(imovel.status)}</span></td>
+        <td>${vigencia}</td>
+        <td>
+          <button class="btn-table-action" data-id="${imovel.id}">
+            Ver Detalhes
+          </button>
+        </td>
+      `;
+
+      // Adicionar evento de clique na linha
+      tr.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (!target.classList.contains('btn-table-action')) {
+          this.abrirModalDetalhes(imovel.id);
+        }
+      });
+
+      // Adicionar evento de clique no botão
+      const btn = tr.querySelector('.btn-table-action');
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.abrirModalDetalhes(imovel.id);
+        });
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    // Atualizar informações de paginação
+    this.atualizarPaginacaoImoveis();
   }
 
   private aplicarMascaraCEP(): void {
@@ -375,7 +550,170 @@ export class SistemaSILIC {
   }
 
   private fecharModalDetalhes(): void {
-    // TODO: Implementar
+    const modal = document.getElementById('modalDetalhes');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  /**
+   * Abre o modal de detalhes do imóvel
+   */
+  private abrirModalDetalhes(imovelId: string): void {
+    const imovel = this.imoveis.find(i => i.id === imovelId);
+    if (!imovel) {
+      console.error('Imóvel não encontrado:', imovelId);
+      return;
+    }
+
+    // Preencher dados do modal
+    this.preencherModalDetalhes(imovel);
+
+    // Abrir modal
+    const modal = document.getElementById('modalDetalhes');
+    if (modal) {
+      modal.classList.add('active');
+      
+      // Configurar evento de fechar
+      const btnFechar = modal.querySelector('.modal-close');
+      if (btnFechar) {
+        btnFechar.addEventListener('click', () => this.fecharModalDetalhes());
+      }
+
+      // Fechar ao clicar fora do modal
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          this.fecharModalDetalhes();
+        }
+      });
+    }
+
+    // Configurar tabs
+    this.configurarTabs();
+  }
+
+  /**
+   * Preenche os dados do modal de detalhes
+   */
+  private preencherModalDetalhes(imovel: Imovel): void {
+    // Título do modal
+    const modalTitle = document.querySelector('.modal-header h2');
+    if (modalTitle) {
+      modalTitle.textContent = `Detalhes do Imóvel`;
+    }
+
+    // Tab Contrato
+    this.setElementText('detNumeroContrato', imovel.codigo);
+    this.setElementText('detDenominacao', `${imovel.endereco}, ${imovel.bairro}`);
+    this.setElementText('detTipoContrato', this.capitalize(imovel.tipo));
+    this.setElementText('detDataInicio', imovel.dataRegistro 
+      ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR')
+      : ''
+    );
+    this.setElementText('detDataFim', '');
+    this.setElementText('detParceiro', '');
+    this.setElementText('detEnderecoContrato', imovel.endereco);
+    this.setElementText('detNumeroEndereco', '');
+
+    // Tab Imóvel
+    this.setElementText('detCodPostal', imovel.cep);
+    this.setElementText('detLocal', `${imovel.cidade} - ${imovel.estado}`);
+    this.setElementText('detRua', imovel.endereco);
+    this.setElementText('detBairro', imovel.bairro);
+    this.setElementText('detCidade', imovel.cidade);
+    this.setElementText('detEstado', imovel.estado);
+    this.setElementText('detCep', imovel.cep);
+    this.setElementText('detTipoEdificio', this.capitalize(imovel.tipo));
+    this.setElementText('detArea', imovel.area ? `${imovel.area} m²` : '');
+    this.setElementText('detValor', imovel.valor ? Utils.formatCurrency(imovel.valor) : '');
+
+    // Tab Locador (se disponível)
+    const locador = this.locadores.find(l => l.id === imovel.id);
+    if (locador) {
+      this.setElementText('detNomeLocador', locador.nome);
+      this.setElementText('detCpfCnpj', locador.documento);
+      this.setElementText('detTipoLocador', locador.tipo === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica');
+      this.setElementText('detTelefone', locador.telefone || '');
+      this.setElementText('detCelular', '');
+      this.setElementText('detEmail', locador.email || '');
+    } else {
+      this.setElementText('detNomeLocador', '');
+      this.setElementText('detCpfCnpj', '');
+      this.setElementText('detTipoLocador', '');
+      this.setElementText('detTelefone', '');
+      this.setElementText('detCelular', '');
+      this.setElementText('detEmail', '');
+    }
+  }
+
+  /**
+   * Helper para capitalizar texto
+   */
+  private capitalize(text: string): string {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  /**
+   * Helper para setar texto em elemento
+   */
+  private setElementText(id: string, text: string): void {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = text;
+    }
+  }
+
+  /**
+   * Formata o status para exibição
+   */
+  private formatarStatus(status: string): string {
+    const statusMap: Record<string, string> = {
+      'ativo': 'Ativo',
+      'prospeccao': 'Prospecção',
+      'mobilizacao': 'Mobilização',
+      'desmobilizacao': 'Desmobilização',
+      'disponivel': 'Disponível',
+      'ocupado': 'Ocupado',
+      'manutencao': 'Manutenção',
+      'vendido': 'Vendido'
+    };
+    return statusMap[status] || status;
+  }
+
+  /**
+   * Configura o sistema de tabs do modal
+   */
+  private configurarTabs(): void {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabBtns.forEach((btn, index) => {
+      btn.addEventListener('click', () => {
+        // Remove active de todos
+        tabBtns.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+
+        // Adiciona active ao clicado
+        btn.classList.add('active');
+        if (tabContents[index]) {
+          tabContents[index].classList.add('active');
+        }
+      });
+    });
+  }
+
+  /**
+   * Atualiza informações de paginação da tabela de imóveis
+   */
+  private atualizarPaginacaoImoveis(): void {
+    const inicio = (this.currentPageImoveis - 1) * this.itemsPerPageImoveis + 1;
+    const fim = Math.min(this.currentPageImoveis * this.itemsPerPageImoveis, this.imoveis.length);
+    const total = this.imoveis.length;
+
+    // Atualizar spans de informação
+    this.setElementText('paginationStart', inicio.toString());
+    this.setElementText('paginationEnd', fim.toString());
+    this.setElementText('paginationTotal', total.toString());
   }
 
   private configurarFiltrosImoveisImediato(): void {
@@ -385,21 +723,21 @@ export class SistemaSILIC {
   private atualizarDashboard(): void {
     const stats = this.calcularEstatisticas();
     
-    const totalElement = document.getElementById('totalImoveis');
-    if (totalElement) {
-      totalElement.textContent = stats.totalImoveis.toString();
-    }
-    
-    // TODO: Implementar outras atualizações do dashboard
+    // Atualizar cards do dashboard
+    this.setElementText('totalImoveis', stats.totalImoveis.toString());
+    this.setElementText('imoveisAtivos', stats.imoveisAtivos.toString());
+    this.setElementText('imoveisProspeccao', stats.imoveisProspeccao.toString());
+    this.setElementText('imoveisMobilizacao', stats.imoveisMobilizacao.toString());
+    this.setElementText('imoveisDesmobilizacao', stats.imoveisDesmobilizacao.toString());
   }
 
   private calcularEstatisticas(): DashboardStats {
     return {
       totalImoveis: this.imoveis.length,
-      imoveisDisponiveis: this.imoveis.filter(i => i.status === 'disponivel').length,
-      imoveisOcupados: this.imoveis.filter(i => i.status === 'ocupado').length,
-      imoveisManutencao: this.imoveis.filter(i => i.status === 'manutencao').length,
-      imoveisVendidos: this.imoveis.filter(i => i.status === 'vendido').length,
+      imoveisAtivos: this.imoveis.filter(i => i.status === 'ativo').length,
+      imoveisProspeccao: this.imoveis.filter(i => i.status === 'prospeccao').length,
+      imoveisMobilizacao: this.imoveis.filter(i => i.status === 'mobilizacao').length,
+      imoveisDesmobilizacao: this.imoveis.filter(i => i.status === 'desmobilizacao').length,
       totalLocadores: this.locadores.length
     };
   }

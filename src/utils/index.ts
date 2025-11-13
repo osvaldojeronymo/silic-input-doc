@@ -42,6 +42,13 @@ export class Utils {
   }
 
   /**
+   * Formata valor monetário (alias)
+   */
+  static formatCurrency(value: number): string {
+    return this.formatMoney(value);
+  }
+
+  /**
    * Formata data
    */
   static formatDate(date: string | Date): string {

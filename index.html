@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-    <link rel="stylesheet" href="/src/styles/style.css">
+    <link rel="stylesheet" href="/src/styles/style.css?v=2.0">
+    <link rel="stylesheet" href="/src/styles/modal-fix.css">
+    <link rel="stylesheet" href="/src/styles/final-fix.css">
 </head>
 <body>
-    <header>
-        <div class="header-content">
-            <div class="logo-section">
-                <img src="/show-input-doc/logo-caixa.svg" alt="CAIXA" class="logo">
+    <header class="modern-header">
+        <div class="header-container">
+            <div class="header-left">
+                <img src="logo-caixa.svg" alt="CAIXA" class="logo-icon">
+                <div class="header-title">
+                    <h1>SILIC 2.0</h1>
+                    <p class="subtitle">Protótipo - Gestão de Imóveis</p>
+                </div>
             </div>
-            <div class="title-section">
-                <h1>SILIC 2.0</h1>
-                <p class="subtitle">Protótipo - Gestão de Imóveis</p>
-            </div>
-            <div class="portal-nav">
+            <div class="header-right">
                 <button id="voltarPortalBtn" class="btn-voltar-portal" onclick="voltarAoPortal()">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                         <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -27,209 +29,296 @@
         </div>
     </header>
     
-    <main class="container">
-        <div class="dashboard-layout">
-            <div class="dashboard-content">
-                <!-- Seção de Cadastro de Imóveis -->
-                <section class="cadastro-imoveis">
-                    <h2 style="text-align: center; margin-bottom: 2rem;">Gestão de Imóveis</h2>
-                    
-                    <!-- Dashboard de Estatísticas -->
-                    <div class="dashboard-overview" style="margin-bottom: 2rem;">
-                        <!-- Total de Imóveis Cadastrados - Em separado -->
-                        <div class="dashboard-total" style="margin-bottom: 1.5rem;">
-                            <div class="stat-card stat-card-total" style="background: #e3f2fd; padding: 2rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                                <div class="stat-number" id="totalImoveis" style="font-size: 3rem; font-weight: bold; color: #1976d2;">0</div>
-                                <div class="stat-label" style="color: #555; margin-top: 0.5rem; font-size: 1.1rem; font-weight: 500;">Imóveis Cadastrados</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Status dos Imóveis - Grid 4x1 -->
-                        <div class="dashboard-status">
-                            <div class="stat-card" style="background: #e8f5e8; padding: 1.5rem; border-radius: 8px; text-align: center;">
-                                <div class="stat-number" id="imoveisDisponiveis" style="font-size: 2rem; font-weight: bold; color: #2e7d32;">0</div>
-                                <div class="stat-label" style="color: #555; margin-top: 0.5rem; font-weight: 500;">Disponíveis</div>
-                            </div>
-                            
-                            <div class="stat-card" style="background: #fff3e0; padding: 1.5rem; border-radius: 8px; text-align: center;">
-                                <div class="stat-number" id="imoveisOcupados" style="font-size: 2rem; font-weight: bold; color: #f57c00;">0</div>
-                                <div class="stat-label" style="color: #555; margin-top: 0.5rem; font-weight: 500;">Ocupados</div>
-                            </div>
-                            
-                            <div class="stat-card" style="background: #f3e5f5; padding: 1.5rem; border-radius: 8px; text-align: center;">
-                                <div class="stat-number" id="imoveisManutencao" style="font-size: 2rem; font-weight: bold; color: #7b1fa2;">0</div>
-                                <div class="stat-label" style="color: #555; margin-top: 0.5rem; font-weight: 500;">Manutenção</div>
-                            </div>
-                            
-                            <div class="stat-card" style="background: #ffebee; padding: 1.5rem; border-radius: 8px; text-align: center;">
-                                <div class="stat-number" id="imoveisVendidos" style="font-size: 2rem; font-weight: bold; color: #c62828;">0</div>
-                                <div class="stat-label" style="color: #555; margin-top: 0.5rem; font-weight: 500;">Vendidos</div>
-                            </div>
-                        </div>
+    <main class="main-container">
+        <!-- Dashboard de Estatísticas -->
+        <section class="dashboard-section">
+            <h2 class="section-title">Gestão de Imóveis</h2>
+            
+            <div class="stats-grid">
+                <!-- Card Principal -->
+                <div class="stat-card-main">
+                    <div class="stat-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="9 22 9 12 15 12 15 22" stroke="currentColor" stroke-width="2"/>
+                        </svg>
                     </div>
-
-                    <!-- Controles da Tabela -->
-                    <div class="tabela-controles">
-                        <div class="controles-esquerda">
-                            <button id="btnNovoImovel" class="btn btn-primary">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                Novo Imóvel
-                            </button>
-                            
-                            <div class="filtros-rapidos">
-                                <select id="filtroTipoImovel">
-                                    <option value="">Todos os tipos</option>
-                                    <option value="residencial">Residencial</option>
-                                    <option value="comercial">Comercial</option>
-                                    <option value="terreno">Terreno</option>
-                                    <option value="industrial">Industrial</option>
-                                </select>
-                                
-                                <select id="filtroStatusImovel">
-                                    <option value="">Todos os status</option>
-                                    <option value="disponivel">Disponível</option>
-                                    <option value="ocupado">Ocupado</option>
-                                    <option value="manutencao">Manutenção</option>
-                                    <option value="vendido">Vendido</option>
-                                </select>
-                                
-                                <input type="text" id="buscaImovel" placeholder="Buscar imóvel...">
-                                
-                                <button id="limparFiltrosImoveis" class="btn btn-secondary">Limpar Filtros</button>
-                            </div>
-                        </div>
-                        
-                        <div class="controles-direita">
-                            <div class="visualizacao-toggle">
-                                <button id="viewTable" class="btn-view active">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                        <path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                    Tabela
-                                </button>
-                                <button id="viewCards" class="btn-view">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                        <path d="M9 11H15M9 15H15M9 7H15M7 3H17C18.1046 3 19 3.89543 19 5V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                    Cards
-                                </button>
-                            </div>
-                            
-                            <div class="paginacao-config">
-                                <label for="imoveisPorPaginaSelect">Itens por página:</label>
-                                <select id="imoveisPorPaginaSelect">
-                                    <option value="5">5</option>
-                                    <option value="10" selected>10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
-                            </div>
-                        </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalImoveis">0</div>
+                        <div class="stat-label">Imóveis Cadastrados</div>
                     </div>
-
-                    <!-- Tabela de Imóveis -->
-                    <div class="tabela-container">
-                        <table id="tabelaImoveis" class="tabela-imoveis">
-                            <thead>
-                                <tr>
-                                    <th>Código</th>
-                                    <th>Endereço</th>
-                                    <th>Cidade</th>
-                                    <th>Tipo</th>
-                                    <th>Status</th>
-                                    <th>Valor</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Dados serão inseridos via JavaScript -->
-                            </tbody>
-                        </table>
+                </div>
+                
+                <!-- Cards de Status -->
+                
+                <!-- Cards de Status -->
+                <div class="stat-card stat-disponivel">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2"/>
+                        </svg>
                     </div>
-
-                    <!-- Paginação -->
-                    <div class="paginacao" id="paginacaoImoveis">
-                        <!-- Controles de paginação serão inseridos via JavaScript -->
+                    <div class="stat-number" id="imoveisAtivos">0</div>
+                    <div class="stat-label">Ativos</div>
+                </div>
+                
+                <div class="stat-card stat-prospeccao">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                            <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+                        </svg>
                     </div>
-                </section>
-
-                <!-- Seção de Locadores -->
-                <section class="locadores" style="margin-top: 3rem;">
-                    <h2 style="text-align: center; margin-bottom: 2rem;">Locadores</h2>
-                    
-                    <div class="locadores-controles">
-                        <button id="adicionarLocador" class="btn btn-primary">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M8.5 11C10.7091 11 12.5 9.20914 12.5 7C12.5 4.79086 10.7091 3 8.5 3C6.29086 3 4.5 4.79086 4.5 7C4.5 9.20914 6.29086 11 8.5 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M20 8V14M17 11H23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            Novo Locador
-                        </button>
-                        
-                        <div class="filtros-locadores">
-                            <input type="text" id="buscaLocador" placeholder="Buscar locador...">
-                            <select id="filtroTipo">
-                                <option value="">Todos os tipos</option>
-                                <option value="fisica">Pessoa Física</option>
-                                <option value="juridica">Pessoa Jurídica</option>
-                            </select>
-                            <select id="filtroStatus">
-                                <option value="">Todos os status</option>
-                                <option value="ativo">Ativo</option>
-                                <option value="inativo">Inativo</option>
-                            </select>
-                            <button id="limparFiltros" class="btn btn-secondary">Limpar Filtros</button>
-                        </div>
+                    <div class="stat-number" id="imoveisProspeccao">0</div>
+                    <div class="stat-label">Em Prospecção</div>
+                </div>
+                
+                <div class="stat-card stat-mobilizacao">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="17 11 19 13 23 9" stroke="currentColor" stroke-width="2"/>
+                        </svg>
                     </div>
-
-                    <div class="locadores-lista" id="locadoresList">
-                        <!-- Lista de locadores será inserida via JavaScript -->
+                    <div class="stat-number" id="imoveisMobilizacao">0</div>
+                    <div class="stat-label">Em Mobilização</div>
+                </div>
+                
+                <div class="stat-card stat-desmobilizacao">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                            <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
                     </div>
-                </section>
+                    <div class="stat-number" id="imoveisDesmobilizacao">0</div>
+                    <div class="stat-label">Em Desmobilização</div>
+                </div>
             </div>
-        </div>
+        </section>
+
+        <!-- Seção de Listagem de Imóveis -->
+        <section class="table-section">
+            <div class="section-header">
+                <h3 class="section-subtitle">Lista de Imóveis</h3>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filters-container">
+                <div class="filter-group">
+                    <select id="filtroTipoImovel" class="filter-select">
+                        <option value="">Todos os tipos</option>
+                        <option value="residencial">Residencial</option>
+                        <option value="comercial">Comercial</option>
+                        <option value="terreno">Terreno</option>
+                        <option value="industrial">Industrial</option>
+                    </select>
+                    
+                    <select id="filtroStatusImovel" class="filter-select">
+                        <option value="">Todos os status</option>
+                        <option value="ativo">Ativo</option>
+                        <option value="prospeccao">Em Prospecção</option>
+                        <option value="mobilizacao">Em Mobilização</option>
+                        <option value="desmobilizacao">Em Desmobilização</option>
+                    </select>
+                    
+                    <input type="text" id="buscaImovel" class="filter-search" placeholder="🔍 Buscar imóvel...">
+                    
+                    <button id="limparFiltrosImoveis" class="btn-clear">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Limpar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela de Imóveis -->
+            <div class="table-wrapper">
+                <table class="imoveis-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Denominação</th>
+                            <th>Local</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Vigência</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaImoveisBody">
+                        <!-- Dados carregados dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Mostrando <span id="paginationStart">0</span> a <span id="paginationEnd">0</span> de <span id="paginationTotal">0</span> imóveis
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    <!-- Controles de paginação -->
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- Modal para detalhes do imóvel -->
+    <!-- Modal de Detalhes do Imóvel -->
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">Detalhes do Imóvel</h3>
-                <span class="close" onclick="fecharModalDetalhes()">&times;</span>
+                <h2>Detalhes do Imóvel</h2>
+                <button class="modal-close">×</button>
             </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Conteúdo será inserido via JavaScript -->
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="contrato">Contrato</button>
+                <button class="tab-btn" data-tab="imovel">Imóvel</button>
+                <button class="tab-btn" data-tab="locador">Locador</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Aba: Dados do Contrato -->
+                <div id="tab-contrato" class="tab-content active">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Número do Contrato</label>
+                            <span id="detNumeroContrato"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Denominação</label>
+                            <span id="detDenominacao"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Tipo de Contrato</label>
+                            <span id="detTipoContrato"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Data de Início</label>
+                            <span id="detDataInicio"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Data de Término</label>
+                            <span id="detDataFim"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Parceiro de Negócios</label>
+                            <span id="detParceiro"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Endereço</label>
+                            <span id="detEnderecoContrato"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Número</label>
+                            <span id="detNumeroEndereco"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Dados do Imóvel -->
+                <div id="tab-imovel" class="tab-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Código Postal</label>
+                            <span id="detCodPostal"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Local</label>
+                            <span id="detLocal"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Rua</label>
+                            <span id="detRua"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Bairro</label>
+                            <span id="detBairro"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Cidade</label>
+                            <span id="detCidade"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Estado</label>
+                            <span id="detEstado"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>CEP</label>
+                            <span id="detCep"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Tipo de Edifício</label>
+                            <span id="detTipoEdificio"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Área</label>
+                            <span id="detArea"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Valor</label>
+                            <span id="detValor"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Dados do Locador -->
+                <div id="tab-locador" class="tab-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Nome Completo</label>
+                            <span id="detNomeLocador"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>CPF/CNPJ</label>
+                            <span id="detCpfCnpj"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Tipo</label>
+                            <span id="detTipoLocador"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Telefone</label>
+                            <span id="detTelefone"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Celular</label>
+                            <span id="detCelular"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>E-mail</label>
+                            <span id="detEmail"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Carrega o módulo TypeScript -->
-    <script type="module" src="/src/main.ts"></script>
-    <script>
-        // Expor função voltarAoPortal para o onclick do botão
-        window.voltarAoPortal = () => {
-            import('/src/main.ts').then(module => {
-                module.voltarAoPortal();
-            });
-        };
-        
-        window.fecharModalDetalhes = () => {
-            const modal = document.getElementById('modalDetalhes');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        };
-        
-        // Inicializar sistema quando carregar
-        window.addEventListener('DOMContentLoaded', () => {
-            import('/src/main.ts').then(module => {
-                window.sistema = new module.SistemaSILIC();
-            });
-        });
-    </script>
+    <!-- Rodapé Moderno -->
+    <footer class="modern-footer">
+        <div class="footer-container">
+            <div class="footer-columns">
+                <div class="footer-brand">
+                    <h4>SILIC 2.0</h4>
+                    <p class="brand-tagline">Soluções para todos os momentos.</p>
+                </div>
+                <div class="footer-contact">
+                    <h5>Contato</h5>
+                    <a class="footer-mail" href="mailto:silic@caixa.gov.br">silic@caixa.gov.br</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    
+
+    <!-- Bootstrap sem scripts inline -->
+    <script type="module" src="/src/init.ts"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ export interface Imovel {
   cep: string;
   estado: string;
   tipo: 'residencial' | 'comercial' | 'terreno' | 'industrial';
-  status: 'disponivel' | 'ocupado' | 'manutencao' | 'vendido';
+  status: 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao';
   area?: number;
   valor?: number;
   descricao?: string;
@@ -62,10 +62,10 @@ export interface FiltroLocadores {
 
 export interface DashboardStats {
   totalImoveis: number;
-  imoveisDisponiveis: number;
-  imoveisOcupados: number;
-  imoveisManutencao: number;
-  imoveisVendidos: number;
+  imoveisAtivos: number;
+  imoveisProspeccao: number;
+  imoveisMobilizacao: number;
+  imoveisDesmobilizacao: number;
   totalLocadores: number;
 }
 
