@@ -2,9 +2,9 @@
 name: Deploy static content to Pages
 
 on:
-  # Executa em pushes em qualquer branch
+  # Executa em pushes na branch main
   push:
-    branches: ["main", "feat/prototipo-imoveis-v1"]
+    branches: ["main"]
 
   # Permite executar manualmente da aba Actions
   workflow_dispatch:
