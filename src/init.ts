@@ -1,6 +1,9 @@
 // Init bootstrap for SILIC 2.0 without inline scripts
 // Exposes helper functions on window and starts the system
 
+// Import styles
+import './styles/style.css';
+
 // Type helper for global window
 declare global {
   interface Window {

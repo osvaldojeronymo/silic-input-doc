@@ -221,15 +221,19 @@ class SistemaSILIC {
                 let objetoValidoAte = null;
                 if (dist.status === 'Desativado' || dist.status === 'Em desmobilização') {
                     objetoValidoAte = this.gerarDataAleatoria('2023-06-01', '2024-12-31');
+                } else {
+                    objetoValidoAte = this.gerarDataAleatoria('2024-01-01', '2025-12-31');
                 }
 
                 imoveis.push({
                     id: id,
                     codigo: codigo,
-                    denominacao: `ED - CAIXA ${cidade} ${this.gerarComplementoEndereco()}, ${uf}`,
+                    denominacao: `CT - AG ${cidade}, ${uf}`,
                     local: cidade,
                     endereco: this.gerarEnderecoAleatorio(),
                     cep: this.gerarCEPAleatorio(),
+                    tipoContrato: 'Contrato de Locação - Imóveis',
+                    utilizacaoPrincipal: Math.random() > 0.3 ? 'Próprio' : 'Terceiro',
                     status: dist.status,
                     inicioValidade: inicioValidade,
                     objetoValidoAte: objetoValidoAte,
@@ -511,6 +515,8 @@ class SistemaSILIC {
                     local,
                     endereco,
                     cep,
+                    tipoContrato: this.imoveis[index].tipoContrato || 'Contrato de Locação - Imóveis',
+                    utilizacaoPrincipal: this.imoveis[index].utilizacaoPrincipal || 'Próprio',
                     status,
                     inicioValidade,
                     objetoValidoAte: objetoValidoAte || null,
@@ -538,6 +544,8 @@ class SistemaSILIC {
                 local,
                 endereco,
                 cep,
+                tipoContrato: 'Contrato de Locação - Imóveis',
+                utilizacaoPrincipal: 'Próprio',
                 status,
                 inicioValidade,
                 objetoValidoAte: objetoValidoAte || null,
@@ -678,16 +686,10 @@ class SistemaSILIC {
                         ${imovel.denominacao}
                     </div>
                 </td>
-                <td>${imovel.local}</td>
+                <td>${imovel.tipoContrato || 'Contrato de Locação - Imóveis'}</td>
+                <td>${imovel.utilizacaoPrincipal || 'Próprio'}</td>
                 <td>${this.formatarStatusBadge(imovel.status)}</td>
-                <td style="text-align: center;">
-                    <div class="locadores-count" style="text-align: center;">
-                        <span style="font-weight: 600; color: ${quantidadeLocadores === 0 ? '#dc3545' : '#495057'};">
-                            ${quantidadeLocadores}
-                        </span>
-                    </div>
-                    ${quantidadeLocadores === 0 ? '<div class="action-warning">Nenhum locador cadastrado</div>' : ''}
-                </td>
+                <td>${imovel.objetoValidoAte ? this.formatarData(imovel.objetoValidoAte) : '<em style="color: #999;">-</em>'}</td>
                 <td>
                     <div class="table-actions">
                         <button class="btn btn-sm btn-compact btn-info" onclick="sistema.mostrarDetalhesImovel(${imovel.id})" title="Ver detalhes completos">
@@ -705,11 +707,6 @@ class SistemaSILIC {
                     </div>
                 </td>
             `;
-
-            // Adicionar classe de destaque se não tiver locadores
-            if (quantidadeLocadores === 0) {
-                row.classList.add('imovel-warning');
-            }
             
             // Destacar imóvel selecionado
             if (this.imovelSelecionado?.id === imovel.id) {
@@ -752,37 +749,76 @@ class SistemaSILIC {
     configurarFiltrosImoveisImediato() {
         console.log('Configurando filtros de imóveis...');
         
-        // Campo de busca de texto
-        const filtroInput = document.getElementById('filtroImoveis');
-        if (filtroInput) {
-            filtroInput.addEventListener('input', (e) => {
-                console.log('Filtro de texto alterado:', e.target.value);
+        // Filtro de Contrato
+        const filtroContrato = document.getElementById('filtroContrato');
+        if (filtroContrato) {
+            filtroContrato.addEventListener('input', () => {
+                console.log('Filtro de contrato alterado');
                 this.filtrarImoveis();
             });
-        } else {
-            console.warn('Campo filtroImoveis não encontrado');
         }
 
-        // Filtro de status
-        const filtroStatus = document.getElementById('filtroStatusImoveis');
-        if (filtroStatus) {
-            filtroStatus.addEventListener('change', (e) => {
-                console.log('Filtro de status alterado:', e.target.value);
+        // Filtro de Tipo de Contrato
+        const filtroTipoContrato = document.getElementById('filtroTipoContrato');
+        if (filtroTipoContrato) {
+            filtroTipoContrato.addEventListener('change', () => {
+                console.log('Filtro de tipo contrato alterado');
                 this.filtrarImoveis();
             });
-        } else {
-            console.warn('Campo filtroStatusImoveis não encontrado');
+        }
+
+        // Filtro de Utilização
+        const filtroUtilizacao = document.getElementById('filtroUtilizacao');
+        if (filtroUtilizacao) {
+            filtroUtilizacao.addEventListener('change', () => {
+                console.log('Filtro de utilização alterado');
+                this.filtrarImoveis();
+            });
+        }
+
+        // Filtro de Status
+        const filtroStatus = document.getElementById('filtroStatus');
+        if (filtroStatus) {
+            filtroStatus.addEventListener('change', () => {
+                console.log('Filtro de status alterado');
+                this.filtrarImoveis();
+            });
+        }
+
+        // Filtro de Denominação
+        const filtroDenominacao = document.getElementById('filtroDenominacao');
+        if (filtroDenominacao) {
+            filtroDenominacao.addEventListener('input', () => {
+                console.log('Filtro de denominação alterado');
+                this.filtrarImoveis();
+            });
+        }
+
+        // Filtro de Data Início
+        const filtroDataInicio = document.getElementById('filtroDataInicio');
+        if (filtroDataInicio) {
+            filtroDataInicio.addEventListener('change', () => {
+                console.log('Filtro de data início alterado');
+                this.filtrarImoveis();
+            });
+        }
+
+        // Filtro de Data Fim
+        const filtroDataFim = document.getElementById('filtroDataFim');
+        if (filtroDataFim) {
+            filtroDataFim.addEventListener('change', () => {
+                console.log('Filtro de data fim alterado');
+                this.filtrarImoveis();
+            });
         }
 
         // Botão limpar filtros
-        const btnLimpar = document.getElementById('btnLimparFiltros');
+        const btnLimpar = document.getElementById('limparFiltrosImoveis');
         if (btnLimpar) {
             btnLimpar.addEventListener('click', () => {
                 console.log('Limpando filtros de imóveis');
                 this.limparFiltrosImoveis();
             });
-        } else {
-            console.warn('Botão btnLimparFiltros não encontrado');
         }
 
         console.log('Filtros de imóveis configurados');
@@ -791,36 +827,88 @@ class SistemaSILIC {
     filtrarImoveis() {
         console.log('Executando filtro de imóveis...');
         
-        const textoFiltro = document.getElementById('filtroImoveis')?.value.toLowerCase().trim() || '';
-        const statusFiltro = document.getElementById('filtroStatusImoveis')?.value || '';
+        // Obter valores dos filtros
+        const filtroContrato = document.getElementById('filtroContrato')?.value.toLowerCase().trim() || '';
+        const filtroTipoContrato = document.getElementById('filtroTipoContrato')?.value || '';
+        const filtroUtilizacao = document.getElementById('filtroUtilizacao')?.value || '';
+        const filtroStatus = document.getElementById('filtroStatus')?.value || '';
+        const filtroDenominacao = document.getElementById('filtroDenominacao')?.value.toLowerCase().trim() || '';
+        const filtroDataInicio = document.getElementById('filtroDataInicio')?.value || '';
+        const filtroDataFim = document.getElementById('filtroDataFim')?.value || '';
         
-        console.log('Filtros aplicados:', { texto: textoFiltro, status: statusFiltro });
+        console.log('Filtros aplicados:', { 
+            contrato: filtroContrato,
+            tipoContrato: filtroTipoContrato,
+            utilizacao: filtroUtilizacao,
+            status: filtroStatus,
+            denominacao: filtroDenominacao,
+            dataInicio: filtroDataInicio,
+            dataFim: filtroDataFim
+        });
         
         // Filtrar imóveis baseado nos critérios
         let imoveisFiltrados = this.imoveis.filter(imovel => {
-            let passaTexto = true;
-            let passaStatus = true;
+            // Filtro por código do contrato
+            if (filtroContrato && !imovel.codigo.toLowerCase().includes(filtroContrato)) {
+                return false;
+            }
             
-            // Filtro por texto (código, denominação ou local)
-            if (textoFiltro) {
-                passaTexto = 
-                    imovel.codigo.toLowerCase().includes(textoFiltro) ||
-                    imovel.denominacao.toLowerCase().includes(textoFiltro) ||
-                    imovel.local.toLowerCase().includes(textoFiltro);
+            // Filtro por tipo de contrato
+            if (filtroTipoContrato) {
+                const tipoImovel = imovel.tipoContrato || 'Contrato de Locação - Imóveis';
+                if (tipoImovel !== filtroTipoContrato) {
+                    return false;
+                }
+            }
+            
+            // Filtro por utilização principal
+            if (filtroUtilizacao) {
+                const utilizacaoImovel = imovel.utilizacaoPrincipal || 'Próprio';
+                if (utilizacaoImovel !== filtroUtilizacao) {
+                    return false;
+                }
             }
             
             // Filtro por status
-            if (statusFiltro) {
-                passaStatus = imovel.status === statusFiltro;
+            if (filtroStatus && imovel.status !== filtroStatus) {
+                return false;
             }
             
-            return passaTexto && passaStatus;
+            // Filtro por denominação (busca parcial)
+            if (filtroDenominacao && !imovel.denominacao.toLowerCase().includes(filtroDenominacao)) {
+                return false;
+            }
+            
+            // Filtro por intervalo de datas (fim da validade)
+            if (filtroDataInicio || filtroDataFim) {
+                if (!imovel.objetoValidoAte) {
+                    return false; // Não tem data de validade
+                }
+                
+                const dataValidade = new Date(imovel.objetoValidoAte);
+                
+                if (filtroDataInicio) {
+                    const dataInicio = new Date(filtroDataInicio);
+                    if (dataValidade < dataInicio) {
+                        return false;
+                    }
+                }
+                
+                if (filtroDataFim) {
+                    const dataFim = new Date(filtroDataFim);
+                    if (dataValidade > dataFim) {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
         });
 
         console.log(`Resultados: ${imoveisFiltrados.length} de ${this.imoveis.length} imóveis`);
         
-        // Mostrar estatísticas de busca
-        this.mostrarEstatisticasBusca(imoveisFiltrados.length);
+        // Armazenar imóveis filtrados para paginação
+        this.imoveisFiltrados = imoveisFiltrados.length < this.imoveis.length ? imoveisFiltrados : null;
         
         // Atualizar tabela com resultados filtrados
         this.atualizarTabelaImoveisFiltrados(imoveisFiltrados);
@@ -853,7 +941,7 @@ class SistemaSILIC {
         if (imoveisFiltrados.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem; color: #666;">
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">
                         Nenhum imóvel encontrado com os filtros aplicados.
                     </td>
                 </tr>
@@ -884,15 +972,12 @@ class SistemaSILIC {
                             ${imovel.denominacao}
                         </button>
                     </td>
-                    <td class="cell-local">${imovel.local}</td>
+                    <td class="cell-tipo-contrato">${imovel.tipoContrato || 'Contrato de Locação - Imóveis'}</td>
+                    <td class="cell-utilizacao">${imovel.utilizacaoPrincipal || 'Próprio'}</td>
                     <td class="cell-status">
                         <span class="status-badge status-${imovel.status.toLowerCase().replace(/\s+/g, '-')}">${imovel.status}</span>
                     </td>
-                    <td class="cell-locadores">
-                        <button class="btn btn-sm btn-outline-primary" onclick="sistema.selecionarImovel(${imovel.id})" title="Ver locadores">
-                            ${locadoresCount} locador${locadoresCount !== 1 ? 'es' : ''}
-                        </button>
-                    </td>
+                    <td class="cell-validade">${imovel.objetoValidoAte ? this.formatarData(imovel.objetoValidoAte) : '<em style="color: #999;">-</em>'}</td>
                     <td class="cell-acoes">
                         <div class="btn-group-actions">
                             <button class="btn btn-sm btn-info" onclick="sistema.mostrarDetalhesImovel(${imovel.id})" title="Ver detalhes">
@@ -931,23 +1016,29 @@ class SistemaSILIC {
     limparFiltrosImoveis() {
         console.log('Limpando filtros de imóveis...');
         
-        // Limpar campos de filtro
-        const filtroInput = document.getElementById('filtroImoveis');
-        const filtroStatus = document.getElementById('filtroStatusImoveis');
+        // Limpar todos os campos de filtro
+        const filtroContrato = document.getElementById('filtroContrato');
+        const filtroTipoContrato = document.getElementById('filtroTipoContrato');
+        const filtroUtilizacao = document.getElementById('filtroUtilizacao');
+        const filtroStatus = document.getElementById('filtroStatus');
+        const filtroDenominacao = document.getElementById('filtroDenominacao');
+        const filtroDataInicio = document.getElementById('filtroDataInicio');
+        const filtroDataFim = document.getElementById('filtroDataFim');
         
-        if (filtroInput) filtroInput.value = '';
+        if (filtroContrato) filtroContrato.value = '';
+        if (filtroTipoContrato) filtroTipoContrato.value = '';
+        if (filtroUtilizacao) filtroUtilizacao.value = '';
         if (filtroStatus) filtroStatus.value = '';
+        if (filtroDenominacao) filtroDenominacao.value = '';
+        if (filtroDataInicio) filtroDataInicio.value = '';
+        if (filtroDataFim) filtroDataFim.value = '';
         
-        // Esconder estatísticas de busca
-        const searchStats = document.getElementById('searchStats');
-        if (searchStats) {
-            searchStats.style.display = 'none';
-        }
+        // Limpar lista de imóveis filtrados
+        this.imoveisFiltrados = null;
         
         // Atualizar tabela com todos os imóveis
         this.currentPageImoveis = 1;
         this.atualizarTabelaImoveis();
-        this.atualizarInfoResultados(this.imoveis.length);
         
         console.log('Filtros limpos');
     }

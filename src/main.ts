@@ -1,12 +1,14 @@
 import { Imovel, Locador, DashboardStats, VisualizationMode } from './types/index.js';
 import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
+import './styles/style.css';
 
 /**
  * Classe principal do Sistema SILIC 2.0
  */
 export class SistemaSILIC {
   private imoveis: Imovel[] = [];
+  private imoveisOriginais: Imovel[] = []; // Lista completa sem filtros
   private locadores: Locador[] = [];
   
   // Paginação
@@ -105,6 +107,7 @@ export class SistemaSILIC {
     if (dadosSAP && dadosSAP.imoveis.length > 0) {
       // Usa dados do SAP
       this.imoveis = dadosSAP.imoveis;
+      this.imoveisOriginais = [...dadosSAP.imoveis]; // Cópia para filtros
       this.locadores = dadosSAP.locadores;
       this.usandoDadosSAP = true;
       
@@ -218,6 +221,7 @@ export class SistemaSILIC {
       // Gerar exatamente 100 imóveis para demonstração
       console.log('Gerando imóveis...');
       this.imoveis = this.gerarImoveisDemo(100);
+      this.imoveisOriginais = [...this.imoveis]; // Cópia para filtros
       console.log(`${this.imoveis.length} imóveis gerados`);
       
       if (!this.imoveis || this.imoveis.length === 0) {
@@ -274,9 +278,19 @@ export class SistemaSILIC {
       const tipo = tipos[Math.floor(Math.random() * tipos.length)];
       const statusImovel = status[Math.floor(Math.random() * status.length)];
       
+      // Gerar data de fim de validade variada (entre 2025 e 2030)
+      const ano = 2025 + Math.floor(Math.random() * 6);
+      const mes = Math.floor(Math.random() * 12) + 1;
+      const dia = Math.floor(Math.random() * 28) + 1;
+      const fimValidade = `${dia.toString().padStart(2, '0')}/${mes.toString().padStart(2, '0')}/${ano}`;
+      
       const imovel: Imovel = {
         id: Utils.generateId(),
         codigo: `IM${String(i).padStart(4, '0')}`,
+        denominacao: `CT - AG ${cidade.toUpperCase()}, ${this.getEstadoByCidade(cidade)}`,
+        tipoContrato: 'Contrato de Locação - Imóveis',
+        utilizacaoPrincipal: 'Próprio',
+        fimValidade: fimValidade,
         endereco: `Rua ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}, ${Math.floor(Math.random() * 9999) + 1}`,
         bairro,
         cidade,
@@ -499,18 +513,16 @@ export class SistemaSILIC {
       // Status badge class
       const badgeClass = `badge badge-${imovel.status}`;
       
-      // Data de vigência (se disponível)
-      const vigencia = imovel.dataRegistro 
-        ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR')
-        : '-';
+      // Data de fim da validade (formato dd/mm/aaaa)
+      const fimValidade = imovel.fimValidade || '-';
 
       tr.innerHTML = `
         <td>${imovel.codigo}</td>
-        <td>${imovel.endereco}, ${imovel.bairro}</td>
-        <td>${imovel.cidade} - ${imovel.estado}</td>
-        <td style="text-transform: capitalize;">${imovel.tipo}</td>
+        <td>${imovel.denominacao}</td>
+        <td>${imovel.tipoContrato || 'Contrato de Locação - Imóveis'}</td>
+        <td>${imovel.utilizacaoPrincipal || '-'}</td>
         <td><span class="${badgeClass}">${this.formatarStatus(imovel.status)}</span></td>
-        <td>${vigencia}</td>
+        <td>${fimValidade}</td>
         <td>
           <button class="btn-table-action" data-id="${imovel.id}">
             Ver Detalhes
@@ -714,10 +726,228 @@ export class SistemaSILIC {
     this.setElementText('paginationStart', inicio.toString());
     this.setElementText('paginationEnd', fim.toString());
     this.setElementText('paginationTotal', total.toString());
+
+    // Gerar botões de paginação
+    this.gerarBotoesPaginacao();
+  }
+
+  private gerarBotoesPaginacao(): void {
+    const paginationControls = document.getElementById('paginationControls');
+    if (!paginationControls) return;
+
+    paginationControls.innerHTML = '';
+
+    const totalPaginas = Math.ceil(this.imoveis.length / this.itemsPerPageImoveis);
+    
+    // Se só tem 1 página, não mostra controles
+    if (totalPaginas <= 1) return;
+
+    // Botão Anterior
+    const btnAnterior = document.createElement('button');
+    btnAnterior.innerHTML = '← Anterior';
+    btnAnterior.disabled = this.currentPageImoveis === 1;
+    btnAnterior.addEventListener('click', () => {
+      if (this.currentPageImoveis > 1) {
+        this.currentPageImoveis--;
+        this.atualizarTabelaImoveis();
+      }
+    });
+    paginationControls.appendChild(btnAnterior);
+
+    // Números de página (máximo 5 páginas visíveis)
+    const maxBotoesVisiveis = 5;
+    let inicioPagina = Math.max(1, this.currentPageImoveis - Math.floor(maxBotoesVisiveis / 2));
+    let fimPagina = Math.min(totalPaginas, inicioPagina + maxBotoesVisiveis - 1);
+
+    // Ajustar início se estiver no final
+    if (fimPagina - inicioPagina < maxBotoesVisiveis - 1) {
+      inicioPagina = Math.max(1, fimPagina - maxBotoesVisiveis + 1);
+    }
+
+    // Primeira página se não estiver visível
+    if (inicioPagina > 1) {
+      const btn1 = document.createElement('button');
+      btn1.textContent = '1';
+      btn1.addEventListener('click', () => {
+        this.currentPageImoveis = 1;
+        this.atualizarTabelaImoveis();
+      });
+      paginationControls.appendChild(btn1);
+
+      if (inicioPagina > 2) {
+        const btnReticencias = document.createElement('button');
+        btnReticencias.textContent = '...';
+        btnReticencias.disabled = true;
+        paginationControls.appendChild(btnReticencias);
+      }
+    }
+
+    // Páginas intermediárias
+    for (let i = inicioPagina; i <= fimPagina; i++) {
+      const btnPagina = document.createElement('button');
+      btnPagina.textContent = i.toString();
+      btnPagina.classList.toggle('active', i === this.currentPageImoveis);
+      
+      const pagina = i; // Captura o valor no closure
+      btnPagina.addEventListener('click', () => {
+        this.currentPageImoveis = pagina;
+        this.atualizarTabelaImoveis();
+      });
+      
+      paginationControls.appendChild(btnPagina);
+    }
+
+    // Última página se não estiver visível
+    if (fimPagina < totalPaginas) {
+      if (fimPagina < totalPaginas - 1) {
+        const btnReticencias = document.createElement('button');
+        btnReticencias.textContent = '...';
+        btnReticencias.disabled = true;
+        paginationControls.appendChild(btnReticencias);
+      }
+
+      const btnUltima = document.createElement('button');
+      btnUltima.textContent = totalPaginas.toString();
+      btnUltima.addEventListener('click', () => {
+        this.currentPageImoveis = totalPaginas;
+        this.atualizarTabelaImoveis();
+      });
+      paginationControls.appendChild(btnUltima);
+    }
+
+    // Botão Próximo
+    const btnProximo = document.createElement('button');
+    btnProximo.innerHTML = 'Próximo →';
+    btnProximo.disabled = this.currentPageImoveis === totalPaginas;
+    btnProximo.addEventListener('click', () => {
+      if (this.currentPageImoveis < totalPaginas) {
+        this.currentPageImoveis++;
+        this.atualizarTabelaImoveis();
+      }
+    });
+    paginationControls.appendChild(btnProximo);
   }
 
   private configurarFiltrosImoveisImediato(): void {
-    // TODO: Implementar
+    // Botão Pesquisar
+    this.addEventListenerSafe('pesquisarImoveis', 'click', () => {
+      this.aplicarFiltrosImoveis();
+    });
+
+    // Botão Limpar
+    this.addEventListenerSafe('limparFiltrosImoveis', 'click', () => {
+      this.limparFiltrosImoveis();
+    });
+
+    // Enter nos campos de texto
+    this.addEventListenerSafe('filtroContrato', 'keypress', (e) => {
+      if ((e as KeyboardEvent).key === 'Enter') {
+        this.aplicarFiltrosImoveis();
+      }
+    });
+
+    this.addEventListenerSafe('filtroDenominacao', 'keypress', (e) => {
+      if ((e as KeyboardEvent).key === 'Enter') {
+        this.aplicarFiltrosImoveis();
+      }
+    });
+  }
+
+  private aplicarFiltrosImoveis(): void {
+    console.log('🔍 Aplicando filtros de imóveis...');
+    
+    const filtroContrato = (document.getElementById('filtroContrato') as HTMLInputElement)?.value.toLowerCase() || '';
+    const filtroUtilizacao = (document.getElementById('filtroUtilizacao') as HTMLSelectElement)?.value || '';
+    const filtroStatus = (document.getElementById('filtroStatus') as HTMLSelectElement)?.value || '';
+    const filtroDenominacao = (document.getElementById('filtroDenominacao') as HTMLInputElement)?.value.toLowerCase() || '';
+    const filtroDataInicio = (document.getElementById('filtroDataInicio') as HTMLInputElement)?.value || '';
+    const filtroDataFim = (document.getElementById('filtroDataFim') as HTMLInputElement)?.value || '';
+
+    this.imoveis = this.imoveisOriginais.filter(imovel => {
+      // Filtro por código de contrato
+      if (filtroContrato && !imovel.codigo.toLowerCase().includes(filtroContrato)) {
+        return false;
+      }
+
+      // Filtro por utilização
+      if (filtroUtilizacao && imovel.utilizacaoPrincipal !== filtroUtilizacao) {
+        return false;
+      }
+
+      // Filtro por status
+      if (filtroStatus) {
+        const statusMap: { [key: string]: string } = {
+          'Ativo': 'ativo',
+          'Em Prospecção': 'prospeccao',
+          'Em Mobilização': 'mobilizacao',
+          'Em Desmobilização': 'desmobilizacao',
+          'Desativado': 'desativado'
+        };
+        if (imovel.status !== statusMap[filtroStatus]) {
+          return false;
+        }
+      }
+
+      // Filtro por denominação
+      if (filtroDenominacao && !imovel.denominacao.toLowerCase().includes(filtroDenominacao)) {
+        return false;
+      }
+
+      // Filtro por data (se fimValidade estiver disponível)
+      if (filtroDataInicio || filtroDataFim) {
+        if (imovel.fimValidade) {
+          // Converter dd/mm/aaaa para Date
+          const [dia, mes, ano] = imovel.fimValidade.split('/');
+          const dataValidade = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+
+          if (filtroDataInicio) {
+            const dataInicio = new Date(filtroDataInicio);
+            if (dataValidade < dataInicio) return false;
+          }
+
+          if (filtroDataFim) {
+            const dataFim = new Date(filtroDataFim);
+            if (dataValidade > dataFim) return false;
+          }
+        } else {
+          // Se não tem data de validade, não passa no filtro de data
+          if (filtroDataInicio || filtroDataFim) return false;
+        }
+      }
+
+      return true;
+    });
+
+    this.currentPageImoveis = 1;
+    this.atualizarTabelaImoveis();
+    this.atualizarDashboard();
+    
+    console.log(`✅ Filtros aplicados: ${this.imoveis.length} imóveis encontrados`);
+  }
+
+  private limparFiltrosImoveis(): void {
+    // Limpar todos os campos
+    const filtroContrato = document.getElementById('filtroContrato') as HTMLInputElement;
+    const filtroUtilizacao = document.getElementById('filtroUtilizacao') as HTMLSelectElement;
+    const filtroStatus = document.getElementById('filtroStatus') as HTMLSelectElement;
+    const filtroDenominacao = document.getElementById('filtroDenominacao') as HTMLInputElement;
+    const filtroDataInicio = document.getElementById('filtroDataInicio') as HTMLInputElement;
+    const filtroDataFim = document.getElementById('filtroDataFim') as HTMLInputElement;
+
+    if (filtroContrato) filtroContrato.value = '';
+    if (filtroUtilizacao) filtroUtilizacao.value = '';
+    if (filtroStatus) filtroStatus.value = '';
+    if (filtroDenominacao) filtroDenominacao.value = '';
+    if (filtroDataInicio) filtroDataInicio.value = '';
+    if (filtroDataFim) filtroDataFim.value = '';
+
+    // Restaurar todos os imóveis
+    this.imoveis = [...this.imoveisOriginais];
+    this.currentPageImoveis = 1;
+    this.atualizarTabelaImoveis();
+    this.atualizarDashboard();
+    
+    console.log('🧹 Filtros limpos');
   }
 
   private atualizarDashboard(): void {

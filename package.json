@@ -14,7 +14,9 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "convert:excel": ".venv/bin/python scripts/converter-excel-para-json.py",
+    "gerar:dados": ".venv/bin/python scripts/gerar-dados-mockados.py"
   },
   "devDependencies": {
     "typescript": "~5.8.3",

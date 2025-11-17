@@ -3,6 +3,10 @@
 export interface Imovel {
   id: string;
   codigo: string;
+  denominacao: string;  // Denominação do contrato
+  tipoContrato?: string;  // Tipo do contrato (ex: "Contrato de Locação - Imóveis")
+  utilizacaoPrincipal?: string;  // Utilização principal do imóvel
+  fimValidade?: string;  // Data de fim da validade do contrato
   endereco: string;
   bairro: string;
   cidade: string;
