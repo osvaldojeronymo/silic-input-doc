@@ -1,4 +1,4 @@
-import { Imovel, Locador, DashboardStats, VisualizationMode } from './types/index.js';
+import { Imovel, Locador, DashboardStats, VisualizationMode, ContratoEdit, ImovelEdit, LocadorEdit } from './types/index.js';
 import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
 import './styles/style.css';
@@ -19,6 +19,9 @@ export class SistemaSILIC {
   
   private currentView: VisualizationMode = 'table';
   private usandoDadosSAP = false;
+  private contratoEdits: Map<string, ContratoEdit> = new Map();
+  private imovelEdits: Map<string, ImovelEdit> = new Map();
+  private locadorEdits: Map<string, LocadorEdit> = new Map();
 
   constructor() {
     this.inicializar();
@@ -602,6 +605,33 @@ export class SistemaSILIC {
 
     // Configurar tabs
     this.configurarTabs();
+
+    // Configurar máscaras e regras dos campos de contrato
+    this.configurarCamposContrato();
+
+    // Configurar máscaras dos campos do imóvel
+    this.configurarCamposImovel();
+
+    // Configurar ação de salvar imóvel
+    const btnSalvarImovel = document.getElementById('btnSalvarImovel');
+    if (btnSalvarImovel) {
+      btnSalvarImovel.addEventListener('click', () => this.salvarImovel(imovelId));
+    }
+
+    // Configurar máscaras/validações dos campos do locador
+    this.configurarCamposLocador();
+
+    // Configurar ação de salvar locador
+    const btnSalvarLocador = document.getElementById('btnSalvarLocador');
+    if (btnSalvarLocador) {
+      btnSalvarLocador.addEventListener('click', () => this.salvarLocador(imovelId));
+    }
+
+    // Configurar ação de salvar contrato
+    const btnSalvar = document.getElementById('btnSalvarContrato');
+    if (btnSalvar) {
+      btnSalvar.addEventListener('click', () => this.salvarContrato(imovelId));
+    }
   }
 
   /**
@@ -614,48 +644,42 @@ export class SistemaSILIC {
       modalTitle.textContent = `Detalhes do Imóvel`;
     }
 
-    // Tab Contrato
-    this.setElementText('detNumeroContrato', imovel.codigo);
-    this.setElementText('detDenominacao', `${imovel.endereco}, ${imovel.bairro}`);
-    this.setElementText('detTipoContrato', this.capitalize(imovel.tipo));
-    this.setElementText('detDataInicio', imovel.dataRegistro 
-      ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR')
-      : ''
-    );
-    this.setElementText('detDataFim', '');
-    this.setElementText('detParceiro', '');
-    this.setElementText('detEnderecoContrato', imovel.endereco);
-    this.setElementText('detNumeroEndereco', '');
+    // Tab Contrato (preenche valores iniciais)
+    this.setInputValue('contratoNumero', '');
+    this.setInputValue('contratoDenominacao', imovel.denominacao || `${imovel.endereco}, ${imovel.bairro}`);
+    this.setInputValue('contratoTipoEdificio', '');
+    this.setInputValue('contratoCriadoPor', '');
+    this.setInputValue('contratoInicio', imovel.dataRegistro ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR') : '');
+    this.setInputValue('contratoFimValidade', imovel.fimValidade || '');
+    this.setInputValue('contratoRescisao', '');
 
-    // Tab Imóvel
-    this.setElementText('detCodPostal', imovel.cep);
-    this.setElementText('detLocal', `${imovel.cidade} - ${imovel.estado}`);
-    this.setElementText('detRua', imovel.endereco);
-    this.setElementText('detBairro', imovel.bairro);
-    this.setElementText('detCidade', imovel.cidade);
-    this.setElementText('detEstado', imovel.estado);
-    this.setElementText('detCep', imovel.cep);
-    this.setElementText('detTipoEdificio', this.capitalize(imovel.tipo));
-    this.setElementText('detArea', imovel.area ? `${imovel.area} m²` : '');
-    this.setElementText('detValor', imovel.valor ? Utils.formatCurrency(imovel.valor) : '');
+    // Tab Imóvel (inputs) com preferências salvas
+    const edits = this.imovelEdits.get(imovel.id);
+    this.setInputValue('imovelCep', edits?.cep ?? imovel.cep ?? '');
+    this.setInputValue('imovelEndereco', edits?.endereco ?? imovel.endereco ?? '');
+    this.setInputValue('imovelNumero', edits?.numero ?? '');
+    this.setInputValue('imovelBairro', edits?.bairro ?? imovel.bairro ?? '');
+    this.setInputValue('imovelLocal', edits?.local ?? imovel.cidade ?? '');
+    this.setInputValue('imovelUf', edits?.uf ?? imovel.estado ?? '');
 
-    // Tab Locador (se disponível)
+    // Tab Locador (inputs) com preferências salvas
+    const locadorEd = this.locadorEdits.get(imovel.id);
     const locador = this.locadores.find(l => l.id === imovel.id);
-    if (locador) {
-      this.setElementText('detNomeLocador', locador.nome);
-      this.setElementText('detCpfCnpj', locador.documento);
-      this.setElementText('detTipoLocador', locador.tipo === 'fisica' ? 'Pessoa Física' : 'Pessoa Jurídica');
-      this.setElementText('detTelefone', locador.telefone || '');
-      this.setElementText('detCelular', '');
-      this.setElementText('detEmail', locador.email || '');
-    } else {
-      this.setElementText('detNomeLocador', '');
-      this.setElementText('detCpfCnpj', '');
-      this.setElementText('detTipoLocador', '');
-      this.setElementText('detTelefone', '');
-      this.setElementText('detCelular', '');
-      this.setElementText('detEmail', '');
-    }
+    this.setInputValue('locadorParceiro', locadorEd?.parceiro ?? '');
+    this.setInputValue('locadorTipoIdFiscal', locadorEd?.tipoIdFiscal ?? (locador ? (locador.tipo === 'fisica' ? 'CPF' : 'CNPJ') : ''));
+    this.setInputValue('locadorDenominacaoFuncao', locadorEd?.denominacaoFuncao ?? 'Proponente Credor');
+    this.setInputValue('locadorInicioRelacao', locadorEd?.inicioRelacao ?? '');
+    this.setInputValue('locadorFimRelacao', locadorEd?.fimRelacao ?? '');
+    this.setInputValue('locadorNome', locadorEd?.nome ?? (locador?.nome || ''));
+    this.setInputValue('locadorCep', locadorEd?.cep ?? '');
+    this.setInputValue('locadorEndereco', locadorEd?.endereco ?? '');
+    this.setInputValue('locadorNumero', locadorEd?.numero ?? '');
+    this.setInputValue('locadorBairro', locadorEd?.bairro ?? '');
+    this.setInputValue('locadorLocal', locadorEd?.local ?? '');
+    this.setInputValue('locadorUf', locadorEd?.uf ?? '');
+    this.setInputValue('locadorEmail', locadorEd?.email ?? (locador?.email || ''));
+    this.setInputValue('locadorTelefoneFixo', locadorEd?.telefoneFixo ?? (locador?.telefone || ''));
+    this.setInputValue('locadorTelefoneCelular', locadorEd?.telefoneCelular ?? '');
   }
 
   /**
@@ -672,6 +696,360 @@ export class SistemaSILIC {
     const element = document.getElementById(id);
     if (element) {
       element.textContent = text;
+    }
+  }
+
+  private setInputValue(id: string, value: string): void {
+    const el = document.getElementById(id) as HTMLInputElement | null;
+    if (el) el.value = value || '';
+  }
+
+  private configurarCamposContrato(): void {
+    const numero = document.getElementById('contratoNumero') as HTMLInputElement | null;
+    const tipoEdificio = document.getElementById('contratoTipoEdificio') as HTMLInputElement | null;
+    const criadoPor = document.getElementById('contratoCriadoPor') as HTMLInputElement | null;
+    const inicio = document.getElementById('contratoInicio') as HTMLInputElement | null;
+    const fim = document.getElementById('contratoFimValidade') as HTMLInputElement | null;
+    const rescisao = document.getElementById('contratoRescisao') as HTMLInputElement | null;
+
+    // Número do contrato: apenas dígitos, máximo 8
+    if (numero) {
+      numero.addEventListener('input', () => {
+        numero.value = numero.value.replace(/\D/g, '').slice(0, 8);
+      });
+    }
+
+    // Tipo de edifício: apenas dígitos, máximo 2
+    if (tipoEdificio) {
+      tipoEdificio.addEventListener('input', () => {
+        tipoEdificio.value = tipoEdificio.value.replace(/\D/g, '').slice(0, 2);
+      });
+    }
+
+    // Criado por: primeira letra + 6 dígitos (ex: C088576)
+    if (criadoPor) {
+      criadoPor.addEventListener('input', () => {
+        const v = criadoPor.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const letra = v.replace(/[^A-Z]/g, '').slice(0, 1);
+        const numeros = v.replace(/[^0-9]/g, '').slice(0, 6);
+        criadoPor.value = `${letra}${numeros}`;
+      });
+    }
+
+    // Datas: DD/MM/AAAA máscara simples
+    const aplicarMascaraData = (input: HTMLInputElement) => {
+      input.addEventListener('input', () => {
+        let v = input.value.replace(/\D/g, '').slice(0, 8);
+        if (v.length >= 5) input.value = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4,8)}`;
+        else if (v.length >= 3) input.value = `${v.slice(0,2)}/${v.slice(2,4)}`;
+        else input.value = v;
+      });
+    };
+
+    if (inicio) aplicarMascaraData(inicio);
+    if (fim) aplicarMascaraData(fim);
+    if (rescisao) aplicarMascaraData(rescisao);
+
+    // Regra: Rescisão em fica vazio desabilitado até Fim da validade ser preenchido
+    if (rescisao) {
+      rescisao.disabled = true;
+    }
+    if (fim && rescisao) {
+      const toggleRescisao = () => {
+        rescisao.disabled = fim.value.trim().length === 0;
+        if (rescisao.disabled) rescisao.value = '';
+      };
+      fim.addEventListener('input', toggleRescisao);
+      toggleRescisao();
+    }
+  }
+
+  private configurarCamposImovel(): void {
+    const cep = document.getElementById('imovelCep') as HTMLInputElement | null;
+    const numero = document.getElementById('imovelNumero') as HTMLInputElement | null;
+    const uf = document.getElementById('imovelUf') as HTMLInputElement | null;
+
+    if (cep) {
+      cep.addEventListener('input', () => {
+        let v = cep.value.replace(/\D/g, '').slice(0, 8);
+        if (v.length > 5) cep.value = `${v.slice(0,5)}-${v.slice(5)}`;
+        else cep.value = v;
+      });
+    }
+    if (numero) {
+      numero.addEventListener('input', () => {
+        numero.value = numero.value.replace(/\D/g, '').slice(0, 6);
+      });
+    }
+    if (uf) {
+      uf.addEventListener('input', () => {
+        uf.value = uf.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+      });
+    }
+  }
+
+  private configurarCamposLocador(): void {
+    const cep = document.getElementById('locadorCep') as HTMLInputElement | null;
+    const numero = document.getElementById('locadorNumero') as HTMLInputElement | null;
+    const uf = document.getElementById('locadorUf') as HTMLInputElement | null;
+    const fixo = document.getElementById('locadorTelefoneFixo') as HTMLInputElement | null;
+    const celular = document.getElementById('locadorTelefoneCelular') as HTMLInputElement | null;
+    const inicio = document.getElementById('locadorInicioRelacao') as HTMLInputElement | null;
+    const fim = document.getElementById('locadorFimRelacao') as HTMLInputElement | null;
+
+    if (cep) {
+      cep.addEventListener('input', () => {
+        let v = cep.value.replace(/\D/g, '').slice(0, 8);
+        if (v.length > 5) cep.value = `${v.slice(0,5)}-${v.slice(5)}`;
+        else cep.value = v;
+      });
+    }
+    if (numero) {
+      numero.addEventListener('input', () => {
+        numero.value = numero.value.replace(/\D/g, '').slice(0, 6);
+      });
+    }
+    if (uf) {
+      uf.addEventListener('input', () => {
+        uf.value = uf.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+      });
+    }
+    if (fixo) {
+      fixo.addEventListener('input', () => {
+        let v = fixo.value.replace(/\D/g, '').slice(0, 10);
+        // (00) 0000-0000
+        if (v.length >= 7) fixo.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6,10)}`;
+        else if (v.length >= 3) fixo.value = `(${v.slice(0,2)}) ${v.slice(2,6)}`;
+        else fixo.value = v;
+      });
+    }
+    if (celular) {
+      celular.addEventListener('input', () => {
+        let v = celular.value.replace(/\D/g, '').slice(0, 11);
+        // (00) 00000-0000
+        if (v.length >= 7) celular.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7,11)}`;
+        else if (v.length >= 3) celular.value = `(${v.slice(0,2)}) ${v.slice(2,7)}`;
+        else celular.value = v;
+      });
+    }
+    const aplicarMascaraData = (input: HTMLInputElement) => {
+      input.addEventListener('input', () => {
+        let v = input.value.replace(/\D/g, '').slice(0, 8);
+        if (v.length >= 5) input.value = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4,8)}`;
+        else if (v.length >= 3) input.value = `${v.slice(0,2)}/${v.slice(2,4)}`;
+        else input.value = v;
+      });
+    };
+    if (inicio) aplicarMascaraData(inicio);
+    if (fim) aplicarMascaraData(fim);
+  }
+
+  private salvarLocador(imovelId: string): void {
+    const parceiro = (document.getElementById('locadorParceiro') as HTMLInputElement | null)?.value || '';
+    const tipoIdFiscal = (document.getElementById('locadorTipoIdFiscal') as HTMLInputElement | null)?.value || '';
+    const denominacaoFuncao = (document.getElementById('locadorDenominacaoFuncao') as HTMLInputElement | null)?.value || '';
+    const inicioRelacao = (document.getElementById('locadorInicioRelacao') as HTMLInputElement | null)?.value || '';
+    const fimRelacao = (document.getElementById('locadorFimRelacao') as HTMLInputElement | null)?.value || '';
+    const nome = (document.getElementById('locadorNome') as HTMLInputElement | null)?.value || '';
+    const cep = (document.getElementById('locadorCep') as HTMLInputElement | null)?.value || '';
+    const endereco = (document.getElementById('locadorEndereco') as HTMLInputElement | null)?.value || '';
+    const numero = (document.getElementById('locadorNumero') as HTMLInputElement | null)?.value || '';
+    const bairro = (document.getElementById('locadorBairro') as HTMLInputElement | null)?.value || '';
+    const local = (document.getElementById('locadorLocal') as HTMLInputElement | null)?.value || '';
+    const uf = (document.getElementById('locadorUf') as HTMLInputElement | null)?.value || '';
+    const email = (document.getElementById('locadorEmail') as HTMLInputElement | null)?.value || '';
+    const telefoneFixo = (document.getElementById('locadorTelefoneFixo') as HTMLInputElement | null)?.value || '';
+    const telefoneCelular = (document.getElementById('locadorTelefoneCelular') as HTMLInputElement | null)?.value || '';
+
+    const statusSalvar = document.getElementById('statusSalvarLocador');
+
+    // Validações
+    const obrigatorio = (v: string) => v.trim().length > 0;
+    const cepOk = /^\d{5}-\d{3}$/.test(cep);
+    const numeroOk = /^\d+$/.test(numero) || numero.trim().length === 0; // opcional
+    const ufOk = /^[A-Z]{2}$/.test(uf);
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.trim().length === 0; // opcional
+    const fixoOk = /^\(\d{2}\) \d{4}-\d{4}$/.test(telefoneFixo) || telefoneFixo.trim().length === 0; // opcional
+    const celularOk = /^\(\d{2}\) \d{5}-\d{4}$/.test(telefoneCelular) || telefoneCelular.trim().length === 0; // opcional
+    const inicioOk = this.validarData(inicioRelacao, true);
+    const fimOk = this.validarData(fimRelacao, true);
+
+    this.mostrarErro('erroLocadorParceiro', !obrigatorio(parceiro));
+    this.mostrarErro('erroLocadorTipoIdFiscal', !obrigatorio(tipoIdFiscal));
+    this.mostrarErro('erroLocadorDenominacaoFuncao', !obrigatorio(denominacaoFuncao));
+    this.mostrarErro('erroLocadorInicioRelacao', !inicioOk);
+    this.mostrarErro('erroLocadorFimRelacao', !fimOk);
+    this.mostrarErro('erroLocadorNome', !obrigatorio(nome));
+    this.mostrarErro('erroLocadorCep', !cepOk);
+    this.mostrarErro('erroLocadorEndereco', !obrigatorio(endereco));
+    this.mostrarErro('erroLocadorNumero', !numeroOk);
+    this.mostrarErro('erroLocadorBairro', !obrigatorio(bairro));
+    this.mostrarErro('erroLocadorLocal', !obrigatorio(local));
+    this.mostrarErro('erroLocadorUf', !ufOk);
+    this.mostrarErro('erroLocadorEmail', !emailOk);
+    this.mostrarErro('erroLocadorTelefoneFixo', !fixoOk);
+    this.mostrarErro('erroLocadorTelefoneCelular', !celularOk);
+
+    const ok = obrigatorio(parceiro) && obrigatorio(tipoIdFiscal) && obrigatorio(denominacaoFuncao)
+      && inicioOk && fimOk && obrigatorio(nome) && cepOk && obrigatorio(endereco) && numeroOk
+      && obrigatorio(bairro) && obrigatorio(local) && ufOk && emailOk && fixoOk && celularOk;
+
+    if (!ok) {
+      if (statusSalvar) {
+        statusSalvar.textContent = 'Há erros nos campos.';
+        (statusSalvar as HTMLElement).style.color = '#c62828';
+        (statusSalvar as HTMLElement).style.display = 'inline';
+        setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 3000);
+      }
+      return;
+    }
+
+    this.locadorEdits.set(imovelId, {
+      parceiro, tipoIdFiscal, denominacaoFuncao, inicioRelacao, fimRelacao, nome,
+      cep, endereco, numero, bairro, local, uf, email, telefoneFixo, telefoneCelular
+    });
+
+    if (statusSalvar) {
+      statusSalvar.textContent = 'Salvo com sucesso.';
+      (statusSalvar as HTMLElement).style.color = '#2e7d32';
+      (statusSalvar as HTMLElement).style.display = 'inline';
+      setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 2000);
+    }
+  }
+
+  private salvarImovel(imovelId: string): void {
+    const cep = (document.getElementById('imovelCep') as HTMLInputElement | null)?.value || '';
+    const endereco = (document.getElementById('imovelEndereco') as HTMLInputElement | null)?.value || '';
+    const numero = (document.getElementById('imovelNumero') as HTMLInputElement | null)?.value || '';
+    const bairro = (document.getElementById('imovelBairro') as HTMLInputElement | null)?.value || '';
+    const local = (document.getElementById('imovelLocal') as HTMLInputElement | null)?.value || '';
+    const uf = (document.getElementById('imovelUf') as HTMLInputElement | null)?.value || '';
+
+    const statusSalvar = document.getElementById('statusSalvarImovel');
+
+    // Validações básicas
+    const cepOk = /^\d{5}-\d{3}$/.test(cep);
+    const enderecoOk = endereco.trim().length > 0;
+    const numeroOk = /^\d+$/.test(numero) || numero.trim().length === 0; // número opcional
+    const bairroOk = bairro.trim().length > 0;
+    const localOk = local.trim().length > 0;
+    const ufOk = /^[A-Z]{2}$/.test(uf);
+
+    this.mostrarErro('erroImovelCep', !cepOk);
+    this.mostrarErro('erroImovelEndereco', !enderecoOk);
+    this.mostrarErro('erroImovelNumero', !numeroOk);
+    this.mostrarErro('erroImovelBairro', !bairroOk);
+    this.mostrarErro('erroImovelLocal', !localOk);
+    this.mostrarErro('erroImovelUf', !ufOk);
+
+    const ok = cepOk && enderecoOk && numeroOk && bairroOk && localOk && ufOk;
+    if (!ok) {
+      if (statusSalvar) {
+        statusSalvar.textContent = 'Há erros nos campos.';
+        (statusSalvar as HTMLElement).style.color = '#c62828';
+        (statusSalvar as HTMLElement).style.display = 'inline';
+        setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 3000);
+      }
+      return;
+    }
+
+    this.imovelEdits.set(imovelId, { cep, endereco, numero, bairro, local, uf });
+
+    if (statusSalvar) {
+      statusSalvar.textContent = 'Salvo com sucesso.';
+      (statusSalvar as HTMLElement).style.color = '#2e7d32';
+      (statusSalvar as HTMLElement).style.display = 'inline';
+      setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 2000);
+    }
+  }
+
+  private validarData(value: string, permitirVazio = false): boolean {
+    if (!value) return permitirVazio;
+    const m = value.match(/^([0-3]\d)\/(0\d|1[0-2])\/(\d{4})$/);
+    if (!m) return false;
+    const d = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10);
+    const y = parseInt(m[3], 10);
+    const dt = new Date(y, mo - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+  }
+
+  private mostrarErro(id: string, mostrar: boolean, mensagem?: string): void {
+    const el = document.getElementById(id);
+    if (!el) return;
+    (el as HTMLElement).style.display = mostrar ? 'block' : 'none';
+    if (mensagem) el.textContent = mensagem;
+  }
+
+  private salvarContrato(imovelId: string): void {
+    const numero = (document.getElementById('contratoNumero') as HTMLInputElement | null)?.value || '';
+    const denominacao = (document.getElementById('contratoDenominacao') as HTMLInputElement | null)?.value || '';
+    const tipoEdificio = (document.getElementById('contratoTipoEdificio') as HTMLInputElement | null)?.value || '';
+    const criadoPor = (document.getElementById('contratoCriadoPor') as HTMLInputElement | null)?.value || '';
+    const inicio = (document.getElementById('contratoInicio') as HTMLInputElement | null)?.value || '';
+    const fimValidade = (document.getElementById('contratoFimValidade') as HTMLInputElement | null)?.value || '';
+    const rescisao = (document.getElementById('contratoRescisao') as HTMLInputElement | null)?.value || '';
+
+    // Validações
+    let ok = true;
+    const onlyDigits = (v: string) => v.replace(/\D/g, '');
+
+    const numOk = onlyDigits(numero).length === 8;
+    this.mostrarErro('erroContratoNumero', !numOk);
+    ok = ok && numOk;
+
+    const denomOk = denominacao.trim().length > 0;
+    this.mostrarErro('erroContratoDenominacao', !denomOk);
+    ok = ok && denomOk;
+
+    const tipoOk = onlyDigits(tipoEdificio).length === 2;
+    this.mostrarErro('erroContratoTipoEdificio', !tipoOk);
+    ok = ok && tipoOk;
+
+    const criadoOk = /^[A-Z]{1}\d{6}$/.test(criadoPor.toUpperCase());
+    this.mostrarErro('erroContratoCriadoPor', !criadoOk);
+    ok = ok && criadoOk;
+
+    const inicioOk = this.validarData(inicio, true);
+    this.mostrarErro('erroContratoInicio', !inicioOk);
+    ok = ok && inicioOk;
+
+    const fimOk = this.validarData(fimValidade, true);
+    this.mostrarErro('erroContratoFimValidade', !fimOk);
+    ok = ok && fimOk;
+
+    const rescPermitido = fimValidade.trim().length > 0;
+    const rescOk = rescPermitido ? this.validarData(rescisao, true) : rescisao.trim().length === 0;
+    this.mostrarErro('erroContratoRescisao', !rescOk, rescPermitido ? 'Data inválida.' : 'Preencha Fim da validade para habilitar.');
+    ok = ok && rescOk;
+
+    const statusSalvar = document.getElementById('statusSalvarContrato');
+    if (!ok) {
+      if (statusSalvar) {
+        statusSalvar.textContent = 'Há erros nos campos.';
+        (statusSalvar as HTMLElement).style.color = '#c62828';
+        (statusSalvar as HTMLElement).style.display = 'inline';
+        setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 3000);
+      }
+      return;
+    }
+
+    // Persistência em memória
+    this.contratoEdits.set(imovelId, {
+      numero: onlyDigits(numero),
+      denominacao: denominacao.trim(),
+      tipoEdificio: onlyDigits(tipoEdificio),
+      criadoPor: criadoPor.toUpperCase(),
+      inicio,
+      fimValidade,
+      rescisao
+    });
+
+    if (statusSalvar) {
+      statusSalvar.textContent = 'Salvo com sucesso.';
+      (statusSalvar as HTMLElement).style.color = '#2e7d32';
+      (statusSalvar as HTMLElement).style.display = 'inline';
+      setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 2000);
     }
   }
 

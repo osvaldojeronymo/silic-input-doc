@@ -210,36 +210,43 @@
                 <div id="tab-contrato" class="tab-content active">
                     <div class="info-grid">
                         <div class="info-item">
-                            <label>Número do Contrato</label>
-                            <span id="detNumeroContrato"></span>
+                            <label for="contratoNumero">Número do contrato</label>
+                            <input id="contratoNumero" type="text" inputmode="numeric" maxlength="8" pattern="\\d{8}" placeholder="00000000">
+                            <small id="erroContratoNumero" class="error-msg" style="color:#c62828;display:none">Informe 8 dígitos numéricos.</small>
                         </div>
                         <div class="info-item">
-                            <label>Denominação</label>
-                            <span id="detDenominacao"></span>
+                            <label for="contratoDenominacao">Denominação do contrato</label>
+                            <input id="contratoDenominacao" type="text" placeholder="Digite a denominação" />
+                            <small id="erroContratoDenominacao" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
                         </div>
                         <div class="info-item">
-                            <label>Tipo de Contrato</label>
-                            <span id="detTipoContrato"></span>
+                            <label for="contratoTipoEdificio">Tipo de edifício</label>
+                            <input id="contratoTipoEdificio" type="text" inputmode="numeric" maxlength="2" pattern="\\d{2}" placeholder="00">
+                            <small id="erroContratoTipoEdificio" class="error-msg" style="color:#c62828;display:none">Informe 2 dígitos.</small>
                         </div>
                         <div class="info-item">
-                            <label>Data de Início</label>
-                            <span id="detDataInicio"></span>
+                            <label for="contratoCriadoPor">Criado por</label>
+                            <input id="contratoCriadoPor" type="text" maxlength="7" pattern="[A-Za-z]{1}\\d{6}" placeholder="C088576">
+                            <small id="erroContratoCriadoPor" class="error-msg" style="color:#c62828;display:none">Formato: 1 letra + 6 dígitos.</small>
                         </div>
                         <div class="info-item">
-                            <label>Data de Término</label>
-                            <span id="detDataFim"></span>
+                            <label for="contratoInicio">Início do contrato</label>
+                            <input id="contratoInicio" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroContratoInicio" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
                         </div>
                         <div class="info-item">
-                            <label>Parceiro de Negócios</label>
-                            <span id="detParceiro"></span>
+                            <label for="contratoFimValidade">Fim da validade</label>
+                            <input id="contratoFimValidade" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroContratoFimValidade" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
                         </div>
                         <div class="info-item">
-                            <label>Endereço</label>
-                            <span id="detEnderecoContrato"></span>
+                            <label for="contratoRescisao">Rescisão em</label>
+                            <input id="contratoRescisao" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroContratoRescisao" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
                         </div>
-                        <div class="info-item">
-                            <label>Número</label>
-                            <span id="detNumeroEndereco"></span>
+                        <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
+                            <button id="btnSalvarContrato" class="btn-primary">Salvar contrato</button>
+                            <span id="statusSalvarContrato" style="font-size:.9rem;color:#2e7d32;display:none">Salvo com sucesso.</span>
                         </div>
                     </div>
                 </div>
@@ -248,44 +255,123 @@
                 <div id="tab-imovel" class="tab-content">
                     <div class="info-grid">
                         <div class="info-item">
-                            <label>Código Postal</label>
-                            <span id="detCodPostal"></span>
+                            <label for="imovelCep">Código postal</label>
+                            <input id="imovelCep" type="text" placeholder="00000-000" maxlength="9" />
+                            <small id="erroImovelCep" class="error-msg" style="color:#c62828;display:none">Formato: 00000-000.</small>
                         </div>
                         <div class="info-item">
-                            <label>Local</label>
-                            <span id="detLocal"></span>
+                            <label for="imovelEndereco">Endereço</label>
+                            <input id="imovelEndereco" type="text" placeholder="Rua/Av." />
+                            <small id="erroImovelEndereco" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
                         </div>
                         <div class="info-item">
-                            <label>Rua</label>
-                            <span id="detRua"></span>
+                            <label for="imovelNumero">Número</label>
+                            <input id="imovelNumero" type="text" inputmode="numeric" maxlength="6" placeholder="0000" />
+                            <small id="erroImovelNumero" class="error-msg" style="color:#c62828;display:none">Informe apenas dígitos.</small>
                         </div>
                         <div class="info-item">
-                            <label>Bairro</label>
-                            <span id="detBairro"></span>
+                            <label for="imovelBairro">Bairro</label>
+                            <input id="imovelBairro" type="text" placeholder="Bairro" />
+                            <small id="erroImovelBairro" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
                         </div>
                         <div class="info-item">
-                            <label>Cidade</label>
-                            <span id="detCidade"></span>
+                            <label for="imovelLocal">Local</label>
+                            <input id="imovelLocal" type="text" placeholder="Cidade" />
+                            <small id="erroImovelLocal" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
                         </div>
                         <div class="info-item">
-                            <label>Estado</label>
-                            <span id="detEstado"></span>
+                            <label for="imovelUf">UF</label>
+                            <input id="imovelUf" type="text" maxlength="2" placeholder="UF" />
+                            <small id="erroImovelUf" class="error-msg" style="color:#c62828;display:none">Informe UF com 2 letras.</small>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
+                            <button id="btnSalvarImovel" class="btn-primary">Salvar imóvel</button>
+                            <span id="statusSalvarImovel" style="font-size:.9rem;color:#2e7d32;display:none">Salvo com sucesso.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Dados do Locador -->
+                <div id="tab-locador" class="tab-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label for="locadorParceiro">Parceiro de negócios</label>
+                            <input id="locadorParceiro" type="text" placeholder="Parceiro" />
+                            <small id="erroLocadorParceiro" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
                         </div>
                         <div class="info-item">
-                            <label>CEP</label>
-                            <span id="detCep"></span>
+                            <label for="locadorTipoIdFiscal">Tipo ID Fiscal</label>
+                            <input id="locadorTipoIdFiscal" type="text" placeholder="CPF/CNPJ" />
+                            <small id="erroLocadorTipoIdFiscal" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
                         </div>
                         <div class="info-item">
-                            <label>Tipo de Edifício</label>
-                            <span id="detTipoEdificio"></span>
+                            <label for="locadorDenominacaoFuncao">Denominação função PN</label>
+                            <input id="locadorDenominacaoFuncao" type="text" placeholder="Proponente Credor" />
+                            <small id="erroLocadorDenominacaoFuncao" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
                         </div>
                         <div class="info-item">
-                            <label>Área</label>
-                            <span id="detArea"></span>
+                            <label for="locadorInicioRelacao">Início da relação</label>
+                            <input id="locadorInicioRelacao" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroLocadorInicioRelacao" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
                         </div>
                         <div class="info-item">
-                            <label>Valor</label>
-                            <span id="detValor"></span>
+                            <label for="locadorFimRelacao">Fim da relação</label>
+                            <input id="locadorFimRelacao" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroLocadorFimRelacao" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorNome">Nome</label>
+                            <input id="locadorNome" type="text" placeholder="Nome" />
+                            <small id="erroLocadorNome" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorCep">Código postal</label>
+                            <input id="locadorCep" type="text" placeholder="00000-000" maxlength="9" />
+                            <small id="erroLocadorCep" class="error-msg" style="color:#c62828;display:none">Formato: 00000-000.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorEndereco">Endereço</label>
+                            <input id="locadorEndereco" type="text" placeholder="Rua/Av." />
+                            <small id="erroLocadorEndereco" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorNumero">Número</label>
+                            <input id="locadorNumero" type="text" inputmode="numeric" maxlength="6" placeholder="0000" />
+                            <small id="erroLocadorNumero" class="error-msg" style="color:#c62828;display:none">Informe apenas dígitos.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorBairro">Bairro</label>
+                            <input id="locadorBairro" type="text" placeholder="Bairro" />
+                            <small id="erroLocadorBairro" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorLocal">Local</label>
+                            <input id="locadorLocal" type="text" placeholder="Cidade" />
+                            <small id="erroLocadorLocal" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorUf">UF</label>
+                            <input id="locadorUf" type="text" maxlength="2" placeholder="UF" />
+                            <small id="erroLocadorUf" class="error-msg" style="color:#c62828;display:none">Informe UF com 2 letras.</small>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <label for="locadorEmail">Endereço eletrônico</label>
+                            <input id="locadorEmail" type="email" placeholder="email@dominio.com" />
+                            <small id="erroLocadorEmail" class="error-msg" style="color:#c62828;display:none">E-mail inválido.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorTelefoneFixo">Telefone fixo</label>
+                            <input id="locadorTelefoneFixo" type="text" placeholder="(00) 0000-0000" maxlength="14" />
+                            <small id="erroLocadorTelefoneFixo" class="error-msg" style="color:#c62828;display:none">Telefone inválido.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorTelefoneCelular">Telefone celular</label>
+                            <input id="locadorTelefoneCelular" type="text" placeholder="(00) 00000-0000" maxlength="15" />
+                            <small id="erroLocadorTelefoneCelular" class="error-msg" style="color:#c62828;display:none">Celular inválido.</small>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
+                            <button id="btnSalvarLocador" class="btn-primary">Salvar locador</button>
+                            <span id="statusSalvarLocador" style="font-size:.9rem;color:#2e7d32;display:none">Salvo com sucesso.</span>
                         </div>
                     </div>
                 </div>

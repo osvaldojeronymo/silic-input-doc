@@ -92,3 +92,41 @@ export interface SilicEventDetail {
 export interface SilicEvent extends CustomEvent {
   detail: SilicEventDetail;
 }
+
+// Dados de contrato editáveis no modal
+export interface ContratoEdit {
+  numero?: string;            // 8 dígitos
+  denominacao?: string;       // texto
+  tipoEdificio?: string;      // 2 dígitos
+  criadoPor?: string;         // 1 letra + 6 dígitos
+  inicio?: string;            // DD/MM/AAAA
+  fimValidade?: string;       // DD/MM/AAAA
+  rescisao?: string;          // DD/MM/AAAA
+}
+
+export interface ImovelEdit {
+  cep?: string;        // 00000-000
+  endereco?: string;   // texto
+  numero?: string;     // dígitos
+  bairro?: string;     // texto
+  local?: string;      // cidade
+  uf?: string;         // 2 letras
+}
+
+export interface LocadorEdit {
+  parceiro?: string;
+  tipoIdFiscal?: string;
+  denominacaoFuncao?: string; // Proponente Credor
+  inicioRelacao?: string;     // DD/MM/AAAA
+  fimRelacao?: string;        // DD/MM/AAAA
+  nome?: string;
+  cep?: string;               // 00000-000
+  endereco?: string;
+  numero?: string;            // dígitos
+  bairro?: string;
+  local?: string;             // cidade
+  uf?: string;                // 2 letras
+  email?: string;
+  telefoneFixo?: string;      // (00) 0000-0000
+  telefoneCelular?: string;   // (00) 00000-0000
+}
