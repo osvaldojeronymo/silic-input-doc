@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-DnfNHER-.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-DtvBTKVj.js"></script>
   <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-o6SskY8w.css">
 </head>
 <body>
@@ -386,9 +386,15 @@
                         <div class="info-item" style="grid-column: 1 / -1;">
                             <div id="servicoDescricao" style="margin-top:.5rem;color:#555"></div>
                         </div>
-                        <div class="info-item" style="grid-column: 1 / -1;">
-                            <label>Requisitos do serviço</label>
-                            <ul id="servicoRequisitos" style="list-style: none; padding-left: 0;"></ul>
+                        <div class="info-item" style="grid-column: 1 / -1; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                            <div>
+                                <label>Dados que serão enviados</label>
+                                <ul id="dadosPreenchidos" style="list-style: none; padding-left: 0;"></ul>
+                            </div>
+                            <div>
+                                <label>Dados pendentes</label>
+                                <ul id="dadosPendentes" style="list-style: none; padding-left: 0;"></ul>
+                            </div>
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
                             <button id="btnSolicitarServico" class="btn-primary" disabled>Solicitar serviços</button>
