@@ -27,6 +27,49 @@ export interface Imovel {
   locadorId?: string;
   dataRegistro: string;
   dataAtualizacao?: string;
+
+  // Campos adicionais (Banco de dados completo)
+  // Módulo Imóvel
+  edificio?: string;                 // Edifício
+  denominacaoEdificio?: string;      // Denom.edifício
+  inicioValidadeObjeto?: string;     // Início validade obj.
+  objetoValidoAte?: string;          // Objeto válido até
+  tipoEdificioCodigo?: string;       // Tipo de edifício (código numérico)
+  criadoPor?: string;                // Criado por (ex: C048007)
+  chavePais?: string;                // Chave do país (ex: BR)
+  denominacaoEstadoEdificio?: string;// Denominação do estado do edifício (ex: Bom)
+  funcao?: string;                   // Função (ex: Z003)
+  denominacaoFuncao?: string;        // Denom.função (ex: Atendimento Público)
+  regiao?: string;                   // Região (UF)
+  tipoAplice?: string;               // Tipo de apólice
+  inscrIPTU?: string;                // Inscr. IPTU
+  numeroITR?: string;                // Nº ITR
+  grupoAutorizacoes?: string;        // Grupo autorizações
+  ativoFlag?: boolean;               // Ativo
+
+  // Módulo Contrato/Parceiro vinculados ao imóvel
+  contratoCodigo?: string;           // Nº do contrato (ex: 10000011)
+  contratoDenominacao?: string;      // Denominação do contrato
+  contratoTipo?: string;             // Denom.tipo contrato
+  contratoInicio?: string;           // Início do contrato
+  contratoFimValidade?: string;      // Fim da validade
+  contratoRescisaoEm?: string;       // Rescisão em
+
+  parceiroNegocios?: string;         // Parceiro de negócios (nome/ender.)
+  tipoIdFiscal?: 'CPF' | 'CNPJ';     // Tipo ID Fiscal
+  numeroIdFiscal?: string;           // NºID fiscal
+  denominacaoFuncaoPN?: string;      // Denom.função PN (ex: Proponente Credor)
+  inicioRelacao?: string;            // Início da relação
+  fimRelacao?: string;               // Fim da relação
+  ruaPN?: string;                    // Rua (PN)
+  numeroPN?: string;                 // Nº (PN)
+  bairroPN?: string;                 // Bairro (PN)
+  localPN?: string;                  // Local (PN)
+  regiaoPN?: string;                 // Região (PN)
+  cepPN?: string;                    // Código postal (PN)
+  emailPN?: string;                  // Endereço de e-mail (PN)
+  telefonePN?: string;               // Nº telefone (PN)
+  celularPN?: string;                // Telefone celular (PN)
 }
 
 export interface Locador {
