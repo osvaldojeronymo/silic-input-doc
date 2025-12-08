@@ -386,71 +386,140 @@ export class SistemaSILIC {
 
   // --- Aba Solicitar Serviços ---
   private inicializarAbaServicos(imovel: Imovel): void {
-    const busca = document.getElementById('servicoBusca') as HTMLInputElement | null;
-    const select = document.getElementById('servicoSelect') as HTMLSelectElement | null;
+    const catSel = document.getElementById('svcCategoria') as HTMLSelectElement | null;
+    const acaoSel = document.getElementById('svcAcao') as HTMLSelectElement | null;
+    const modSel = document.getElementById('svcModalidade') as HTMLSelectElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
     const requisitos = document.getElementById('servicoRequisitos') as HTMLUListElement | null;
     const btn = document.getElementById('btnSolicitarServico') as HTMLButtonElement | null;
-    const status = document.getElementById('statusSolicitarServico') as HTMLSpanElement | null;
 
-    if (!select || !descricao || !requisitos || !btn) return;
+    if (!catSel || !acaoSel || !modSel || !descricao || !requisitos || !btn) return;
 
-    const listaServicos = this.carregarServicos();
-    this.popularServicosSelect(select, listaServicos);
+    const mapa = this.carregarServicosHierarquia();
 
-    const atualizar = () => {
-      const servico = listaServicos.find(s => s.id === select.value);
-      if (!servico) return;
-      descricao.textContent = servico.descricao;
-      this.atualizarRequisitos(requisitos, servico, imovel);
-      btn.disabled = !this.validarRequisitos(servico, imovel);
+    const popularAcoes = (categoria: string) => {
+      acaoSel.innerHTML = '<option value="">Selecione...</option>';
+      modSel.innerHTML = '<option value="">Selecione...</option>';
+      acaoSel.disabled = !categoria;
+      modSel.disabled = true;
+      if (!categoria) return;
+      const acoes = Object.keys(mapa[categoria] || {});
+      for (const a of acoes) {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = this.capitalize(a.replace(/-/g,' '));
+        acaoSel.appendChild(opt);
+      }
     };
 
-    select.addEventListener('change', atualizar);
-    if (busca) {
-      busca.addEventListener('input', () => this.filtrarServicos(select, listaServicos, busca.value));
-    }
+    const popularModalidades = (categoria: string, acao: string) => {
+      modSel.innerHTML = '<option value="">Selecione...</option>';
+      modSel.disabled = !(categoria && acao);
+      if (!(categoria && acao)) return;
+      const modalidades = Object.keys(mapa[categoria]?.[acao] || {});
+      for (const m of modalidades) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = this.capitalize(m);
+        modSel.appendChild(opt);
+      }
+    };
+
+    const atualizarResumo = () => {
+      const categoria = catSel.value;
+      const acao = acaoSel.value;
+      const modalidade = modSel.value;
+      const def = mapa[categoria]?.[acao]?.[modalidade];
+      if (!def) { descricao.textContent = ''; requisitos.innerHTML = ''; btn.disabled = true; return; }
+      descricao.textContent = def.descricao;
+      this.atualizarRequisitos(requisitos, def, imovel);
+      btn.disabled = !this.validarRequisitos(def, imovel);
+    };
+
+    catSel.addEventListener('change', () => { popularAcoes(catSel.value); atualizarResumo(); });
+    acaoSel.addEventListener('change', () => { popularModalidades(catSel.value, acaoSel.value); atualizarResumo(); });
+    modSel.addEventListener('change', atualizarResumo);
 
     btn.addEventListener('click', () => {
-      const servico = listaServicos.find(s => s.id === select.value);
-      if (!servico) return;
-      const payload = this.montarPayloadSolicitacao(servico, imovel);
+      const categoria = catSel.value;
+      const acao = acaoSel.value;
+      const modalidade = modSel.value;
+      const def = mapa[categoria]?.[acao]?.[modalidade];
+      if (!def) return;
+      const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovel);
       console.log('📦 Solicitação (protótipo):', payload);
       const mensagem = 'Solicitação registrada. Os dados serão encaminhados ao módulo "Solicitar serviços".';
       this.showToast(mensagem);
     });
 
-    // Dispara atualização inicial
-    atualizar();
+    // Dispara inicialização
+    popularAcoes(catSel.value);
+    atualizarResumo();
   }
 
-  private carregarServicos(): Array<{id:string; nome:string; descricao:string; requisitos: Array<'cep'|'endereco'|'cidade'|'estado'|'fimValidade'>}> {
-    // Lista resumida fornecida para o módulo Imóveis
-    const cat = (nome:string, descricao:string, requisitos: Array<'cep'|'endereco'|'cidade'|'estado'|'fimValidade'>) => ({ id: nome.toLowerCase().replace(/\s+/g,'-').replace(/[ãáâàéêíóôõúç]/g,''), nome, descricao, requisitos });
-    return [
-      cat('Contratação - Nova Unidade - Locação', 'Nova unidade via locação.', ['cep','endereco','cidade','estado']),
-      cat('Contratação - Nova Unidade - Cessão', 'Nova unidade via cessão.', ['cep','endereco','cidade','estado']),
-      cat('Contratação - Nova Unidade - Comodato', 'Nova unidade via comodato.', ['cep','endereco','cidade','estado']),
-      cat('Contratação - Mudança Endereço - Locação', 'Mudança de endereço (locação).', ['cep','endereco','cidade','estado']),
-      cat('Contratação - Mudança Endereço - Cessão', 'Mudança de endereço (cessão).', ['cep','endereco','cidade','estado']),
-      cat('Contratação - Mudança Endereço - Comodato', 'Mudança de endereço (comodato).', ['cep','endereco','cidade','estado']),
-      cat('Contratação - Regularização - Locação', 'Regularização contratual (locação).', ['fimValidade']),
-      cat('Contratação - Regularização - Cessão', 'Regularização contratual (cessão).', ['fimValidade']),
-      cat('Contratação - Regularização - Comodato', 'Regularização contratual (comodato).', ['fimValidade']),
-      cat('Ato Formal - Prorrogação - Locação', 'Prorrogação de contrato (locação).', ['fimValidade']),
-      cat('Ato Formal - Prorrogação - Cessão', 'Prorrogação de contrato (cessão).', ['fimValidade']),
-      cat('Ato Formal - Prorrogação - Comodato', 'Prorrogação de contrato (comodato).', ['fimValidade']),
-      cat('Ato Formal - Rescisão', 'Rescisão contratual.', ['fimValidade']),
-      cat('Ato Formal - Alteração Titularidade', 'Alteração de titularidade.', ['fimValidade']),
-      cat('Ato Formal - Antecipação Parcela', 'Antecipação de parcela.', ['fimValidade']),
-      cat('Ato Formal - Recebimento Imóvel', 'Recebimento de imóvel.', ['cep','endereco','cidade','estado']),
-      cat('Ato Formal - Acréscimo de área', 'Acréscimo de área contratada.', ['fimValidade']),
-      cat('Ato Formal - Supressão de área', 'Supressão de área contratada.', ['fimValidade']),
-      cat('Ato Formal - Revisão do Aluguel', 'Revisão de aluguel.', ['fimValidade']),
-      cat('Ato Formal - Reajuste do Aluguel', 'Reajuste de aluguel.', ['fimValidade']),
-      cat('Ato Formal - Apostilamento', 'Apostilamento contratual.', ['fimValidade']),
-      cat('Ato Formal - Ação Renovatória', 'Ação renovatória.', ['fimValidade'])
-    ];
+  private carregarServicosHierarquia(): Record<string, Record<string, Record<string, {id:string; nome:string; descricao:string; requisitos: Array<'cep'|'endereco'|'cidade'|'estado'|'fimValidade'>}>>> {
+    const make = (categoria:string, acao:string, modalidade:string, descricao:string, requisitos: Array<'cep'|'endereco'|'cidade'|'estado'|'fimValidade'>) => ({
+      id: `${categoria}-${acao}-${modalidade}`,
+      nome: `${this.capitalize(categoria.replace(/-/g,' '))} - ${this.capitalize(acao.replace(/-/g,' '))} - ${this.capitalize(modalidade)}`,
+      descricao,
+      requisitos
+    });
+    return {
+      'contratacao': {
+        'nova-unidade': {
+          'locacao': make('contratacao','nova-unidade','locacao','Nova unidade via locação.', ['cep','endereco','cidade','estado']),
+          'cessao': make('contratacao','nova-unidade','cessao','Nova unidade via cessão.', ['cep','endereco','cidade','estado']),
+          'comodato': make('contratacao','nova-unidade','comodato','Nova unidade via comodato.', ['cep','endereco','cidade','estado'])
+        },
+        'mudanca-endereco': {
+          'locacao': make('contratacao','mudanca-endereco','locacao','Mudança de endereço (locação).', ['cep','endereco','cidade','estado']),
+          'cessao': make('contratacao','mudanca-endereco','cessao','Mudança de endereço (cessão).', ['cep','endereco','cidade','estado']),
+          'comodato': make('contratacao','mudanca-endereco','comodato','Mudança de endereço (comodato).', ['cep','endereco','cidade','estado'])
+        },
+        'regularizacao': {
+          'locacao': make('contratacao','regularizacao','locacao','Regularização contratual (locação).', ['fimValidade']),
+          'cessao': make('contratacao','regularizacao','cessao','Regularização contratual (cessão).', ['fimValidade']),
+          'comodato': make('contratacao','regularizacao','comodato','Regularização contratual (comodato).', ['fimValidade'])
+        }
+      },
+      'ato-formal': {
+        'prorrogacao': {
+          'locacao': make('ato-formal','prorrogacao','locacao','Prorrogação de contrato (locação).', ['fimValidade']),
+          'cessao': make('ato-formal','prorrogacao','cessao','Prorrogação de contrato (cessão).', ['fimValidade']),
+          'comodato': make('ato-formal','prorrogacao','comodato','Prorrogação de contrato (comodato).', ['fimValidade'])
+        },
+        'rescisao': {
+          'geral': make('ato-formal','rescisao','geral','Rescisão contratual.', ['fimValidade'])
+        },
+        'alteracao-titularidade': {
+          'geral': make('ato-formal','alteracao-titularidade','geral','Alteração de titularidade.', ['fimValidade'])
+        },
+        'antecipacao-parcela': {
+          'geral': make('ato-formal','antecipacao-parcela','geral','Antecipação de parcela.', ['fimValidade'])
+        },
+        'recebimento-imovel': {
+          'geral': make('ato-formal','recebimento-imovel','geral','Recebimento de imóvel.', ['cep','endereco','cidade','estado'])
+        },
+        'acrescimo-area': {
+          'geral': make('ato-formal','acrescimo-area','geral','Acréscimo de área contratada.', ['fimValidade'])
+        },
+        'supressao-area': {
+          'geral': make('ato-formal','supressao-area','geral','Supressão de área contratada.', ['fimValidade'])
+        },
+        'revisao-aluguel': {
+          'geral': make('ato-formal','revisao-aluguel','geral','Revisão de aluguel.', ['fimValidade'])
+        },
+        'reajuste-aluguel': {
+          'geral': make('ato-formal','reajuste-aluguel','geral','Reajuste de aluguel.', ['fimValidade'])
+        },
+        'apostilamento': {
+          'geral': make('ato-formal','apostilamento','geral','Apostilamento contratual.', ['fimValidade'])
+        },
+        'acao-renovatoria': {
+          'geral': make('ato-formal','acao-renovatoria','geral','Ação renovatória.', ['fimValidade'])
+        }
+      }
+    };
   }
 
   private popularServicosSelect(select: HTMLSelectElement, lista: Array<{id:string; nome:string}>): void {
