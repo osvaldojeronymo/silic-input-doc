@@ -458,7 +458,7 @@ export class SistemaSILIC {
     if (el) el.value = value || '';
   }
 
-  private configurarCamposContrato(): void {
+  /* campos de edição removidos */
     const numero = document.getElementById('contratoNumero') as HTMLInputElement | null;
     const tipoEdificio = document.getElementById('contratoTipoEdificio') as HTMLInputElement | null;
     const criadoPor = document.getElementById('contratoCriadoPor') as HTMLInputElement | null;
@@ -518,7 +518,7 @@ export class SistemaSILIC {
     }
   }
 
-  private configurarCamposImovel(): void {
+  /* campos de edição removidos */
     const cep = document.getElementById('imovelCep') as HTMLInputElement | null;
     const numero = document.getElementById('imovelNumero') as HTMLInputElement | null;
     const uf = document.getElementById('imovelUf') as HTMLInputElement | null;
@@ -542,7 +542,7 @@ export class SistemaSILIC {
     }
   }
 
-  private configurarCamposLocador(): void {
+  /* campos de edição removidos */
     const cep = document.getElementById('locadorCep') as HTMLInputElement | null;
     const numero = document.getElementById('locadorNumero') as HTMLInputElement | null;
     const uf = document.getElementById('locadorUf') as HTMLInputElement | null;
@@ -735,77 +735,7 @@ export class SistemaSILIC {
     if (mensagem) el.textContent = mensagem;
   }
 
-  private salvarContrato(imovelId: string): void {
-    const numero = (document.getElementById('contratoNumero') as HTMLInputElement | null)?.value || '';
-    const denominacao = (document.getElementById('contratoDenominacao') as HTMLInputElement | null)?.value || '';
-    const tipoEdificio = (document.getElementById('contratoTipoEdificio') as HTMLInputElement | null)?.value || '';
-    const criadoPor = (document.getElementById('contratoCriadoPor') as HTMLInputElement | null)?.value || '';
-    const inicio = (document.getElementById('contratoInicio') as HTMLInputElement | null)?.value || '';
-    const fimValidade = (document.getElementById('contratoFimValidade') as HTMLInputElement | null)?.value || '';
-    const rescisao = (document.getElementById('contratoRescisao') as HTMLInputElement | null)?.value || '';
-
-    // Validações
-    let ok = true;
-    const onlyDigits = (v: string) => v.replace(/\D/g, '');
-
-    const numOk = onlyDigits(numero).length === 8;
-    this.mostrarErro('erroContratoNumero', !numOk);
-    ok = ok && numOk;
-
-    const denomOk = denominacao.trim().length > 0;
-    this.mostrarErro('erroContratoDenominacao', !denomOk);
-    ok = ok && denomOk;
-
-    const tipoOk = onlyDigits(tipoEdificio).length === 2;
-    this.mostrarErro('erroContratoTipoEdificio', !tipoOk);
-    ok = ok && tipoOk;
-
-    const criadoOk = /^[A-Z]{1}\d{6}$/.test(criadoPor.toUpperCase());
-    this.mostrarErro('erroContratoCriadoPor', !criadoOk);
-    ok = ok && criadoOk;
-
-    const inicioOk = this.validarData(inicio, true);
-    this.mostrarErro('erroContratoInicio', !inicioOk);
-    ok = ok && inicioOk;
-
-    const fimOk = this.validarData(fimValidade, true);
-    this.mostrarErro('erroContratoFimValidade', !fimOk);
-    ok = ok && fimOk;
-
-    const rescPermitido = fimValidade.trim().length > 0;
-    const rescOk = rescPermitido ? this.validarData(rescisao, true) : rescisao.trim().length === 0;
-    this.mostrarErro('erroContratoRescisao', !rescOk, rescPermitido ? 'Data inválida.' : 'Preencha Fim da validade para habilitar.');
-    ok = ok && rescOk;
-
-    const statusSalvar = document.getElementById('statusSalvarContrato');
-    if (!ok) {
-      if (statusSalvar) {
-        statusSalvar.textContent = 'Há erros nos campos.';
-        (statusSalvar as HTMLElement).style.color = '#c62828';
-        (statusSalvar as HTMLElement).style.display = 'inline';
-        setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 3000);
-      }
-      return;
-    }
-
-    // Persistência em memória
-    this.contratoEdits.set(imovelId, {
-      numero: onlyDigits(numero),
-      denominacao: denominacao.trim(),
-      tipoEdificio: onlyDigits(tipoEdificio),
-      criadoPor: criadoPor.toUpperCase(),
-      inicio,
-      fimValidade,
-      rescisao
-    });
-
-    if (statusSalvar) {
-      statusSalvar.textContent = 'Salvo com sucesso.';
-      (statusSalvar as HTMLElement).style.color = '#2e7d32';
-      (statusSalvar as HTMLElement).style.display = 'inline';
-      setTimeout(() => (statusSalvar as HTMLElement).style.display = 'none', 2000);
-    }
-  }
+  // salvarContrato removido (read-only)
 
   /**
    * Formata o status para exibição
