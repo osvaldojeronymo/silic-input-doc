@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "SILIC 2.0 - Sistema de Gestão de Imóveis com TypeScript e Vite",
-  "homepage": "https://osvaldojeronymo.github.io/show-input-doc/",
+  "homepage": "https://osvaldojeronymo.github.io/silic-input-doc/",
   "repository": {
     "type": "git",
     "url": "https://github.com/osvaldojeronymo/show-input-doc.git"
