@@ -417,14 +417,7 @@ export class SistemaSILIC {
       const payload = this.montarPayloadSolicitacao(servico, imovel);
       console.log('📦 Solicitação (protótipo):', payload);
       const mensagem = 'Solicitação registrada. Os dados serão encaminhados ao módulo "Solicitar serviços".';
-      if (status) {
-        status.textContent = mensagem;
-        (status as HTMLElement).style.color = '#2e7d32';
-        (status as HTMLElement).style.display = 'inline';
-        setTimeout(() => (status as HTMLElement).style.display = 'none', 3000);
-      } else {
-        alert(mensagem);
-      }
+      this.showToast(mensagem);
     });
 
     // Dispara atualização inicial
@@ -546,6 +539,26 @@ export class SistemaSILIC {
   private addEventListenerSafe(id: string, event: string, handler: (e: Event) => void): void {
     const el = document.getElementById(id);
     if (el) el.addEventListener(event, handler);
+  }
+
+  private showToast(message: string): void {
+    const cont = document.getElementById('toastContainer');
+    if (!cont) { alert(message); return; }
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.background = '#2e7d32';
+    toast.style.color = '#fff';
+    toast.style.padding = '10px 14px';
+    toast.style.borderRadius = '6px';
+    toast.style.boxShadow = '0 2px 8px rgba(0,0,0,.15)';
+    toast.style.fontSize = '.95rem';
+    toast.style.maxWidth = '360px';
+    cont.appendChild(toast);
+    setTimeout(() => {
+      toast.style.transition = 'opacity .3s';
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
   }
 
   /* campos de edição removidos */
