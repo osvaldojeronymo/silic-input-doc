@@ -1,4 +1,4 @@
-import { Imovel, Locador, DashboardStats, VisualizationMode, ContratoEdit, ImovelEdit, LocadorEdit } from './types/index.js';
+import { Imovel, Locador, DashboardStats, VisualizationMode } from './types/index.js';
 import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
 import './styles/style.css';
@@ -9,338 +9,6 @@ import './styles/style.css';
 export class SistemaSILIC {
   private imoveis: Imovel[] = [];
   private imoveisOriginais: Imovel[] = []; // Lista completa sem filtros
-  private locadores: Locador[] = [];
-  
-  // Paginação
-  private currentPage = 1;
-  private itemsPerPage = 10;
-  private currentPageImoveis = 1;
-  private itemsPerPageImoveis = 10;
-  
-  private currentView: VisualizationMode = 'table';
-  private usandoDadosSAP = false;
-  private contratoEdits: Map<string, ContratoEdit> = new Map();
-  private imovelEdits: Map<string, ImovelEdit> = new Map();
-  private locadorEdits: Map<string, LocadorEdit> = new Map();
-
-  constructor() {
-    this.inicializar();
-  }
-
-  /**
-   * Inicializa o sistema e configura event listeners
-   */
-  private inicializar(): void {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        this.setupEventListeners();
-        this.carregarDados();
-      });
-    } else {
-      setTimeout(() => {
-        this.setupEventListeners();
-        this.carregarDados();
-      }, 100);
-    }
-  }
-
-  /**
-   * Configura todos os event listeners
-   */
-  private setupEventListeners(): void {
-    // Toggle de visualização
-    this.addEventListenerSafe('viewTable', 'click', () => this.alterarVisualizacao('table'));
-    this.addEventListenerSafe('viewCards', 'click', () => this.alterarVisualizacao('cards'));
-    
-    // Filtros e busca
-    this.addEventListenerSafe('buscaLocador', 'input', () => this.filtrarLocadores());
-    this.addEventListenerSafe('filtroTipo', 'change', () => this.filtrarLocadores());
-    this.addEventListenerSafe('filtroStatus', 'change', () => this.filtrarLocadores());
-    this.addEventListenerSafe('limparFiltros', 'click', () => this.limparFiltros());
-    
-    // Paginação de locadores
-    this.addEventListenerSafe('itensPorPaginaSelect', 'change', (e) => {
-      const target = e.target as HTMLSelectElement;
-      this.itemsPerPage = parseInt(target.value);
-      this.currentPage = 1;
-      this.atualizarListaLocadores();
-    });
-
-    // Paginação de imóveis
-    this.addEventListenerSafe('imoveisPorPaginaSelect', 'change', (e) => {
-      const target = e.target as HTMLSelectElement;
-      this.itemsPerPageImoveis = parseInt(target.value);
-      this.currentPageImoveis = 1;
-      this.atualizarTabelaImoveis();
-    });
-
-    // Máscara para CEP
-    this.aplicarMascaraCEP();
-    
-    // Event listener para fechar modal com ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        this.fecharModalDetalhes();
-      }
-    });
-    
-    // Configurar filtros imediatamente
-    this.configurarFiltrosImoveisImediato();
-  }
-
-  /**
-   * Adiciona event listener de forma segura (verifica se elemento existe)
-   */
-  private addEventListenerSafe(elementId: string, event: string, handler: (e: Event) => void): void {
-    const element = document.getElementById(elementId);
-    if (element) {
-      element.addEventListener(event, handler);
-    }
-  }
-
-  /**
-   * Carrega dados (tenta SAP primeiro, depois dados demo)
-   */
-  private async carregarDados(): Promise<void> {
-    console.log('🔄 Iniciando carregamento de dados...');
-    
-    // Tenta carregar dados do SAP
-    const dadosSAP = await SAPDataLoader.carregarDados();
-    
-    if (dadosSAP && dadosSAP.imoveis.length > 0) {
-      // Usa dados do SAP
-      this.imoveis = dadosSAP.imoveis;
-      this.imoveisOriginais = [...dadosSAP.imoveis]; // Cópia para filtros
-      this.locadores = dadosSAP.locadores;
-      this.usandoDadosSAP = true;
-      
-      console.log('✅ Dados do SAP carregados!');
-      console.log(SAPDataLoader.formatarInfo(dadosSAP));
-      
-      // Mostra notificação ao usuário
-      this.mostrarNotificacao('✅ Dados do SAP carregados com sucesso!', 'success');
-    } else {
-      // Carrega dados demo
-      console.log('📋 Carregando dados de demonstração...');
-      this.carregarDadosDemo();
-      this.usandoDadosSAP = false;
-      
-      this.mostrarNotificacao('📋 Usando dados de demonstração', 'info');
-    }
-    
-    // Atualiza interface
-    this.atualizarDashboard();
-    this.atualizarTabelaImoveis();
-    this.atualizarListaLocadores();
-    this.configurarFiltrosImoveisImediato();
-    
-    // Atualiza indicador de fonte de dados
-    this.atualizarIndicadorFonteDados();
-  }
-
-  /**
-   * Atualiza indicador visual da fonte de dados
-   */
-  private atualizarIndicadorFonteDados(): void {
-    const header = document.querySelector('.title-section');
-    if (!header) return;
-    
-    // Remove indicador existente se houver
-    const indicadorExistente = header.querySelector('.data-source-indicator');
-    if (indicadorExistente) {
-      indicadorExistente.remove();
-    }
-    
-    // Cria novo indicador
-    const indicador = document.createElement('div');
-    indicador.className = 'data-source-indicator';
-    indicador.style.cssText = `
-      margin-top: 0.5rem;
-      padding: 0.25rem 0.75rem;
-      border-radius: 12px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: inline-block;
-      ${this.usandoDadosSAP 
-        ? 'background: #e8f5e9; color: #2e7d32;' 
-        : 'background: #fff3e0; color: #f57c00;'}
-    `;
-    indicador.textContent = this.usandoDadosSAP 
-      ? '🗂️ Dados do SAP' 
-      : '📋 Dados Demo';
-    
-    const subtitle = header.querySelector('.subtitle');
-    if (subtitle) {
-      subtitle.after(indicador);
-    }
-  }
-
-  /**
-   * Mostra notificação temporária
-   */
-  private mostrarNotificacao(mensagem: string, tipo: 'success' | 'info' | 'warning' | 'error'): void {
-    const cores = {
-      success: { bg: '#e8f5e9', text: '#2e7d32', border: '#4caf50' },
-      info: { bg: '#e3f2fd', text: '#1565c0', border: '#2196f3' },
-      warning: { bg: '#fff3e0', text: '#e65100', border: '#ff9800' },
-      error: { bg: '#ffebee', text: '#c62828', border: '#f44336' }
-    };
-    
-    const cor = cores[tipo];
-    
-    const notificacao = document.createElement('div');
-    notificacao.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${cor.bg};
-      color: ${cor.text};
-      border-left: 4px solid ${cor.border};
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      z-index: 10000;
-      max-width: 400px;
-      animation: slideIn 0.3s ease-out;
-      font-weight: 500;
-    `;
-    notificacao.textContent = mensagem;
-    
-    document.body.appendChild(notificacao);
-    
-    setTimeout(() => {
-      notificacao.style.animation = 'slideOut 0.3s ease-out';
-      setTimeout(() => notificacao.remove(), 300);
-    }, 5000);
-  }
-
-  /**
-   * Carrega dados de demonstração
-   */
-  private carregarDadosDemo(): void {
-    console.log('Iniciando carregamento de dados demo...');
-    
-    try {
-      // Gerar exatamente 100 imóveis para demonstração
-      console.log('Gerando imóveis...');
-      this.imoveis = this.gerarImoveisDemo(100);
-      this.imoveisOriginais = [...this.imoveis]; // Cópia para filtros
-      console.log(`${this.imoveis.length} imóveis gerados`);
-      
-      if (!this.imoveis || this.imoveis.length === 0) {
-        throw new Error('Falha na geração de imóveis');
-      }
-      
-      console.log('Gerando locadores...');
-      try {
-        this.locadores = this.gerarLocadoresDemo();
-        console.log(`${this.locadores ? this.locadores.length : 'null'} locadores gerados`);
-      } catch (error) {
-        console.error('Erro na geração de locadores:', error);
-        this.locadores = this.gerarLocadoresBasicos();
-      }
-      
-      console.log('Atualizando dashboard...');
-      this.atualizarDashboard();
-      
-      console.log('Atualizando tabela...');
-      this.atualizarTabelaImoveis();
-      
-      console.log('Configurando filtros...');
-      this.configurarFiltrosImoveisImediato();
-      
-      console.log(`Sistema carregado com sucesso! ${this.imoveis.length} imóveis, ${this.locadores.length} locadores`);
-      
-    } catch (error) {
-      console.error('Erro no carregamento de dados:', error);
-    }
-  }
-
-  /**
-   * Gera imóveis de demonstração
-   */
-  private gerarImoveisDemo(quantidade: number): Imovel[] {
-    const cidades = [
-      'São Paulo', 'Rio de Janeiro', 'Brasília', 'Salvador', 'Fortaleza', 
-      'Belo Horizonte', 'Manaus', 'Curitiba', 'Recife', 'Goiânia'
-    ];
-
-    const bairros = [
-      'Centro', 'Vila Madalena', 'Copacabana', 'Ipanema', 'Leblon',
-      'Savassi', 'Funcionários', 'Boa Viagem', 'Aldeota', 'Meireles'
-    ];
-
-    const tipos: Array<Imovel['tipo']> = ['residencial', 'comercial', 'terreno', 'industrial'];
-    const status: Array<Imovel['status']> = ['ativo', 'prospeccao', 'mobilizacao', 'desmobilizacao'];
-
-    const imoveis: Imovel[] = [];
-
-    for (let i = 1; i <= quantidade; i++) {
-      const cidade = cidades[Math.floor(Math.random() * cidades.length)];
-      const bairro = bairros[Math.floor(Math.random() * bairros.length)];
-      const tipo = tipos[Math.floor(Math.random() * tipos.length)];
-      const statusImovel = status[Math.floor(Math.random() * status.length)];
-      
-      // Gerar data de fim de validade variada (entre 2025 e 2030)
-      const ano = 2025 + Math.floor(Math.random() * 6);
-      const mes = Math.floor(Math.random() * 12) + 1;
-      const dia = Math.floor(Math.random() * 28) + 1;
-      const fimValidade = `${dia.toString().padStart(2, '0')}/${mes.toString().padStart(2, '0')}/${ano}`;
-      
-      const imovel: Imovel = {
-        id: Utils.generateId(),
-        codigo: `IM${String(i).padStart(4, '0')}`,
-        denominacao: `CT - AG ${cidade.toUpperCase()}, ${this.getEstadoByCidade(cidade)}`,
-        tipoContrato: 'Contrato de Locação - Imóveis',
-        utilizacaoPrincipal: 'Próprio',
-        fimValidade: fimValidade,
-        endereco: `Rua ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}, ${Math.floor(Math.random() * 9999) + 1}`,
-        bairro,
-        cidade,
-        cep: `${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-        estado: this.getEstadoByCidade(cidade),
-        tipo,
-        status: statusImovel,
-        area: Math.floor(Math.random() * 500) + 50,
-        valor: Math.floor(Math.random() * 500000) + 100000,
-        dataRegistro: new Date().toISOString(),
-        caracteristicas: tipo === 'residencial' ? {
-          quartos: Math.floor(Math.random() * 4) + 1,
-          banheiros: Math.floor(Math.random() * 3) + 1,
-          garagem: Math.floor(Math.random() * 3)
-        } : undefined
-      };
-
-      imoveis.push(imovel);
-    }
-
-    return imoveis;
-  }
-
-  /**
-   * Gera locadores de demonstração
-   */
-  private gerarLocadoresDemo(): Locador[] {
-    const nomes = [
-      'João Silva', 'Maria Santos', 'Pedro Costa', 'Ana Oliveira',
-      'Carlos Ferreira', 'Lucia Almeida', 'Roberto Lima', 'Fernanda Rodrigues'
-    ];
-
-    const empresas = [
-      'Construtora ABC Ltda', 'Imobiliária XYZ S.A.', 'Incorporadora DEF',
-      'Administradora GHI', 'Investimentos JKL'
-    ];
-
-    const locadores: Locador[] = [];
-
-    // Pessoas físicas
-    for (let i = 0; i < nomes.length; i++) {
-      const locador: Locador = {
-        id: Utils.generateId(),
-        nome: nomes[i],
-        tipo: 'fisica',
-        documento: this.gerarCPF(),
-        email: `${nomes[i].toLowerCase().replace(' ', '.')}@email.com`,
         telefone: this.gerarTelefone(),
         status: Math.random() > 0.1 ? 'ativo' : 'inativo',
         dataRegistro: new Date().toISOString()
@@ -606,32 +274,8 @@ export class SistemaSILIC {
     // Configurar tabs
     this.configurarTabs();
 
-    // Configurar máscaras e regras dos campos de contrato
-    this.configurarCamposContrato();
-
-    // Configurar máscaras dos campos do imóvel
-    this.configurarCamposImovel();
-
-    // Configurar ação de salvar imóvel
-    const btnSalvarImovel = document.getElementById('btnSalvarImovel');
-    if (btnSalvarImovel) {
-      btnSalvarImovel.addEventListener('click', () => this.salvarImovel(imovelId));
-    }
-
-    // Configurar máscaras/validações dos campos do locador
-    this.configurarCamposLocador();
-
-    // Configurar ação de salvar locador
-    const btnSalvarLocador = document.getElementById('btnSalvarLocador');
-    if (btnSalvarLocador) {
-      btnSalvarLocador.addEventListener('click', () => this.salvarLocador(imovelId));
-    }
-
-    // Configurar ação de salvar contrato
-    const btnSalvar = document.getElementById('btnSalvarContrato');
-    if (btnSalvar) {
-      btnSalvar.addEventListener('click', () => this.salvarContrato(imovelId));
-    }
+    // Inicializar aba de serviços com o imóvel atual
+    this.inicializarAbaServicos(imovel);
   }
 
   /**
@@ -644,42 +288,174 @@ export class SistemaSILIC {
       modalTitle.textContent = `Detalhes do Imóvel`;
     }
 
-    // Tab Contrato (preenche valores iniciais)
-    this.setInputValue('contratoNumero', '');
-    this.setInputValue('contratoDenominacao', imovel.denominacao || `${imovel.endereco}, ${imovel.bairro}`);
-    this.setInputValue('contratoTipoEdificio', '');
-    this.setInputValue('contratoCriadoPor', '');
-    this.setInputValue('contratoInicio', imovel.dataRegistro ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR') : '');
-    this.setInputValue('contratoFimValidade', imovel.fimValidade || '');
-    this.setInputValue('contratoRescisao', '');
+    // Tab Contrato (read-only spans)
+    this.setElementText('detContratoNumero', imovel.codigo || '-');
+    this.setElementText('detContratoDenominacao', imovel.denominacao || `${imovel.endereco}, ${imovel.bairro}`);
+    this.setElementText('detContratoTipoEdificio', imovel.tipoContrato || 'Contrato de Locação - Imóveis');
+    this.setElementText('detContratoCriadoPor', '-');
+    this.setElementText('detContratoInicio', imovel.dataRegistro ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR') : '-');
+    this.setElementText('detContratoFimValidade', imovel.fimValidade || '-');
+    this.setElementText('detContratoRescisao', '-');
 
-    // Tab Imóvel (inputs) com preferências salvas
-    const edits = this.imovelEdits.get(imovel.id);
-    this.setInputValue('imovelCep', edits?.cep ?? imovel.cep ?? '');
-    this.setInputValue('imovelEndereco', edits?.endereco ?? imovel.endereco ?? '');
-    this.setInputValue('imovelNumero', edits?.numero ?? '');
-    this.setInputValue('imovelBairro', edits?.bairro ?? imovel.bairro ?? '');
-    this.setInputValue('imovelLocal', edits?.local ?? imovel.cidade ?? '');
-    this.setInputValue('imovelUf', edits?.uf ?? imovel.estado ?? '');
+    // Tab Imóvel (read-only spans)
+    this.setElementText('detImovelCep', imovel.cep || '-');
+    this.setElementText('detImovelEndereco', imovel.endereco || '-');
+    this.setElementText('detImovelNumero', '-');
+    this.setElementText('detImovelBairro', imovel.bairro || '-');
+    this.setElementText('detImovelLocal', imovel.cidade || '-');
+    this.setElementText('detImovelUf', imovel.estado || '-');
 
-    // Tab Locador (inputs) com preferências salvas
-    const locadorEd = this.locadorEdits.get(imovel.id);
-    const locador = this.locadores.find(l => l.id === imovel.id);
-    this.setInputValue('locadorParceiro', locadorEd?.parceiro ?? '');
-    this.setInputValue('locadorTipoIdFiscal', locadorEd?.tipoIdFiscal ?? (locador ? (locador.tipo === 'fisica' ? 'CPF' : 'CNPJ') : ''));
-    this.setInputValue('locadorDenominacaoFuncao', locadorEd?.denominacaoFuncao ?? 'Proponente Credor');
-    this.setInputValue('locadorInicioRelacao', locadorEd?.inicioRelacao ?? '');
-    this.setInputValue('locadorFimRelacao', locadorEd?.fimRelacao ?? '');
-    this.setInputValue('locadorNome', locadorEd?.nome ?? (locador?.nome || ''));
-    this.setInputValue('locadorCep', locadorEd?.cep ?? '');
-    this.setInputValue('locadorEndereco', locadorEd?.endereco ?? '');
-    this.setInputValue('locadorNumero', locadorEd?.numero ?? '');
-    this.setInputValue('locadorBairro', locadorEd?.bairro ?? '');
-    this.setInputValue('locadorLocal', locadorEd?.local ?? '');
-    this.setInputValue('locadorUf', locadorEd?.uf ?? '');
-    this.setInputValue('locadorEmail', locadorEd?.email ?? (locador?.email || ''));
-    this.setInputValue('locadorTelefoneFixo', locadorEd?.telefoneFixo ?? (locador?.telefone || ''));
-    this.setInputValue('locadorTelefoneCelular', locadorEd?.telefoneCelular ?? '');
+    // Tab Locador (read-only spans) - usando dados básicos se disponíveis
+    const locador = this.locadores.find(l => l.status === 'ativo');
+    this.setElementText('detParceiroNegocios', locador ? locador.nome : '-');
+    this.setElementText('detTipoIdFiscal', locador ? (locador.tipo === 'fisica' ? 'CPF' : 'CNPJ') : '-');
+    this.setElementText('detDenominacaoFuncao', 'Proponente Credor');
+    this.setElementText('detInicioRelacao', '-');
+    this.setElementText('detFimRelacao', '-');
+    this.setElementText('detNomeLocador', locador ? locador.nome : '-');
+    this.setElementText('detLocadorCep', '-');
+    this.setElementText('detLocadorEndereco', '-');
+    this.setElementText('detLocadorNumero', '-');
+    this.setElementText('detLocadorBairro', '-');
+    this.setElementText('detLocadorLocal', '-');
+    this.setElementText('detLocadorUf', '-');
+    this.setElementText('detLocadorEmail', locador?.email || '-');
+    this.setElementText('detLocadorTelefoneFixo', '-');
+    this.setElementText('detLocadorTelefoneCelular', '-');
+  }
+
+  // --- Aba Solicitar Serviços ---
+  private inicializarAbaServicos(imovel: Imovel): void {
+    const busca = document.getElementById('servicoBusca') as HTMLInputElement | null;
+    const select = document.getElementById('servicoSelect') as HTMLSelectElement | null;
+    const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
+    const requisitos = document.getElementById('servicoRequisitos') as HTMLUListElement | null;
+    const btn = document.getElementById('btnSolicitarServico') as HTMLButtonElement | null;
+    const status = document.getElementById('statusSolicitarServico') as HTMLSpanElement | null;
+
+    if (!select || !descricao || !requisitos || !btn) return;
+
+    const listaServicos = this.carregarServicos();
+    this.popularServicosSelect(select, listaServicos);
+
+    const atualizar = () => {
+      const servico = listaServicos.find(s => s.id === select.value);
+      if (!servico) return;
+      descricao.textContent = servico.descricao;
+      this.atualizarRequisitos(requisitos, servico, imovel);
+      btn.disabled = !this.validarRequisitos(servico, imovel);
+    };
+
+    select.addEventListener('change', atualizar);
+    if (busca) {
+      busca.addEventListener('input', () => this.filtrarServicos(select, listaServicos, busca.value));
+    }
+
+    btn.addEventListener('click', () => {
+      const servico = listaServicos.find(s => s.id === select.value);
+      if (!servico) return;
+      const payload = this.montarPayloadSolicitacao(servico, imovel);
+      console.log('📦 Solicitação de serviço:', payload);
+      if (status) {
+        status.textContent = 'Solicitação enviada.';
+        (status as HTMLElement).style.color = '#2e7d32';
+        (status as HTMLElement).style.display = 'inline';
+        setTimeout(() => (status as HTMLElement).style.display = 'none', 2500);
+      }
+    });
+
+    // Dispara atualização inicial
+    atualizar();
+  }
+
+  private carregarServicos(): Array<{id:string; nome:string; descricao:string; requisitos: Array<'cep'|'endereco'|'cidade'|'estado'|'fimValidade'>}> {
+    // Lista resumida fornecida para o módulo Imóveis
+    const cat = (nome:string, descricao:string, requisitos: Array<'cep'|'endereco'|'cidade'|'estado'|'fimValidade'>) => ({ id: nome.toLowerCase().replace(/\s+/g,'-').replace(/[ãáâàéêíóôõúç]/g,''), nome, descricao, requisitos });
+    return [
+      cat('Contratação - Nova Unidade - Locação', 'Nova unidade via locação.', ['cep','endereco','cidade','estado']),
+      cat('Contratação - Nova Unidade - Cessão', 'Nova unidade via cessão.', ['cep','endereco','cidade','estado']),
+      cat('Contratação - Nova Unidade - Comodato', 'Nova unidade via comodato.', ['cep','endereco','cidade','estado']),
+      cat('Contratação - Mudança Endereço - Locação', 'Mudança de endereço (locação).', ['cep','endereco','cidade','estado']),
+      cat('Contratação - Mudança Endereço - Cessão', 'Mudança de endereço (cessão).', ['cep','endereco','cidade','estado']),
+      cat('Contratação - Mudança Endereço - Comodato', 'Mudança de endereço (comodato).', ['cep','endereco','cidade','estado']),
+      cat('Contratação - Regularização - Locação', 'Regularização contratual (locação).', ['fimValidade']),
+      cat('Contratação - Regularização - Cessão', 'Regularização contratual (cessão).', ['fimValidade']),
+      cat('Contratação - Regularização - Comodato', 'Regularização contratual (comodato).', ['fimValidade']),
+      cat('Ato Formal - Prorrogação - Locação', 'Prorrogação de contrato (locação).', ['fimValidade']),
+      cat('Ato Formal - Prorrogação - Cessão', 'Prorrogação de contrato (cessão).', ['fimValidade']),
+      cat('Ato Formal - Prorrogação - Comodato', 'Prorrogação de contrato (comodato).', ['fimValidade']),
+      cat('Ato Formal - Rescisão', 'Rescisão contratual.', ['fimValidade']),
+      cat('Ato Formal - Alteração Titularidade', 'Alteração de titularidade.', ['fimValidade']),
+      cat('Ato Formal - Antecipação Parcela', 'Antecipação de parcela.', ['fimValidade']),
+      cat('Ato Formal - Recebimento Imóvel', 'Recebimento de imóvel.', ['cep','endereco','cidade','estado']),
+      cat('Ato Formal - Acréscimo de área', 'Acréscimo de área contratada.', ['fimValidade']),
+      cat('Ato Formal - Supressão de área', 'Supressão de área contratada.', ['fimValidade']),
+      cat('Ato Formal - Revisão do Aluguel', 'Revisão de aluguel.', ['fimValidade']),
+      cat('Ato Formal - Reajuste do Aluguel', 'Reajuste de aluguel.', ['fimValidade']),
+      cat('Ato Formal - Apostilamento', 'Apostilamento contratual.', ['fimValidade']),
+      cat('Ato Formal - Ação Renovatória', 'Ação renovatória.', ['fimValidade'])
+    ];
+  }
+
+  private popularServicosSelect(select: HTMLSelectElement, lista: Array<{id:string; nome:string}>): void {
+    select.innerHTML = '';
+    for (const s of lista) {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.nome;
+      select.appendChild(opt);
+    }
+  }
+
+  private filtrarServicos(select: HTMLSelectElement, lista: Array<{id:string; nome:string}>, termo: string): void {
+    const termoLower = termo.toLowerCase();
+    const filtrados = lista.filter(s => s.nome.toLowerCase().includes(termoLower));
+    this.popularServicosSelect(select, filtrados.length ? filtrados : lista);
+  }
+
+  private validarRequisitos(servico: {requisitos: string[]}, imovel: Imovel): boolean {
+    const has = (k: string) => {
+      switch (k) {
+        case 'cep': return !!imovel.cep;
+        case 'endereco': return !!imovel.endereco;
+        case 'cidade': return !!imovel.cidade;
+        case 'estado': return !!imovel.estado;
+        case 'fimValidade': return !!imovel.fimValidade;
+        default: return true;
+      }
+    };
+    return servico.requisitos.every(has);
+  }
+
+  private atualizarRequisitos(listEl: HTMLUListElement, servico: {requisitos: string[]}, imovel: Imovel): void {
+    listEl.innerHTML = '';
+    const labels: Record<string,string> = {
+      cep: 'CEP', endereco: 'Endereço', cidade: 'Cidade', estado: 'UF', fimValidade: 'Fim da validade'
+    };
+    for (const req of servico.requisitos) {
+      const li = document.createElement('li');
+      const ok = this.validarRequisitos(servico, imovel);
+      li.textContent = `${labels[req]}`;
+      li.style.color = ok ? '#2e7d32' : '#c62828';
+      listEl.appendChild(li);
+    }
+  }
+
+  private montarPayloadSolicitacao(servico: {id:string; nome:string}, imovel: Imovel): Record<string, unknown> {
+    return {
+      servico: { id: servico.id, nome: servico.nome },
+      imovel: {
+        id: imovel.id,
+        codigo: imovel.codigo,
+        endereco: imovel.endereco,
+        cep: imovel.cep,
+        cidade: imovel.cidade,
+        estado: imovel.estado,
+        fimValidade: imovel.fimValidade
+      },
+      origem: this.usandoDadosSAP ? 'SAP' : 'Demo',
+      criadoEm: new Date().toISOString()
+    };
   }
 
   /**
