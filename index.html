@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-Dt0IN7lx.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-CVmpLgOd.js"></script>
   <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-o6SskY8w.css">
 </head>
 <body>
@@ -358,11 +358,29 @@
 
                 <!-- Aba: Solicitar Serviços -->
                 <div id="tab-servicos" class="tab-content">
-                    <div class="info-grid" style="grid-template-columns: 1fr;">
+                    <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                        <div class="info-item">
+                            <label>Categoria</label>
+                            <select id="svcCategoria">
+                                <option value="">Selecione...</option>
+                                <option value="contratacao">Contratação</option>
+                                <option value="ato-formal">Ato Formal</option>
+                            </select>
+                        </div>
+                        <div class="info-item">
+                            <label>Ação</label>
+                            <select id="svcAcao" disabled>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+                        <div class="info-item">
+                            <label>Modalidade</label>
+                            <select id="svcModalidade" disabled>
+                                <option value="">Selecione...</option>
+                            </select>
+                        </div>
+
                         <div class="info-item" style="grid-column: 1 / -1;">
-                            <label for="servicoSelect">Tipo de serviço</label>
-                            <input id="servicoBusca" type="text" placeholder="Buscar serviço..." />
-                            <select id="servicoSelect"></select>
                             <div id="servicoDescricao" style="margin-top:.5rem;color:#555"></div>
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1;">
@@ -371,7 +389,6 @@
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
                             <button id="btnSolicitarServico" class="btn-primary" disabled>Solicitar serviços</button>
-                            <span id="statusSolicitarServico" style="font-size:.9rem;color:#2e7d32;display:none">Solicitação enviada.</span>
                         </div>
                     </div>
                 </div>
