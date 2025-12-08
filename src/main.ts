@@ -17,6 +17,16 @@ export class SistemaSILIC {
   private itemsPerPage = 10;
   private currentPageImoveis = 1;
   private itemsPerPageImoveis = 10;
+  private currentView: VisualizationMode = 'table';
+
+  constructor() {
+    this.usandoDadosSAP = false;
+    this.carregarDadosDemo();
+    this.configurarFiltrosImoveisImediato();
+    this.configurarItemsPorPagina();
+    this.atualizarTabelaImoveis();
+    this.atualizarDashboard();
+  }
   
 
   // Métodos auxiliares para geração de dados
@@ -84,6 +94,90 @@ export class SistemaSILIC {
     const ddd = Math.floor(Math.random() * 89) + 11;
     const numero = Math.floor(Math.random() * 900000000) + 100000000;
     return `(${ddd}) ${numero.toString().slice(0, 5)}-${numero.toString().slice(5)}`;
+  }
+  
+  private carregarDadosDemo(): void {
+    this.locadores = [
+      {
+        id: 'loc-1',
+        nome: 'João da Silva',
+        tipo: 'fisica',
+        documento: this.gerarCPF(),
+        email: 'joao.silva@example.com',
+        telefone: this.gerarTelefone(),
+        endereco: { logradouro: 'Rua das Flores', numero: '123', bairro: 'Centro', cidade: 'São Paulo', estado: 'SP', cep: '01000-000' },
+        status: 'ativo',
+        dataRegistro: new Date().toISOString()
+      },
+      {
+        id: 'loc-2',
+        nome: 'Imóveis XYZ Ltda',
+        tipo: 'juridica',
+        documento: this.gerarCNPJ(),
+        email: 'contato@imoveisxyz.com.br',
+        telefone: this.gerarTelefone(),
+        endereco: { logradouro: 'Av. Paulista', numero: '1500', bairro: 'Bela Vista', cidade: 'São Paulo', estado: 'SP', cep: '01310-000' },
+        status: 'ativo',
+        dataRegistro: new Date().toISOString()
+      }
+    ];
+
+    this.imoveisOriginais = this.gerarImoveisDemo(100);
+    this.imoveis = [...this.imoveisOriginais];
+  }
+
+  private gerarImoveisDemo(qtd: number): Imovel[] {
+    const cidades = ['São Paulo','Rio de Janeiro','Brasília','Salvador','Fortaleza','Belo Horizonte','Manaus','Curitiba','Recife','Goiânia'];
+    const bairros = ['Centro','Jardim','Vila Nova','Boa Vista','Industrial','Comercial'];
+    const utilizacoes = ['Próprio','Terceiro'];
+    const statusList: Imovel['status'][] = ['ativo','prospeccao','mobilizacao','desmobilizacao'];
+
+    const out: Imovel[] = [];
+    for (let i = 0; i < qtd; i++) {
+      const cidade = cidades[i % cidades.length];
+      const estado = this.getEstadoByCidade(cidade);
+      const bairro = bairros[i % bairros.length];
+      const codigo = (10000000 + i).toString();
+      const area = Math.round(80 + Math.random() * 920);
+      const valor = +(1500 + Math.random() * 8500).toFixed(2);
+      const dia = String(1 + Math.floor(Math.random() * 27)).padStart(2,'0');
+      const mes = String(1 + Math.floor(Math.random() * 12)).padStart(2,'0');
+      const ano = String(2026 + Math.floor(Math.random() * 4));
+      const fimValidade = `${dia}/${mes}/${ano}`;
+
+      out.push({
+        id: `imo-${i+1}`,
+        codigo,
+        denominacao: `Contrato ${codigo} - Unidade ${cidade}`,
+        tipoContrato: 'Contrato de Locação - Imóveis',
+        utilizacaoPrincipal: utilizacoes[i % utilizacoes.length],
+        fimValidade,
+        endereco: `Rua Exemplo ${i+1}`,
+        bairro,
+        cidade,
+        cep: `${String(10000 + i).padStart(5,'0')}-${String(100 + i).padStart(3,'0')}`,
+        estado,
+        tipo: 'comercial',
+        status: statusList[i % statusList.length],
+        area,
+        valor,
+        descricao: 'Imóvel gerado para demonstração.',
+        fotos: [],
+        caracteristicas: { quartos: 0, banheiros: 2, garagem: 0 },
+        locadorId: this.locadores[i % this.locadores.length].id,
+        dataRegistro: new Date().toISOString(),
+        dataAtualizacao: new Date().toISOString(),
+
+        tipoEdificioCodigo: '01',
+        parceiroNegocios: this.locadores[i % this.locadores.length].nome,
+        tipoIdFiscal: this.locadores[i % this.locadores.length].tipo === 'fisica' ? 'CPF' : 'CNPJ',
+        numeroIdFiscal: this.locadores[i % this.locadores.length].documento,
+        denominacaoFuncaoPN: 'Proponente Credor',
+        inicioRelacao: `01/01/2025`,
+        fimRelacao: `31/12/${ano}`
+      });
+    }
+    return out;
   }
 
   // Métodos de interface (serão implementados nas próximas partes)
@@ -321,12 +415,15 @@ export class SistemaSILIC {
       const servico = listaServicos.find(s => s.id === select.value);
       if (!servico) return;
       const payload = this.montarPayloadSolicitacao(servico, imovel);
-      console.log('📦 Solicitação de serviço:', payload);
+      console.log('📦 Solicitação (protótipo):', payload);
+      const mensagem = 'Solicitação registrada. Os dados serão encaminhados ao módulo "Solicitar serviços".';
       if (status) {
-        status.textContent = 'Solicitação enviada.';
+        status.textContent = mensagem;
         (status as HTMLElement).style.color = '#2e7d32';
         (status as HTMLElement).style.display = 'inline';
-        setTimeout(() => (status as HTMLElement).style.display = 'none', 2500);
+        setTimeout(() => (status as HTMLElement).style.display = 'none', 3000);
+      } else {
+        alert(mensagem);
       }
     });
 
@@ -794,92 +891,7 @@ export class SistemaSILIC {
   }
 }
 
-// Construtor: carregar dados demo e inicializar UI
-(SistemaSILIC as any) = class extends SistemaSILIC {
-  constructor() {
-    super();
-    this.usandoDadosSAP = false;
-    this.carregarDadosDemo();
-    this.configurarFiltrosImoveisImediato();
-    this.configurarItemsPorPagina();
-    this.atualizarTabelaImoveis();
-    this.atualizarDashboard();
-  }
-
-  private carregarDadosDemo(): void {
-    this.locadores = [
-      {
-        id: 'loc-1', nome: 'João da Silva', tipo: 'fisica', documento: this.gerarCPF(),
-        email: 'joao.silva@example.com', telefone: this.gerarTelefone(),
-        endereco: { logradouro: 'Rua das Flores', numero: '123', bairro: 'Centro', cidade: 'São Paulo', estado: 'SP', cep: '01000-000' },
-        status: 'ativo', dataRegistro: new Date().toISOString()
-      },
-      {
-        id: 'loc-2', nome: 'Imóveis XYZ Ltda', tipo: 'juridica', documento: this.gerarCNPJ(),
-        email: 'contato@imoveisxyz.com.br', telefone: this.gerarTelefone(),
-        endereco: { logradouro: 'Av. Paulista', numero: '1500', bairro: 'Bela Vista', cidade: 'São Paulo', estado: 'SP', cep: '01310-000' },
-        status: 'ativo', dataRegistro: new Date().toISOString()
-      }
-    ];
-
-    this.imoveisOriginais = this.gerarImoveisDemo(100);
-    this.imoveis = [...this.imoveisOriginais];
-  }
-
-  private gerarImoveisDemo(qtd: number): Imovel[] {
-    const cidades = ['São Paulo','Rio de Janeiro','Brasília','Salvador','Fortaleza','Belo Horizonte','Manaus','Curitiba','Recife','Goiânia'];
-    const bairros = ['Centro','Jardim','Vila Nova','Boa Vista','Industrial','Comercial'];
-    const utilizacoes = ['Próprio','Terceiro'];
-    const statusList: Imovel['status'][] = ['ativo','prospeccao','mobilizacao','desmobilizacao'];
-
-    const out: Imovel[] = [];
-    for (let i = 0; i < qtd; i++) {
-      const cidade = cidades[i % cidades.length];
-      const estado = this.getEstadoByCidade(cidade);
-      const bairro = bairros[i % bairros.length];
-      const codigo = (10000000 + i).toString();
-      const area = Math.round(80 + Math.random() * 920);
-      const valor = +(1500 + Math.random() * 8500).toFixed(2);
-      const dia = String(1 + Math.floor(Math.random() * 27)).padStart(2,'0');
-      const mes = String(1 + Math.floor(Math.random() * 12)).padStart(2,'0');
-      const ano = String(2026 + Math.floor(Math.random() * 4));
-      const fimValidade = `${dia}/${mes}/${ano}`;
-
-      out.push({
-        id: `imo-${i+1}`,
-        codigo,
-        denominacao: `Contrato ${codigo} - Unidade ${cidade}`,
-        tipoContrato: 'Contrato de Locação - Imóveis',
-        utilizacaoPrincipal: utilizacoes[i % utilizacoes.length],
-        fimValidade,
-        endereco: `Rua Exemplo ${i+1}`,
-        bairro,
-        cidade,
-        cep: `${String(10000 + i).padStart(5,'0')}-${String(100 + i).padStart(3,'0')}`,
-        estado,
-        tipo: 'comercial',
-        status: statusList[i % statusList.length],
-        area,
-        valor,
-        descricao: 'Imóvel gerado para demonstração.',
-        fotos: [],
-        caracteristicas: { quartos: 0, banheiros: 2, garagem: 0 },
-        locadorId: this.locadores[i % this.locadores.length].id,
-        dataRegistro: new Date().toISOString(),
-        dataAtualizacao: new Date().toISOString(),
-
-        tipoEdificioCodigo: '01',
-        parceiroNegocios: this.locadores[i % this.locadores.length].nome,
-        tipoIdFiscal: this.locadores[i % this.locadores.length].tipo === 'fisica' ? 'CPF' : 'CNPJ',
-        numeroIdFiscal: this.locadores[i % this.locadores.length].documento,
-        denominacaoFuncaoPN: 'Proponente Credor',
-        inicioRelacao: `01/01/2025`,
-        fimRelacao: `31/12/${ano}`
-      });
-    }
-    return out;
-  }
-};
+// Removido bloco de protótipo temporário
 
 // Função para voltar ao portal SILIC
 export function voltarAoPortal(): void {
