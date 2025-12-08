@@ -1,8 +1,10 @@
 # 🏠 SILIC Input Doc - TypeScript + Vite
 
+![Deploy Status](https://github.com/osvaldojeronymo/silic-input-doc/actions/workflows/pages.yml/badge.svg)
+
 **Sistema de Gestão de Imóveis SILIC 2.0 migrado para TypeScript e Vite**
 
-🚀 **Demo:** [https://osvaldojeronymo.github.io/show-input-doc/](https://osvaldojeronymo.github.io/show-input-doc/)
+🚀 **Demo:** [https://osvaldojeronymo.github.io/silic-input-doc/](https://osvaldojeronymo.github.io/silic-input-doc/)
 
 ## 📋 Visão Geral
 
@@ -21,7 +23,7 @@ Este projeto é uma migração completa do sistema SILIC Input Doc original (Jav
 ## 📁 Estrutura do Projeto
 
 ```
-show-input-doc/
+silic-input-doc/
 ├── 📂 src/
 │   ├── 📂 components/       # Componentes modulares (futuro)
 │   ├── 📂 styles/          # Arquivos CSS
@@ -58,7 +60,7 @@ npm install
 
 # Executar em modo desenvolvimento
 npm run dev
-# Acessa: http://localhost:3000/show-input-doc/
+# Acessa: http://localhost:3000/silic-input-doc/
 
 # Verificar tipos TypeScript
 npm run typecheck
@@ -192,7 +194,7 @@ interface Locador {
 ### **Vite (vite.config.ts)**
 ```typescript
 {
-  base: '/show-input-doc/',  // Para GitHub Pages
+  base: '/silic-input-doc/',  // Para GitHub Pages
   port: 3000,               // Porta de desenvolvimento  
   // Aliases para imports limpos
 }

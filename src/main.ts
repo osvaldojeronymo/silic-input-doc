@@ -392,6 +392,7 @@ export class SistemaSILIC {
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
     const listaPreenchidos = document.getElementById('dadosPreenchidos') as HTMLUListElement | null;
     const listaPendentes = document.getElementById('dadosPendentes') as HTMLUListElement | null;
+    const payloadPreview = document.getElementById('payloadPreview') as HTMLPreElement | null;
     const btn = document.getElementById('btnSolicitarServico') as HTMLButtonElement | null;
 
     if (!catSel || !acaoSel || !modSel || !descricao || !listaPreenchidos || !listaPendentes || !btn) return;
@@ -431,9 +432,12 @@ export class SistemaSILIC {
       const acao = acaoSel.value;
       const modalidade = modSel.value;
       const def = mapa[categoria]?.[acao]?.[modalidade];
-      if (!def) { descricao.textContent = ''; listaPreenchidos.innerHTML = ''; listaPendentes.innerHTML = ''; btn.disabled = true; return; }
+      if (!def) { descricao.textContent = ''; listaPreenchidos.innerHTML = ''; listaPendentes.innerHTML = ''; if(payloadPreview) payloadPreview.textContent=''; btn.disabled = true; return; }
       descricao.textContent = def.descricao;
-      this.atualizarResumoDados(listaPreenchidos, listaPendentes, def, imovel);
+      const resumo = this.montarResumoCampos(def, imovel);
+      this.atualizarResumoDados(listaPreenchidos, listaPendentes, resumo);
+      const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovel);
+      if (payloadPreview) payloadPreview.textContent = JSON.stringify(payload, null, 2);
       btn.disabled = !this.validarRequisitos(def, imovel);
     };
 
@@ -553,25 +557,47 @@ export class SistemaSILIC {
     return servico.requisitos.every(has);
   }
 
-  private atualizarResumoDados(preenchidosEl: HTMLUListElement, pendentesEl: HTMLUListElement, servico: {requisitos: string[]}, imovel: Imovel): void {
-    preenchidosEl.innerHTML = '';
-    pendentesEl.innerHTML = '';
-    const campos: Array<{key:string; label:string; value:string|undefined}> = [
+  private montarResumoCampos(servico: {requisitos: string[]}, imovel: Imovel): { preenchidos: Array<{label:string;value:string}>, pendentes: Array<{label:string}> } {
+    const camposBase: Array<{key:string; label:string; value?:string}> = [
+      { key: 'codigo', label: 'Contrato', value: imovel.codigo },
+      { key: 'denominacao', label: 'Denominação', value: imovel.denominacao },
+      { key: 'parceiroNegocios', label: 'Parceiro', value: imovel.parceiroNegocios },
       { key: 'cep', label: 'CEP', value: imovel.cep },
       { key: 'endereco', label: 'Endereço', value: imovel.endereco },
+      { key: 'bairro', label: 'Bairro', value: imovel.bairro },
       { key: 'cidade', label: 'Cidade', value: imovel.cidade },
       { key: 'estado', label: 'UF', value: imovel.estado },
       { key: 'fimValidade', label: 'Fim da validade', value: imovel.fimValidade }
     ];
-    for (const c of campos) {
+    const preenchidos: Array<{label:string;value:string}> = [];
+    const pendentes: Array<{label:string}> = [];
+    for (const c of camposBase) {
+      if (c.value) preenchidos.push({ label: c.label, value: c.value });
+      else pendentes.push({ label: c.label });
+    }
+    // Destacar requisitos faltantes especificamente
+    const labels: Record<string,string> = { cep: 'CEP', endereco: 'Endereço', cidade: 'Cidade', estado: 'UF', fimValidade: 'Fim da validade' };
+    for (const req of servico.requisitos) {
+      const val = (imovel as any)[req];
+      if (!val) pendentes.push({ label: labels[req] || req });
+    }
+    return { preenchidos, pendentes };
+  }
+
+  private atualizarResumoDados(preenchidosEl: HTMLUListElement, pendentesEl: HTMLUListElement, resumo: { preenchidos: Array<{label:string;value:string}>, pendentes: Array<{label:string}> }): void {
+    preenchidosEl.innerHTML = '';
+    pendentesEl.innerHTML = '';
+    for (const p of resumo.preenchidos) {
       const li = document.createElement('li');
-      li.textContent = c.value ? `${c.label}: ${c.value}` : `${c.label}: —`;
-      if (!c.value) {
-        li.style.color = '#b26a00'; // amber/destaque para faltantes
-      } else {
-        li.style.color = '#2e7d32';
-      }
-      (c.value ? preenchidosEl : pendentesEl).appendChild(li);
+      li.textContent = `${p.label}: ${p.value}`;
+      li.style.color = '#2e7d32';
+      preenchidosEl.appendChild(li);
+    }
+    for (const f of resumo.pendentes) {
+      const li = document.createElement('li');
+      li.textContent = `${f.label}: —`;
+      li.style.color = '#b26a00';
+      pendentesEl.appendChild(li);
     }
   }
 
