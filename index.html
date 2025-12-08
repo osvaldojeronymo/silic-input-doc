@@ -387,9 +387,15 @@
                         <div class="info-item" style="grid-column: 1 / -1;">
                             <div id="servicoDescricao" style="margin-top:.5rem;color:#555"></div>
                         </div>
-                        <div class="info-item" style="grid-column: 1 / -1;">
-                            <label>Requisitos do serviço</label>
-                            <ul id="servicoRequisitos" style="list-style: none; padding-left: 0;"></ul>
+                        <div class="info-item" style="grid-column: 1 / -1; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                            <div>
+                                <label>Dados que serão enviados</label>
+                                <ul id="dadosPreenchidos" style="list-style: none; padding-left: 0;"></ul>
+                            </div>
+                            <div>
+                                <label>Dados pendentes</label>
+                                <ul id="dadosPendentes" style="list-style: none; padding-left: 0;"></ul>
+                            </div>
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
                             <button id="btnSolicitarServico" class="btn-primary" disabled>Solicitar serviços</button>

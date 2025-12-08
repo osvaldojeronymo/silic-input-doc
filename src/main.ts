@@ -390,10 +390,11 @@ export class SistemaSILIC {
     const acaoSel = document.getElementById('svcAcao') as HTMLSelectElement | null;
     const modSel = document.getElementById('svcModalidade') as HTMLSelectElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
-    const requisitos = document.getElementById('servicoRequisitos') as HTMLUListElement | null;
+    const listaPreenchidos = document.getElementById('dadosPreenchidos') as HTMLUListElement | null;
+    const listaPendentes = document.getElementById('dadosPendentes') as HTMLUListElement | null;
     const btn = document.getElementById('btnSolicitarServico') as HTMLButtonElement | null;
 
-    if (!catSel || !acaoSel || !modSel || !descricao || !requisitos || !btn) return;
+    if (!catSel || !acaoSel || !modSel || !descricao || !listaPreenchidos || !listaPendentes || !btn) return;
 
     const mapa = this.carregarServicosHierarquia();
 
@@ -430,9 +431,9 @@ export class SistemaSILIC {
       const acao = acaoSel.value;
       const modalidade = modSel.value;
       const def = mapa[categoria]?.[acao]?.[modalidade];
-      if (!def) { descricao.textContent = ''; requisitos.innerHTML = ''; btn.disabled = true; return; }
+      if (!def) { descricao.textContent = ''; listaPreenchidos.innerHTML = ''; listaPendentes.innerHTML = ''; btn.disabled = true; return; }
       descricao.textContent = def.descricao;
-      this.atualizarRequisitos(requisitos, def, imovel);
+      this.atualizarResumoDados(listaPreenchidos, listaPendentes, def, imovel);
       btn.disabled = !this.validarRequisitos(def, imovel);
     };
 
@@ -448,7 +449,7 @@ export class SistemaSILIC {
       if (!def) return;
       const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovel);
       console.log('📦 Solicitação (protótipo):', payload);
-      const mensagem = 'Solicitação registrada. Os dados serão encaminhados ao módulo "Solicitar serviços".';
+      const mensagem = 'Solicitação registrada. Seus dados foram encaminhados ao módulo "Solicitar serviços". Em breve você poderá acompanhar o andamento.';
       this.showToast(mensagem);
     });
 
@@ -552,17 +553,20 @@ export class SistemaSILIC {
     return servico.requisitos.every(has);
   }
 
-  private atualizarRequisitos(listEl: HTMLUListElement, servico: {requisitos: string[]}, imovel: Imovel): void {
-    listEl.innerHTML = '';
-    const labels: Record<string,string> = {
-      cep: 'CEP', endereco: 'Endereço', cidade: 'Cidade', estado: 'UF', fimValidade: 'Fim da validade'
-    };
-    for (const req of servico.requisitos) {
+  private atualizarResumoDados(preenchidosEl: HTMLUListElement, pendentesEl: HTMLUListElement, servico: {requisitos: string[]}, imovel: Imovel): void {
+    preenchidosEl.innerHTML = '';
+    pendentesEl.innerHTML = '';
+    const campos: Array<{key:string; label:string; value:string|undefined}> = [
+      { key: 'cep', label: 'CEP', value: imovel.cep },
+      { key: 'endereco', label: 'Endereço', value: imovel.endereco },
+      { key: 'cidade', label: 'Cidade', value: imovel.cidade },
+      { key: 'estado', label: 'UF', value: imovel.estado },
+      { key: 'fimValidade', label: 'Fim da validade', value: imovel.fimValidade }
+    ];
+    for (const c of campos) {
       const li = document.createElement('li');
-      const ok = this.validarRequisitos(servico, imovel);
-      li.textContent = `${labels[req]}`;
-      li.style.color = ok ? '#2e7d32' : '#c62828';
-      listEl.appendChild(li);
+      li.textContent = c.value ? `${c.label}: ${c.value}` : `${c.label}: —`;
+      (c.value ? preenchidosEl : pendentesEl).appendChild(li);
     }
   }
 
