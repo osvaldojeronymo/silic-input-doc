@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILIC 2.0 - Gestão de Imóveis</title>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-2Un1fqfc.js"></script>
+  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-o6SskY8w.css">
+</head>
+<body>
+    <header class="modern-header">
+        <div class="header-container">
+            <div class="header-left">
+                <img src="data:image/svg+xml,%3csvg%20width='41'%20height='28'%20viewBox='0%200%2041%2028'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M0%2028H12.1697L25.4954%2014.6743H13.3257L0%2028Z'%20fill='%23F39200'/%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M27.9999%200L22.7339%205.26605L26.844%2013.3257L40.1697%200H27.9999Z'%20fill='%23F39200'/%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M7.89893%200H20.0365L26.8439%2013.3257H14.6742L7.89893%200Z'%20fill='white'/%3e%3cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M17.4355%2022.7339L25.4952%2014.6743L32.2704%2028H20.1328L17.4355%2022.7339Z'%20fill='white'/%3e%3c/svg%3e" alt="CAIXA" class="logo-icon">
+                <div class="header-title">
+                    <h1>SILIC 2.0</h1>
+                    <p class="subtitle">Protótipo - Gestão de Imóveis</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="voltarPortalBtn" class="btn-voltar-portal" onclick="voltarAoPortal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Voltar ao Portal
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <main class="main-container">
+        <!-- Dashboard de Estatísticas -->
+        <section class="dashboard-section">
+            <h2 class="section-title">Gestão de Imóveis</h2>
+            
+            <div class="stats-grid">
+                <!-- Card Principal -->
+                <div class="stat-card-main">
+                    <div class="stat-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="9 22 9 12 15 12 15 22" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="totalImoveis">0</div>
+                        <div class="stat-label">Imóveis Cadastrados</div>
+                    </div>
+                </div>
+                
+                <!-- Cards de Status -->
+                
+                <!-- Cards de Status -->
+                <div class="stat-card stat-disponivel">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-number" id="imoveisAtivos">0</div>
+                    <div class="stat-label">Ativos</div>
+                </div>
+                
+                <div class="stat-card stat-prospeccao">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                            <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-number" id="imoveisProspeccao">0</div>
+                    <div class="stat-label">Em Prospecção</div>
+                </div>
+                
+                <div class="stat-card stat-mobilizacao">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="17 11 19 13 23 9" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-number" id="imoveisMobilizacao">0</div>
+                    <div class="stat-label">Em Mobilização</div>
+                </div>
+                
+                <div class="stat-card stat-desmobilizacao">
+                    <div class="stat-icon-small">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                            <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <div class="stat-number" id="imoveisDesmobilizacao">0</div>
+                    <div class="stat-label">Em Desmobilização</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção de Listagem de Imóveis -->
+        <section class="table-section">
+            <div class="section-header">
+                <h3 class="section-subtitle">Lista de Imóveis</h3>
+            </div>
+
+            <!-- Filtros -->
+            <div class="filters-container">
+                <div class="filter-group">
+                    <input type="text" id="filtroContrato" class="filter-search" placeholder="🔍 Contrato (ex: 10000000)">
+                    
+                    <select id="filtroUtilizacao" class="filter-select">
+                        <option value="">Todas as utilizações</option>
+                        <option value="Próprio">Próprio</option>
+                        <option value="Terceiro">Terceiro</option>
+                    </select>
+                    
+                    <select id="filtroStatus" class="filter-select">
+                        <option value="">Todos os status</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Em Prospecção">Em Prospecção</option>
+                        <option value="Em Mobilização">Em Mobilização</option>
+                        <option value="Em Desmobilização">Em Desmobilização</option>
+                        <option value="Desativado">Desativado</option>
+                    </select>
+                    
+                    <input type="text" id="filtroDenominacao" class="filter-search" placeholder="🔍 Buscar denominação...">
+                    
+                    <input type="date" id="filtroDataInicio" class="filter-date" placeholder="Data início">
+                    
+                    <input type="date" id="filtroDataFim" class="filter-date" placeholder="Data fim">
+                </div>
+                
+                <div class="filter-actions">
+                    <button id="limparFiltrosImoveis" class="btn-clear">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        Limpar
+                    </button>
+                    
+                    <button id="pesquisarImoveis" class="btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                            <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Pesquisar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela de Imóveis -->
+            <div class="table-wrapper">
+                <table class="imoveis-table">
+                    <thead>
+                        <tr>
+                            <th>Contrato</th>
+                            <th>Denominação do contrato</th>
+                            <th>Tipo contrato</th>
+                            <th>Utilização principal</th>
+                            <th>Status</th>
+                            <th>Fim da validade</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaImoveisBody">
+                        <!-- Dados carregados dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Mostrando <span id="paginationStart">0</span> a <span id="paginationEnd">0</span> de <span id="paginationTotal">0</span> imóveis
+                </div>
+                <div class="pagination-actions">
+                    <select id="imoveisPorPaginaSelect" class="items-per-page">
+                        <option value="10">10 por página</option>
+                        <option value="25">25 por página</option>
+                        <option value="50">50 por página</option>
+                        <option value="100">100 por página</option>
+                    </select>
+                    <div class="pagination-controls" id="paginationControls">
+                        <!-- Botões de navegação serão inseridos aqui -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Detalhes do Imóvel -->
+    <div id="modalDetalhes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalhes do Imóvel</h2>
+                <button class="modal-close">×</button>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="contrato">Contrato</button>
+                <button class="tab-btn" data-tab="imovel">Imóvel</button>
+                <button class="tab-btn" data-tab="locador">Locador</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Aba: Dados do Contrato -->
+                <div id="tab-contrato" class="tab-content active">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label for="contratoNumero">Número do contrato</label>
+                            <input id="contratoNumero" type="text" inputmode="numeric" maxlength="8" pattern="\\d{8}" placeholder="00000000">
+                            <small id="erroContratoNumero" class="error-msg" style="color:#c62828;display:none">Informe 8 dígitos numéricos.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="contratoDenominacao">Denominação do contrato</label>
+                            <input id="contratoDenominacao" type="text" placeholder="Digite a denominação" />
+                            <small id="erroContratoDenominacao" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="contratoTipoEdificio">Tipo de edifício</label>
+                            <input id="contratoTipoEdificio" type="text" inputmode="numeric" maxlength="2" pattern="\\d{2}" placeholder="00">
+                            <small id="erroContratoTipoEdificio" class="error-msg" style="color:#c62828;display:none">Informe 2 dígitos.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="contratoCriadoPor">Criado por</label>
+                            <input id="contratoCriadoPor" type="text" maxlength="7" pattern="[A-Za-z]{1}\\d{6}" placeholder="C088576">
+                            <small id="erroContratoCriadoPor" class="error-msg" style="color:#c62828;display:none">Formato: 1 letra + 6 dígitos.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="contratoInicio">Início do contrato</label>
+                            <input id="contratoInicio" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroContratoInicio" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="contratoFimValidade">Fim da validade</label>
+                            <input id="contratoFimValidade" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroContratoFimValidade" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="contratoRescisao">Rescisão em</label>
+                            <input id="contratoRescisao" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroContratoRescisao" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
+                            <button id="btnSalvarContrato" class="btn-primary">Salvar contrato</button>
+                            <span id="statusSalvarContrato" style="font-size:.9rem;color:#2e7d32;display:none">Salvo com sucesso.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Dados do Imóvel -->
+                <div id="tab-imovel" class="tab-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label for="imovelCep">Código postal</label>
+                            <input id="imovelCep" type="text" placeholder="00000-000" maxlength="9" />
+                            <small id="erroImovelCep" class="error-msg" style="color:#c62828;display:none">Formato: 00000-000.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="imovelEndereco">Endereço</label>
+                            <input id="imovelEndereco" type="text" placeholder="Rua/Av." />
+                            <small id="erroImovelEndereco" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="imovelNumero">Número</label>
+                            <input id="imovelNumero" type="text" inputmode="numeric" maxlength="6" placeholder="0000" />
+                            <small id="erroImovelNumero" class="error-msg" style="color:#c62828;display:none">Informe apenas dígitos.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="imovelBairro">Bairro</label>
+                            <input id="imovelBairro" type="text" placeholder="Bairro" />
+                            <small id="erroImovelBairro" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="imovelLocal">Local</label>
+                            <input id="imovelLocal" type="text" placeholder="Cidade" />
+                            <small id="erroImovelLocal" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="imovelUf">UF</label>
+                            <input id="imovelUf" type="text" maxlength="2" placeholder="UF" />
+                            <small id="erroImovelUf" class="error-msg" style="color:#c62828;display:none">Informe UF com 2 letras.</small>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
+                            <button id="btnSalvarImovel" class="btn-primary">Salvar imóvel</button>
+                            <span id="statusSalvarImovel" style="font-size:.9rem;color:#2e7d32;display:none">Salvo com sucesso.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Dados do Locador -->
+                <div id="tab-locador" class="tab-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label for="locadorParceiro">Parceiro de negócios</label>
+                            <input id="locadorParceiro" type="text" placeholder="Parceiro" />
+                            <small id="erroLocadorParceiro" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorTipoIdFiscal">Tipo ID Fiscal</label>
+                            <input id="locadorTipoIdFiscal" type="text" placeholder="CPF/CNPJ" />
+                            <small id="erroLocadorTipoIdFiscal" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorDenominacaoFuncao">Denominação função PN</label>
+                            <input id="locadorDenominacaoFuncao" type="text" placeholder="Proponente Credor" />
+                            <small id="erroLocadorDenominacaoFuncao" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorInicioRelacao">Início da relação</label>
+                            <input id="locadorInicioRelacao" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroLocadorInicioRelacao" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorFimRelacao">Fim da relação</label>
+                            <input id="locadorFimRelacao" type="text" placeholder="DD/MM/AAAA" maxlength="10" />
+                            <small id="erroLocadorFimRelacao" class="error-msg" style="color:#c62828;display:none">Data inválida.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorNome">Nome</label>
+                            <input id="locadorNome" type="text" placeholder="Nome" />
+                            <small id="erroLocadorNome" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorCep">Código postal</label>
+                            <input id="locadorCep" type="text" placeholder="00000-000" maxlength="9" />
+                            <small id="erroLocadorCep" class="error-msg" style="color:#c62828;display:none">Formato: 00000-000.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorEndereco">Endereço</label>
+                            <input id="locadorEndereco" type="text" placeholder="Rua/Av." />
+                            <small id="erroLocadorEndereco" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorNumero">Número</label>
+                            <input id="locadorNumero" type="text" inputmode="numeric" maxlength="6" placeholder="0000" />
+                            <small id="erroLocadorNumero" class="error-msg" style="color:#c62828;display:none">Informe apenas dígitos.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorBairro">Bairro</label>
+                            <input id="locadorBairro" type="text" placeholder="Bairro" />
+                            <small id="erroLocadorBairro" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorLocal">Local</label>
+                            <input id="locadorLocal" type="text" placeholder="Cidade" />
+                            <small id="erroLocadorLocal" class="error-msg" style="color:#c62828;display:none">Campo obrigatório.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorUf">UF</label>
+                            <input id="locadorUf" type="text" maxlength="2" placeholder="UF" />
+                            <small id="erroLocadorUf" class="error-msg" style="color:#c62828;display:none">Informe UF com 2 letras.</small>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1;">
+                            <label for="locadorEmail">Endereço eletrônico</label>
+                            <input id="locadorEmail" type="email" placeholder="email@dominio.com" />
+                            <small id="erroLocadorEmail" class="error-msg" style="color:#c62828;display:none">E-mail inválido.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorTelefoneFixo">Telefone fixo</label>
+                            <input id="locadorTelefoneFixo" type="text" placeholder="(00) 0000-0000" maxlength="14" />
+                            <small id="erroLocadorTelefoneFixo" class="error-msg" style="color:#c62828;display:none">Telefone inválido.</small>
+                        </div>
+                        <div class="info-item">
+                            <label for="locadorTelefoneCelular">Telefone celular</label>
+                            <input id="locadorTelefoneCelular" type="text" placeholder="(00) 00000-0000" maxlength="15" />
+                            <small id="erroLocadorTelefoneCelular" class="error-msg" style="color:#c62828;display:none">Celular inválido.</small>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
+                            <button id="btnSalvarLocador" class="btn-primary">Salvar locador</button>
+                            <span id="statusSalvarLocador" style="font-size:.9rem;color:#2e7d32;display:none">Salvo com sucesso.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Dados do Locador -->
+                <div id="tab-locador" class="tab-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Nome Completo</label>
+                            <span id="detNomeLocador"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>CPF/CNPJ</label>
+                            <span id="detCpfCnpj"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Tipo</label>
+                            <span id="detTipoLocador"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Telefone</label>
+                            <span id="detTelefone"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Celular</label>
+                            <span id="detCelular"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>E-mail</label>
+                            <span id="detEmail"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rodapé Moderno -->
+    <footer class="modern-footer">
+        <div class="footer-container">
+            <div class="footer-columns">
+                <div class="footer-brand">
+                    <h4>SILIC 2.0</h4>
+                    <p class="brand-tagline">Soluções para todos os momentos.</p>
+                </div>
+                <div class="footer-contact">
+                    <h5>Contato</h5>
+                    <a class="footer-mail" href="mailto:silic@caixa.gov.br">silic@caixa.gov.br</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    
+
+    <!-- Bootstrap sem scripts inline -->
+</body>
+</html>
