@@ -9,35 +9,13 @@ import './styles/style.css';
 export class SistemaSILIC {
   private imoveis: Imovel[] = [];
   private imoveisOriginais: Imovel[] = []; // Lista completa sem filtros
-        telefone: this.gerarTelefone(),
-        status: Math.random() > 0.1 ? 'ativo' : 'inativo',
-        dataRegistro: new Date().toISOString()
-      };
-      locadores.push(locador);
-    }
-
-    // Pessoas jurídicas
-    for (let i = 0; i < empresas.length; i++) {
-      const locador: Locador = {
-        id: Utils.generateId(),
-        nome: empresas[i],
-        tipo: 'juridica',
-        documento: this.gerarCNPJ(),
-        email: `contato@${empresas[i].toLowerCase().replace(/\s+/g, '').slice(0, 10)}.com.br`,
-        telefone: this.gerarTelefone(),
-        status: Math.random() > 0.1 ? 'ativo' : 'inativo',
-        dataRegistro: new Date().toISOString()
-      };
-      locadores.push(locador);
-    }
-
-    return locadores;
-  }
-
-  /**
-   * Gera locadores básicos como fallback
-   */
-  private gerarLocadoresBasicos(): Locador[] {
+  private locadores: Locador[] = [];
+  
+  // Paginação
+  private currentPage = 1;
+  private itemsPerPage = 10;
+  private currentPageImoveis = 1;
+  private itemsPerPageImoveis = 10;
     return [
       {
         id: Utils.generateId(),
