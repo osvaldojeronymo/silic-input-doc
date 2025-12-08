@@ -566,6 +566,11 @@ export class SistemaSILIC {
     for (const c of campos) {
       const li = document.createElement('li');
       li.textContent = c.value ? `${c.label}: ${c.value}` : `${c.label}: —`;
+      if (!c.value) {
+        li.style.color = '#b26a00'; // amber/destaque para faltantes
+      } else {
+        li.style.color = '#2e7d32';
+      }
       (c.value ? preenchidosEl : pendentesEl).appendChild(li);
     }
   }
