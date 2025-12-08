@@ -420,7 +420,7 @@ export class SistemaSILIC {
       for (const m of modalidades) {
         const opt = document.createElement('option');
         opt.value = m;
-        opt.textContent = this.capitalize(m);
+        opt.textContent = m === 'nao-se-aplica' ? 'Não se aplica' : this.capitalize(m);
         modSel.appendChild(opt);
       }
     };
@@ -489,34 +489,34 @@ export class SistemaSILIC {
           'comodato': make('ato-formal','prorrogacao','comodato','Prorrogação de contrato (comodato).', ['fimValidade'])
         },
         'rescisao': {
-          'geral': make('ato-formal','rescisao','geral','Rescisão contratual.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','rescisao','nao-se-aplica','Rescisão contratual.', ['fimValidade'])
         },
         'alteracao-titularidade': {
-          'geral': make('ato-formal','alteracao-titularidade','geral','Alteração de titularidade.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','alteracao-titularidade','nao-se-aplica','Alteração de titularidade.', ['fimValidade'])
         },
         'antecipacao-parcela': {
-          'geral': make('ato-formal','antecipacao-parcela','geral','Antecipação de parcela.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','antecipacao-parcela','nao-se-aplica','Antecipação de parcela.', ['fimValidade'])
         },
         'recebimento-imovel': {
-          'geral': make('ato-formal','recebimento-imovel','geral','Recebimento de imóvel.', ['cep','endereco','cidade','estado'])
+          'nao-se-aplica': make('ato-formal','recebimento-imovel','nao-se-aplica','Recebimento de imóvel.', ['cep','endereco','cidade','estado'])
         },
         'acrescimo-area': {
-          'geral': make('ato-formal','acrescimo-area','geral','Acréscimo de área contratada.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','acrescimo-area','nao-se-aplica','Acréscimo de área contratada.', ['fimValidade'])
         },
         'supressao-area': {
-          'geral': make('ato-formal','supressao-area','geral','Supressão de área contratada.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','supressao-area','nao-se-aplica','Supressão de área contratada.', ['fimValidade'])
         },
         'revisao-aluguel': {
-          'geral': make('ato-formal','revisao-aluguel','geral','Revisão de aluguel.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','revisao-aluguel','nao-se-aplica','Revisão de aluguel.', ['fimValidade'])
         },
         'reajuste-aluguel': {
-          'geral': make('ato-formal','reajuste-aluguel','geral','Reajuste de aluguel.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','reajuste-aluguel','nao-se-aplica','Reajuste de aluguel.', ['fimValidade'])
         },
         'apostilamento': {
-          'geral': make('ato-formal','apostilamento','geral','Apostilamento contratual.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','apostilamento','nao-se-aplica','Apostilamento contratual.', ['fimValidade'])
         },
         'acao-renovatoria': {
-          'geral': make('ato-formal','acao-renovatoria','geral','Ação renovatória.', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','acao-renovatoria','nao-se-aplica','Ação renovatória.', ['fimValidade'])
         }
       }
     };
