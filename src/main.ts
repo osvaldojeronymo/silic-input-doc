@@ -388,6 +388,8 @@ export class SistemaSILIC {
   private inicializarAbaServicos(imovel: Imovel): void {
     const catGrid = document.getElementById('wizCategoria') as HTMLDivElement | null;
     const acaoGrid = document.getElementById('wizAcao') as HTMLDivElement | null;
+    const favRow = document.getElementById('wizFav') as HTMLDivElement | null;
+    const recRow = document.getElementById('wizRecentes') as HTMLDivElement | null;
     const modRow = document.getElementById('wizModalidade') as HTMLDivElement | null;
     const searchInput = document.getElementById('wizSearch') as HTMLInputElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
@@ -416,14 +418,24 @@ export class SistemaSILIC {
       b.style.background = '#fff';
       b.style.cursor = 'pointer';
       b.style.textAlign = 'left';
+      b.className = 'card';
       const strong = document.createElement('strong');
       strong.textContent = label;
       const span = document.createElement('span');
       span.textContent = desc || '';
       span.style.color = '#555';
       span.style.fontSize = '.85rem';
+      const fav = document.createElement('span');
+      fav.textContent = '☆';
+      fav.className = 'fav';
+      fav.title = 'Favoritar';
+      fav.style.marginLeft = 'auto';
+      b.style.display = 'grid';
+      b.style.gridTemplateColumns = '1fr auto';
+      b.style.rowGap = '4px';
       b.appendChild(strong);
       if (desc) b.appendChild(span);
+      b.appendChild(fav);
       return b;
     };
 
@@ -436,7 +448,25 @@ export class SistemaSILIC {
       c.style.borderRadius = '999px';
       c.style.background = '#fff';
       c.style.cursor = 'pointer';
+      c.className = 'chip';
       return c;
+    };
+
+    // Favoritos e recentes (localStorage)
+    const FAV_KEY = 'svcFavorites';
+    const REC_KEY = 'svcRecentes';
+    const getFavs = (): Set<string> => {
+      try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch { return new Set(); }
+    };
+    const setFavs = (s: Set<string>) => localStorage.setItem(FAV_KEY, JSON.stringify([...s]));
+    const getRec = (): string[] => {
+      try { return JSON.parse(localStorage.getItem(REC_KEY) || '[]'); } catch { return []; }
+    };
+    const setRec = (arr: string[]) => localStorage.setItem(REC_KEY, JSON.stringify(arr));
+    const addRecent = (key: string) => {
+      const curr = getRec().filter(k => k !== key);
+      curr.unshift(key);
+      setRec(curr.slice(0, 6));
     };
 
     const atualizarResumo = () => {
@@ -464,25 +494,61 @@ export class SistemaSILIC {
           renderModalidades();
           atualizarResumo();
         };
+        if (categoriaSel === c) card.classList.add('selected');
         catGrid.appendChild(card);
       }
     };
 
     const renderAcoes = (filtro?: string) => {
       acaoGrid.innerHTML = '';
+      if (favRow) favRow.innerHTML = '';
+      if (recRow) recRow.innerHTML = '';
       const acoes = Object.keys(mapa[categoriaSel] || {});
       const termo = (filtro || '').toLowerCase();
       const filtradas = termo ? acoes.filter(a => this.capitalize(a.replace(/-/g,' ')).toLowerCase().includes(termo)) : acoes;
+      const favs = getFavs();
       for (const a of filtradas) {
         const label = this.capitalize(a.replace(/-/g,' '));
         const card = makeCard(label);
+        const actionKey = `${categoriaSel}:${a}`;
+        const favEl = card.querySelector('.fav') as HTMLSpanElement | null;
+        if (favEl && favs.has(actionKey)) { favEl.textContent = '★'; favEl.classList.add('active'); }
+        if (favEl) {
+          favEl.onclick = (e) => {
+            e.stopPropagation();
+            const s = getFavs();
+            if (s.has(actionKey)) s.delete(actionKey); else s.add(actionKey);
+            setFavs(s);
+            renderAcoes(filtro);
+          };
+        }
         card.onclick = () => {
           acaoSel = a;
           modalidadeSel = '';
+           addRecent(actionKey);
           renderModalidades();
           atualizarResumo();
         };
+        if (acaoSel === a) card.classList.add('selected');
         acaoGrid.appendChild(card);
+      }
+      // Render favoritos (chips)
+      const favKeys = [...getFavs()].filter(k => k.startsWith(`${categoriaSel}:`));
+      for (const fk of favKeys) {
+        const a = fk.split(':')[1];
+        const chip = makeChip(this.capitalize(a.replace(/-/g,' ')));
+        chip.onclick = () => { acaoSel = a; modalidadeSel = ''; renderModalidades(); atualizarResumo(); };
+        if (acaoSel === a) chip.classList.add('selected');
+        favRow?.appendChild(chip);
+      }
+      // Render recentes (chips)
+      const recKeys = getRec().filter(k => k.startsWith(`${categoriaSel}:`));
+      for (const rk of recKeys) {
+        const a = rk.split(':')[1];
+        const chip = makeChip(this.capitalize(a.replace(/-/g,' ')));
+        chip.onclick = () => { acaoSel = a; modalidadeSel = ''; renderModalidades(); atualizarResumo(); };
+        if (acaoSel === a) chip.classList.add('selected');
+        recRow?.appendChild(chip);
       }
     };
 
@@ -493,6 +559,7 @@ export class SistemaSILIC {
         const label = m === 'nao-se-aplica' ? 'Não se aplica' : this.capitalize(m);
         const chip = makeChip(label);
         chip.onclick = () => { modalidadeSel = m; atualizarResumo(); };
+        if (modalidadeSel === m) chip.classList.add('selected');
         modRow.appendChild(chip);
       }
     };
