@@ -363,26 +363,21 @@
                         <div class="info-item" style="grid-column: 1 / -1;">
                             <h4 style="margin:0 0 8px 0; font-weight:600; color:#183153">Selecione o serviço</h4>
                         </div>
-                        <div class="info-item">
-                            <label>Categoria</label>
-                            <select id="svcCategoria">
-                                <option value="">Selecione...</option>
-                                <option value="mudanca-endereco">Mudança de Endereço</option>
-                                <option value="regularizacao">Regularização</option>
-                                <option value="ato-formal">Ato Formal</option>
-                            </select>
+                        <div class="info-item" style="grid-column: 1 / -1; display:grid; gap:12px;">
+                            <label style="font-weight:600">Categoria</label>
+                            <div id="wizCategoria" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
                         </div>
-                        <div class="info-item">
-                            <label>Ação</label>
-                            <select id="svcAcao" disabled>
-                                <option value="">Selecione...</option>
-                            </select>
+                        <div class="info-item" style="grid-column: 1 / -1; display:grid; gap:8px;">
+                            <label style="font-weight:600">Buscar serviço</label>
+                            <input id="wizSearch" type="text" placeholder="Digite para filtrar ações..." style="padding:8px 10px; border:1px solid #d0d7de; border-radius:6px;" />
                         </div>
-                        <div class="info-item">
-                            <label>Modalidade</label>
-                            <select id="svcModalidade" disabled>
-                                <option value="">Selecione...</option>
-                            </select>
+                        <div class="info-item" style="grid-column: 1 / -1; display:grid; gap:12px;">
+                            <label style="font-weight:600">Ação</label>
+                            <div id="wizAcao" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
+                        </div>
+                        <div class="info-item" style="grid-column: 1 / -1; display:grid; gap:12px;">
+                            <label style="font-weight:600">Modalidade</label>
+                            <div id="wizModalidade" class="chip-row" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                         </div>
 
                         <div class="info-item" style="grid-column: 1 / -1;">

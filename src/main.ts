@@ -386,52 +386,61 @@ export class SistemaSILIC {
 
   // --- Aba Solicitar Serviços ---
   private inicializarAbaServicos(imovel: Imovel): void {
-    const catSel = document.getElementById('svcCategoria') as HTMLSelectElement | null;
-    const acaoSel = document.getElementById('svcAcao') as HTMLSelectElement | null;
-    const modSel = document.getElementById('svcModalidade') as HTMLSelectElement | null;
+    const catGrid = document.getElementById('wizCategoria') as HTMLDivElement | null;
+    const acaoGrid = document.getElementById('wizAcao') as HTMLDivElement | null;
+    const modRow = document.getElementById('wizModalidade') as HTMLDivElement | null;
+    const searchInput = document.getElementById('wizSearch') as HTMLInputElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
     const listaPreenchidos = document.getElementById('dadosPreenchidos') as HTMLUListElement | null;
     const listaPendentes = document.getElementById('dadosPendentes') as HTMLUListElement | null;
     const payloadPreview = document.getElementById('payloadPreview') as HTMLPreElement | null;
     const btn = document.getElementById('btnSolicitarServico') as HTMLButtonElement | null;
 
-    if (!catSel || !acaoSel || !modSel || !descricao || !listaPreenchidos || !listaPendentes || !btn) return;
+    if (!catGrid || !acaoGrid || !modRow || !descricao || !listaPreenchidos || !listaPendentes || !btn) return;
 
     const mapa = this.carregarServicosHierarquia();
+    let categoriaSel = '';
+    let acaoSel = '';
+    let modalidadeSel = '';
 
-    const popularAcoes = (categoria: string) => {
-      acaoSel.innerHTML = '<option value="">Selecione...</option>';
-      modSel.innerHTML = '<option value="">Selecione...</option>';
-      acaoSel.disabled = !categoria;
-      modSel.disabled = true;
-      if (!categoria) return;
-      const acoes = Object.keys(mapa[categoria] || {});
-      for (const a of acoes) {
-        const opt = document.createElement('option');
-        opt.value = a;
-        opt.textContent = this.capitalize(a.replace(/-/g,' '));
-        acaoSel.appendChild(opt);
-      }
+    const makeCard = (label: string, desc?: string): HTMLButtonElement => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.style.display = 'flex';
+      b.style.flexDirection = 'column';
+      b.style.alignItems = 'flex-start';
+      b.style.gap = '4px';
+      b.style.padding = '10px 12px';
+      b.style.border = '1px solid #d0d7de';
+      b.style.borderRadius = '8px';
+      b.style.background = '#fff';
+      b.style.cursor = 'pointer';
+      b.style.textAlign = 'left';
+      const strong = document.createElement('strong');
+      strong.textContent = label;
+      const span = document.createElement('span');
+      span.textContent = desc || '';
+      span.style.color = '#555';
+      span.style.fontSize = '.85rem';
+      b.appendChild(strong);
+      if (desc) b.appendChild(span);
+      return b;
     };
 
-    const popularModalidades = (categoria: string, acao: string) => {
-      modSel.innerHTML = '<option value="">Selecione...</option>';
-      modSel.disabled = !(categoria && acao);
-      if (!(categoria && acao)) return;
-      const modalidades = Object.keys(mapa[categoria]?.[acao] || {});
-      for (const m of modalidades) {
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m === 'nao-se-aplica' ? 'Não se aplica' : this.capitalize(m);
-        modSel.appendChild(opt);
-      }
+    const makeChip = (label: string): HTMLButtonElement => {
+      const c = document.createElement('button');
+      c.type = 'button';
+      c.textContent = label;
+      c.style.padding = '6px 10px';
+      c.style.border = '1px solid #d0d7de';
+      c.style.borderRadius = '999px';
+      c.style.background = '#fff';
+      c.style.cursor = 'pointer';
+      return c;
     };
 
     const atualizarResumo = () => {
-      const categoria = catSel.value;
-      const acao = acaoSel.value;
-      const modalidade = modSel.value;
-      const def = mapa[categoria]?.[acao]?.[modalidade];
+      const def = mapa[categoriaSel]?.[acaoSel]?.[modalidadeSel];
       if (!def) { descricao.textContent = ''; listaPreenchidos.innerHTML = ''; listaPendentes.innerHTML = ''; if(payloadPreview) payloadPreview.textContent=''; btn.disabled = true; return; }
       descricao.textContent = def.descricao;
       const resumo = this.montarResumoCampos(def, imovel);
@@ -441,15 +450,62 @@ export class SistemaSILIC {
       btn.disabled = !this.validarRequisitos(def, imovel);
     };
 
-    catSel.addEventListener('change', () => { popularAcoes(catSel.value); atualizarResumo(); });
-    acaoSel.addEventListener('change', () => { popularModalidades(catSel.value, acaoSel.value); atualizarResumo(); });
-    modSel.addEventListener('change', atualizarResumo);
+    const renderCategorias = () => {
+      catGrid.innerHTML = '';
+      const categorias = Object.keys(mapa);
+      for (const c of categorias) {
+        const label = this.capitalize(c.replace(/-/g,' '));
+        const card = makeCard(label);
+        card.onclick = () => {
+          categoriaSel = c;
+          acaoSel = '';
+          modalidadeSel = '';
+          renderAcoes();
+          renderModalidades();
+          atualizarResumo();
+        };
+        catGrid.appendChild(card);
+      }
+    };
+
+    const renderAcoes = (filtro?: string) => {
+      acaoGrid.innerHTML = '';
+      const acoes = Object.keys(mapa[categoriaSel] || {});
+      const termo = (filtro || '').toLowerCase();
+      const filtradas = termo ? acoes.filter(a => this.capitalize(a.replace(/-/g,' ')).toLowerCase().includes(termo)) : acoes;
+      for (const a of filtradas) {
+        const label = this.capitalize(a.replace(/-/g,' '));
+        const card = makeCard(label);
+        card.onclick = () => {
+          acaoSel = a;
+          modalidadeSel = '';
+          renderModalidades();
+          atualizarResumo();
+        };
+        acaoGrid.appendChild(card);
+      }
+    };
+
+    const renderModalidades = () => {
+      modRow.innerHTML = '';
+      const modalidades = Object.keys(mapa[categoriaSel]?.[acaoSel] || {});
+      for (const m of modalidades) {
+        const label = m === 'nao-se-aplica' ? 'Não se aplica' : this.capitalize(m);
+        const chip = makeChip(label);
+        chip.onclick = () => { modalidadeSel = m; atualizarResumo(); };
+        modRow.appendChild(chip);
+      }
+    };
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        if (!categoriaSel) return;
+        renderAcoes(searchInput.value);
+      });
+    }
 
     btn.addEventListener('click', () => {
-      const categoria = catSel.value;
-      const acao = acaoSel.value;
-      const modalidade = modSel.value;
-      const def = mapa[categoria]?.[acao]?.[modalidade];
+      const def = mapa[categoriaSel]?.[acaoSel]?.[modalidadeSel];
       if (!def) return;
       const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovel);
       console.log('📦 Solicitação (protótipo):', payload);
@@ -457,8 +513,8 @@ export class SistemaSILIC {
       this.showToast(mensagem);
     });
 
-    // Dispara inicialização
-    popularAcoes(catSel.value);
+    // Inicialização
+    renderCategorias();
     atualizarResumo();
   }
 
