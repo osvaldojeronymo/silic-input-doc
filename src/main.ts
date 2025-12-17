@@ -415,7 +415,7 @@ export class SistemaSILIC {
       b.style.padding = '10px 12px';
       b.style.border = '1px solid #d0d7de';
       b.style.borderRadius = '8px';
-      b.style.background = '#fff';
+      // background definido via CSS para permitir seleção inverter cores
       b.style.cursor = 'pointer';
       b.style.textAlign = 'left';
       b.className = 'card';
@@ -446,7 +446,7 @@ export class SistemaSILIC {
       c.style.padding = '6px 10px';
       c.style.border = '1px solid #d0d7de';
       c.style.borderRadius = '999px';
-      c.style.background = '#fff';
+      // background definido via CSS para permitir seleção inverter cores
       c.style.cursor = 'pointer';
       c.className = 'chip';
       return c;
