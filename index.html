@@ -360,14 +360,17 @@
                 <!-- Aba: Solicitar Serviços -->
                 <div id="tab-servicos" class="tab-content">
                     <style>
-                        .card-grid .card{transition:box-shadow .15s,border-color .15s,background .15s}
+                        .card-grid .card{transition:box-shadow .15s,border-color .15s,background .15s,color .15s}
                         .card-grid .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#9da7b1}
-                        .card-grid .card.selected{border-color:#1f6feb; box-shadow:0 0 0 2px rgba(31,111,235,.15); background:#e7f1ff}
+                        .card-grid .card.selected{border-color:#1f6feb; background:#1f6feb; color:#fff; box-shadow:0 0 0 2px rgba(31,111,235,.25)}
+                        .card-grid .card.selected strong{color:#fff}
+                        .card-grid .card.selected span{color:#e6eefc}
+                        .card-grid .card.selected .fav{color:#fff}
                         .card-grid .card .fav{margin-left:auto;color:#b26a00;font-size:1rem;line-height:1}
                         .card-grid .card .fav.active{color:#f39200}
                         .chip-row .chip{transition:background .15s,border-color .15s}
                         .chip-row .chip:hover{background:#f6f8fa}
-                        .chip-row .chip.selected{border-color:#1f6feb; background:#e7f1ff}
+                        .chip-row .chip.selected{border-color:#1f6feb; background:#1f6feb; color:#fff}
                         .mini-label{font-size:.8rem;color:#57606a}
                     </style>
                     <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
