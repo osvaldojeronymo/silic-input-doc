@@ -391,6 +391,7 @@ export class SistemaSILIC {
     const acaoGrid = document.getElementById('wizAcao') as HTMLDivElement | null;
     const acaoBlock = document.getElementById('wizAcaoBlock') as HTMLDivElement | null;
     const modRow = document.getElementById('wizModalidade') as HTMLDivElement | null;
+    const modBlock = document.getElementById('wizModalidadeBlock') as HTMLDivElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
     const listaPreenchidos = document.getElementById('dadosPreenchidos') as HTMLUListElement | null;
     const listaPendentes = document.getElementById('dadosPendentes') as HTMLUListElement | null;
@@ -509,6 +510,12 @@ export class SistemaSILIC {
     const renderModalidades = () => {
       modRow.innerHTML = '';
       const modalidades = Object.keys(mapa[categoriaSel]?.[acaoSel] || {});
+      if (modalidades.length === 1 && modalidades[0] === 'nao-se-aplica') {
+        modalidadeSel = 'nao-se-aplica';
+        if (modBlock) modBlock.style.display = 'none';
+        return;
+      }
+      if (modBlock) modBlock.style.display = 'grid';
       for (const m of modalidades) {
         const label = labelModalidade(m);
         const chip = makeChip(label);
@@ -532,6 +539,7 @@ export class SistemaSILIC {
     // Inicialização
     renderCategorias();
     if (acaoBlock) acaoBlock.style.display = (categoriaSel === 'ato-formal') ? 'grid' : 'none';
+    if (modBlock) modBlock.style.display = 'none';
     atualizarResumo();
   }
 
