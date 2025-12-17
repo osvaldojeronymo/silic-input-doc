@@ -370,6 +370,15 @@
                         .chip-row .chip:hover{background:#f6f8fa}
                         .chip-row .chip.selected{border-color:#1f6feb; background:#1f6feb; color:#fff}
                         .mini-label{font-size:.8rem;color:#57606a}
+
+                                                /* Responsividade do grid de Ação */
+                                                @media (max-width: 1024px) {
+                                                    #wizAcao { grid-template-columns: repeat(2, 1fr) !important; }
+                                                }
+                                                @media (max-width: 640px) {
+                                                    #wizAcao { grid-template-columns: 1fr !important; }
+                                                    #wizCategoria { grid-template-columns: 1fr !important; }
+                                                }
                     </style>
                                                 <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
                                                 <div id="wizCategoriaBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:6px;">
