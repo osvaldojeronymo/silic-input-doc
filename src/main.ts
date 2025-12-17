@@ -470,28 +470,19 @@ export class SistemaSILIC {
       requisitos
     });
     return {
-      'contratacao': {
-        'nova-unidade': {
-          'locacao': make('contratacao','nova-unidade','locacao','Nova unidade via locação.', ['cep','endereco','cidade','estado']),
-          'cessao': make('contratacao','nova-unidade','cessao','Nova unidade via cessão.', ['cep','endereco','cidade','estado']),
-          'comodato': make('contratacao','nova-unidade','comodato','Nova unidade via comodato.', ['cep','endereco','cidade','estado'])
-        },
-        'mudanca-endereco': {
-          'locacao': make('contratacao','mudanca-endereco','locacao','Mudança de endereço (locação).', ['cep','endereco','cidade','estado']),
-          'cessao': make('contratacao','mudanca-endereco','cessao','Mudança de endereço (cessão).', ['cep','endereco','cidade','estado']),
-          'comodato': make('contratacao','mudanca-endereco','comodato','Mudança de endereço (comodato).', ['cep','endereco','cidade','estado'])
-        },
-        'regularizacao': {
-          'locacao': make('contratacao','regularizacao','locacao','Regularização contratual (locação).', ['fimValidade']),
-          'cessao': make('contratacao','regularizacao','cessao','Regularização contratual (cessão).', ['fimValidade']),
-          'comodato': make('contratacao','regularizacao','comodato','Regularização contratual (comodato).', ['fimValidade'])
+      'mudanca-endereco': {
+        'nao-se-aplica': {
+          'nao-se-aplica': make('mudanca-endereco','nao-se-aplica','nao-se-aplica','Mudança de endereço do imóvel/contrato.', ['cep','endereco','cidade','estado'])
+        }
+      },
+      'regularizacao': {
+        'nao-se-aplica': {
+          'nao-se-aplica': make('regularizacao','nao-se-aplica','nao-se-aplica','Regularização contratual.', ['fimValidade'])
         }
       },
       'ato-formal': {
         'prorrogacao': {
-          'locacao': make('ato-formal','prorrogacao','locacao','Prorrogação de contrato (locação).', ['fimValidade']),
-          'cessao': make('ato-formal','prorrogacao','cessao','Prorrogação de contrato (cessão).', ['fimValidade']),
-          'comodato': make('ato-formal','prorrogacao','comodato','Prorrogação de contrato (comodato).', ['fimValidade'])
+          'nao-se-aplica': make('ato-formal','prorrogacao','nao-se-aplica','Prorrogação de contrato.', ['fimValidade'])
         },
         'rescisao': {
           'nao-se-aplica': make('ato-formal','rescisao','nao-se-aplica','Rescisão contratual.', ['fimValidade'])
