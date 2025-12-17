@@ -359,7 +359,7 @@
 
                 <!-- Aba: Solicitar Serviços -->
                 <div id="tab-servicos" class="tab-content">
-                    <style>
+                                        <style>
                         .card-grid .card{background:#fff;color:#24292f;transition:box-shadow .15s,border-color .15s,background .15s,color .15s}
                         .card-grid .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#9da7b1}
                         .card-grid .card.selected{border-color:#1f6feb; background:#1f6feb; color:#fff; box-shadow:0 0 0 2px rgba(31,111,235,.25)}
@@ -371,19 +371,19 @@
                         .chip-row .chip.selected{border-color:#1f6feb; background:#1f6feb; color:#fff}
                         .mini-label{font-size:.8rem;color:#57606a}
                     </style>
-                                                <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                                                <div id="wizCategoriaBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:8px;">
-                                                            <label style="font-weight:600">Categoria</label>
-                                                        <div id="wizCategoria" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
+                                                <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                                                <div id="wizCategoriaBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:6px;">
+                                                            <label style="font-weight:600; margin-bottom:2px;">Categoria</label>
+                                                        <div id="wizCategoria" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;"></div>
                                                 </div>
                         
-                                                <div id="wizAcaoBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:12px;">
-                                                            <label style="font-weight:600; margin-bottom: 4px;">Ação</label>
+                                                <div id="wizAcaoBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:8px;">
+                                                            <label style="font-weight:600; margin-bottom:2px;">Ação</label>
                             
-                                                        <div id="wizAcao" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
+                                                        <div id="wizAcao" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;"></div>
                                                 </div>
-                                                <div id="wizModalidadeBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:12px;">
-                              <label style="font-weight:600; margin-bottom: 4px;">Modalidade</label>
+                                                <div id="wizModalidadeBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:8px;">
+                                                            <label style="font-weight:600; margin-bottom:2px;">Modalidade</label>
                             <div id="wizModalidade" class="chip-row" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                         </div>
 
@@ -402,7 +402,7 @@
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1;">
                             <label>Pré-visualização do payload</label>
-                            <pre id="payloadPreview" style="background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:8px;overflow:auto;max-height:180px"></pre>
+                            <pre id="payloadPreview" style="background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:6px;overflow:auto;max-height:180px"></pre>
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
                             <button id="btnSolicitarServico" class="btn-primary" disabled>Solicitar serviços</button>

@@ -414,7 +414,7 @@ export class SistemaSILIC {
       b.style.flexDirection = 'column';
       b.style.alignItems = 'flex-start';
       b.style.gap = '4px';
-      b.style.padding = '8px 10px';
+      b.style.padding = '6px 8px';
       b.style.border = '1px solid #d0d7de';
       b.style.borderRadius = '8px';
       // background definido via CSS para permitir seleção inverter cores
@@ -436,7 +436,7 @@ export class SistemaSILIC {
       const c = document.createElement('button');
       c.type = 'button';
       c.textContent = label;
-      c.style.padding = '5px 10px';
+      c.style.padding = '4px 8px';
       c.style.border = '1px solid #d0d7de';
       c.style.borderRadius = '999px';
       // background definido via CSS para permitir seleção inverter cores
