@@ -411,6 +411,26 @@ export class SistemaSILIC {
       }
     };
 
+    const labelAcao = (categoria: string, key: string): string => {
+      if (key === 'nao-se-aplica') return 'Não se aplica';
+      if (categoria === 'ato-formal') {
+        switch (key) {
+          case 'prorrogacao': return 'Prorrogação';
+          case 'rescisao': return 'Rescisão';
+          case 'alteracao-titularidade': return 'Alteração de titularidade';
+          case 'antecipacao-parcela': return 'Antecipação de parcela';
+          case 'recebimento-imovel': return 'Recebimento de imóvel';
+          case 'acrescimo-area': return 'Acréscimo de área';
+          case 'supressao-area': return 'Supressão de área';
+          case 'revisao-aluguel': return 'Revisão de aluguel';
+          case 'reajuste-aluguel': return 'Reajuste de aluguel';
+          case 'apostilamento': return 'Apostilamento';
+          case 'acao-renovatoria': return 'Ação renovatória';
+        }
+      }
+      return this.capitalize(key.replace(/-/g,' '));
+    };
+
     const makeCard = (label: string, desc?: string): HTMLButtonElement => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -488,7 +508,7 @@ export class SistemaSILIC {
       const termo = (filtro || '').toLowerCase();
       const filtradas = termo ? acoes.filter(a => this.capitalize(a.replace(/-/g,' ')).toLowerCase().includes(termo)) : acoes;
       for (const a of filtradas) {
-        const label = this.capitalize(a.replace(/-/g,' '));
+        const label = labelAcao(categoriaSel, a);
         const card = makeCard(label);
         card.onclick = () => {
           acaoSel = a;
