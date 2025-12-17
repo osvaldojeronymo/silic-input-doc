@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  plugins: [react()],
   root: '.', 
   base: '/silic-input-doc/',
   server: {
@@ -12,7 +14,8 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: 'index.html'
+        main: 'index.html',
+        'form-renderer': 'form-renderer.html'
       }
     }
   },
