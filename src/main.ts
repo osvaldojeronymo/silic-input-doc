@@ -340,7 +340,7 @@ export class SistemaSILIC {
     // Título do modal
     const modalTitle = document.querySelector('.modal-header h2');
     if (modalTitle) {
-      modalTitle.textContent = `Detalhes do Imóvel`;
+      modalTitle.textContent = `Detalhes`;
     }
 
     // Tab Contrato (read-only spans) - alinhado ao index.html
