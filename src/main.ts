@@ -1,6 +1,7 @@
 import { Imovel, Locador, DashboardStats, VisualizationMode } from './types/index.js';
 import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
+import { labelCategoria, labelAcao, labelModalidade } from './labels.js';
 import './styles/style.css';
 
 /**
@@ -388,6 +389,7 @@ export class SistemaSILIC {
   private inicializarAbaServicos(imovel: Imovel): void {
     const catGrid = document.getElementById('wizCategoria') as HTMLDivElement | null;
     const acaoGrid = document.getElementById('wizAcao') as HTMLDivElement | null;
+    const acaoBlock = document.getElementById('wizAcaoBlock') as HTMLDivElement | null;
     const modRow = document.getElementById('wizModalidade') as HTMLDivElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
     const listaPreenchidos = document.getElementById('dadosPreenchidos') as HTMLUListElement | null;
@@ -402,44 +404,7 @@ export class SistemaSILIC {
     let acaoSel = '';
     let modalidadeSel = '';
 
-    const labelCategoria = (key: string): string => {
-      switch (key) {
-        case 'mudanca-endereco': return 'Mudança de Endereço';
-        case 'regularizacao': return 'Regularização';
-        case 'ato-formal': return 'Ato Formal';
-        default: return this.capitalize(key.replace(/-/g,' '));
-      }
-    };
-
-    const labelAcao = (categoria: string, key: string): string => {
-      if (key === 'nao-se-aplica') return 'Não se aplica';
-      if (categoria === 'ato-formal') {
-        switch (key) {
-          case 'prorrogacao': return 'Prorrogação';
-          case 'rescisao': return 'Rescisão';
-          case 'alteracao-titularidade': return 'Alteração de titularidade';
-          case 'antecipacao-parcela': return 'Antecipação de parcela';
-          case 'recebimento-imovel': return 'Recebimento de imóvel';
-          case 'acrescimo-area': return 'Acréscimo de área';
-          case 'supressao-area': return 'Supressão de área';
-          case 'revisao-aluguel': return 'Revisão de aluguel';
-          case 'reajuste-aluguel': return 'Reajuste de aluguel';
-          case 'apostilamento': return 'Apostilamento';
-          case 'acao-renovatoria': return 'Ação renovatória';
-        }
-      }
-      return this.capitalize(key.replace(/-/g,' '));
-    };
-
-    const labelModalidade = (key: string): string => {
-      switch (key) {
-        case 'nao-se-aplica': return 'Não se aplica';
-        case 'locacao': return 'Locação';
-        case 'cessao': return 'Cessão';
-        case 'comodato': return 'Comodato';
-        default: return this.capitalize(key.replace(/-/g,' '));
-      }
-    };
+    
 
     const makeCard = (label: string, desc?: string): HTMLButtonElement => {
       const b = document.createElement('button');
@@ -503,9 +468,18 @@ export class SistemaSILIC {
           acaoSel = '';
           modalidadeSel = '';
           renderCategorias();
-          renderAcoes();
+          if (categoriaSel === 'ato-formal') {
+            if (acaoGrid) acaoGrid.innerHTML = '';
+            renderAcoes();
+          } else {
+            // Para categorias sem ação, fixar "Não se aplica" e ocultar bloco
+            acaoSel = 'nao-se-aplica';
+            if (acaoGrid) acaoGrid.innerHTML = '';
+          }
           renderModalidades();
           atualizarResumo();
+          // Mostrar/ocultar bloco de Ação conforme categoria
+          if (acaoBlock) acaoBlock.style.display = (categoriaSel === 'ato-formal') ? 'grid' : 'none';
         };
         if (categoriaSel === c) card.classList.add('selected');
         catGrid.appendChild(card);
@@ -557,6 +531,7 @@ export class SistemaSILIC {
 
     // Inicialização
     renderCategorias();
+    if (acaoBlock) acaoBlock.style.display = (categoriaSel === 'ato-formal') ? 'grid' : 'none';
     atualizarResumo();
   }
 
