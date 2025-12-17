@@ -490,6 +490,7 @@ export class SistemaSILIC {
           categoriaSel = c;
           acaoSel = '';
           modalidadeSel = '';
+          renderCategorias();
           renderAcoes();
           renderModalidades();
           atualizarResumo();

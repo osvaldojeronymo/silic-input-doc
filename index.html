@@ -360,9 +360,9 @@
                 <!-- Aba: Solicitar Serviços -->
                 <div id="tab-servicos" class="tab-content">
                     <style>
-                        .card-grid .card{transition:box-shadow .15s,border-color .15s}
+                        .card-grid .card{transition:box-shadow .15s,border-color .15s,background .15s}
                         .card-grid .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#9da7b1}
-                        .card-grid .card.selected{border-color:#1f6feb; box-shadow:0 0 0 2px rgba(31,111,235,.15)}
+                        .card-grid .card.selected{border-color:#1f6feb; box-shadow:0 0 0 2px rgba(31,111,235,.15); background:#e7f1ff}
                         .card-grid .card .fav{margin-left:auto;color:#b26a00;font-size:1rem;line-height:1}
                         .card-grid .card .fav.active{color:#f39200}
                         .chip-row .chip{transition:background .15s,border-color .15s}
@@ -371,9 +371,6 @@
                         .mini-label{font-size:.8rem;color:#57606a}
                     </style>
                     <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                        <div class="info-item" style="grid-column: 1 / -1;">
-                            <h4 style="margin:0 0 8px 0; font-weight:600; color:#183153">Selecione o serviço</h4>
-                        </div>
                         <div class="info-item" style="grid-column: 1 / -1; display:grid; gap:12px;">
                             <label style="font-weight:600">Categoria</label>
                             <div id="wizCategoria" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
