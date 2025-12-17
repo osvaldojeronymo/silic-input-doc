@@ -391,7 +391,6 @@ export class SistemaSILIC {
     const favRow = document.getElementById('wizFav') as HTMLDivElement | null;
     const recRow = document.getElementById('wizRecentes') as HTMLDivElement | null;
     const modRow = document.getElementById('wizModalidade') as HTMLDivElement | null;
-    const searchInput = document.getElementById('wizSearch') as HTMLInputElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
     const listaPreenchidos = document.getElementById('dadosPreenchidos') as HTMLUListElement | null;
     const listaPendentes = document.getElementById('dadosPendentes') as HTMLUListElement | null;
@@ -565,12 +564,7 @@ export class SistemaSILIC {
       }
     };
 
-    if (searchInput) {
-      searchInput.addEventListener('input', () => {
-        if (!categoriaSel) return;
-        renderAcoes(searchInput.value);
-      });
-    }
+    // Busca removida: lista completa de ações por categoria
 
     btn.addEventListener('click', () => {
       const def = mapa[categoriaSel]?.[acaoSel]?.[modalidadeSel];
