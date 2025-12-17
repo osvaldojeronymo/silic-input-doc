@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-DrNQHF01.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-PateXggy.js"></script>
+  <link rel="modulepreload" crossorigin href="/silic-input-doc/assets/modulepreload-polyfill-B5Qt9EMX.js">
   <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-o6SskY8w.css">
 </head>
 <body>
@@ -190,11 +191,11 @@
         </section>
     </main>
 
-    <!-- Modal de Detalhes do Imóvel -->
+    <!-- Modal de Detalhes -->
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Detalhes do Imóvel</h2>
+                <h2>Detalhes</h2>
                 <button class="modal-close">×</button>
             </div>
             
@@ -358,29 +359,42 @@
 
                 <!-- Aba: Solicitar Serviços -->
                 <div id="tab-servicos" class="tab-content">
-                    <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                        <div class="info-item" style="grid-column: 1 / -1;">
-                            <h4 style="margin:0 0 8px 0; font-weight:600; color:#183153">Selecione o serviço</h4>
-                        </div>
-                        <div class="info-item">
-                            <label>Categoria</label>
-                            <select id="svcCategoria">
-                                <option value="">Selecione...</option>
-                                <option value="contratacao">Contratação</option>
-                                <option value="ato-formal">Ato Formal</option>
-                            </select>
-                        </div>
-                        <div class="info-item">
-                            <label>Ação</label>
-                            <select id="svcAcao" disabled>
-                                <option value="">Selecione...</option>
-                            </select>
-                        </div>
-                        <div class="info-item">
-                            <label>Modalidade</label>
-                            <select id="svcModalidade" disabled>
-                                <option value="">Selecione...</option>
-                            </select>
+                                        <style>
+                        .card-grid .card{background:#fff;color:#24292f;transition:box-shadow .15s,border-color .15s,background .15s,color .15s}
+                        .card-grid .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#9da7b1}
+                        .card-grid .card.selected{border-color:#1f6feb; background:#1f6feb; color:#fff; box-shadow:0 0 0 2px rgba(31,111,235,.25)}
+                        .card-grid .card.selected strong{color:#fff}
+                        .card-grid .card.selected span{color:#e6eefc}
+                        
+                        .chip-row .chip{transition:background .15s,border-color .15s}
+                        .chip-row .chip:hover{background:#f6f8fa}
+                        .chip-row .chip.selected{border-color:#1f6feb; background:#1f6feb; color:#fff}
+                        .mini-label{font-size:.8rem;color:#57606a}
+
+                                                /* Responsividade do grid de Ação */
+                                                @media (max-width: 1024px) {
+                                                    #wizAcao { grid-template-columns: repeat(2, 1fr) !important; }
+                                                    #wizCategoria { grid-template-columns: repeat(2, 1fr) !important; }
+                                                }
+                                                @media (max-width: 640px) {
+                                                    #wizAcao { grid-template-columns: 1fr !important; }
+                                                    #wizCategoria { grid-template-columns: 1fr !important; }
+                                                }
+                    </style>
+                                                <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                                                <div id="wizCategoriaBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:6px;">
+                                                            <label style="font-weight:600; margin-bottom:2px;">Categoria</label>
+                                                        <div id="wizCategoria" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;"></div>
+                                                </div>
+                        
+                                                <div id="wizAcaoBlock" class="info-item" style="grid-column: 1 / -1; display:none; gap:8px;">
+                                                            <label style="font-weight:600; margin-bottom:2px;">Ação</label>
+                            
+                                                        <div id="wizAcao" class="card-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;"></div>
+                                                </div>
+                                                <div id="wizModalidadeBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:8px;">
+                                                            <label style="font-weight:600; margin-bottom:2px;">Modalidade</label>
+                            <div id="wizModalidade" class="chip-row" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                         </div>
 
                         <div class="info-item" style="grid-column: 1 / -1;">
@@ -398,7 +412,7 @@
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1;">
                             <label>Pré-visualização do payload</label>
-                            <pre id="payloadPreview" style="background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:8px;overflow:auto;max-height:180px"></pre>
+                            <pre id="payloadPreview" style="background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:6px;overflow:auto;max-height:180px"></pre>
                         </div>
                         <div class="info-item" style="grid-column: 1 / -1; display:flex; gap:.5rem; align-items:center;">
                             <button id="btnSolicitarServico" class="btn-primary" disabled>Solicitar serviços</button>
