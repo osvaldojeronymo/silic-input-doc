@@ -431,6 +431,16 @@ export class SistemaSILIC {
       return this.capitalize(key.replace(/-/g,' '));
     };
 
+    const labelModalidade = (key: string): string => {
+      switch (key) {
+        case 'nao-se-aplica': return 'Não se aplica';
+        case 'locacao': return 'Locação';
+        case 'cessao': return 'Cessão';
+        case 'comodato': return 'Comodato';
+        default: return this.capitalize(key.replace(/-/g,' '));
+      }
+    };
+
     const makeCard = (label: string, desc?: string): HTMLButtonElement => {
       const b = document.createElement('button');
       b.type = 'button';
@@ -526,7 +536,7 @@ export class SistemaSILIC {
       modRow.innerHTML = '';
       const modalidades = Object.keys(mapa[categoriaSel]?.[acaoSel] || {});
       for (const m of modalidades) {
-        const label = m === 'nao-se-aplica' ? 'Não se aplica' : this.capitalize(m);
+        const label = labelModalidade(m);
         const chip = makeChip(label);
         chip.onclick = () => { modalidadeSel = m; atualizarResumo(); };
         if (modalidadeSel === m) chip.classList.add('selected');
