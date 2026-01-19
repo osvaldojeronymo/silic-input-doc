@@ -16,6 +16,14 @@ export default defineConfig({
       input: {
         main: 'index.html',
         'form-renderer': 'form-renderer.html'
+      },
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          rjsf: ['@rjsf/core', '@rjsf/validator-ajv8'],
+          quill: ['react-quill', 'quill'],
+          dnd: ['@dnd-kit/core']
+        }
       }
     }
   },

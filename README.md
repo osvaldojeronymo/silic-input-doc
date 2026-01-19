@@ -12,6 +12,19 @@ Este projeto é uma migração completa do sistema SILIC Input Doc original (Jav
 
 **🆕 Integrado com dados do SAP da Caixa Econômica Federal!** O sistema agora pode carregar dados reais de contratos de locação de imóveis.
 
+## 📝 Notas de Versão 1.0.2
+
+Melhoria de performance no build do `form-renderer`:
+
+- Divisão de chunks via `manualChunks` no Vite para separar bibliotecas pesadas (React/ReactDOM, RJSF+AJV, Quill, DnD Kit).
+- Objetivo: reduzir tamanho de cada chunk individual e melhorar carregamento do `form-renderer`.
+- Publicação: tag `v1.0.2` e deploy em GitHub Pages.
+
+Como validar:
+
+- `npm run build` e verificar saída do `dist/` com múltiplos chunks menores.
+- Abrir `form-renderer.html` no preview e conferir carregamento fluido.
+
 ## 📝 Notas de Versão 1.0.1
 
 Principais melhorias nesta release do protótipo:
