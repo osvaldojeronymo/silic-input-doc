@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-PateXggy.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-DQWV2R43.js"></script>
   <link rel="modulepreload" crossorigin href="/silic-input-doc/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-o6SskY8w.css">
+  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-CoP3scr9.css">
 </head>
 <body>
     <header class="modern-header">
@@ -209,45 +209,275 @@
             <div class="modal-body">
                 <!-- Aba: Dados do Contrato -->
                 <div id="tab-contrato" class="tab-content active">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>Número do Contrato</label>
-                            <span id="detNumeroContrato"></span>
+                    <!-- Resumo rápido do contrato -->
+                    <div class="info-section">
+                        <div class="info-section-title">Resumo</div>
+                        <div class="summary-row">
+                            <div class="summary-chip">Contrato: <strong id="detNumeroContrato"></strong></div>
+                            <div class="summary-chip">Status: <strong id="detContratoStatus"></strong></div>
+                            <div class="summary-chip">Fim: <strong id="detDataFim"></strong></div>
                         </div>
-                        <div class="info-item">
-                            <label>Denominação</label>
-                            <span id="detDenominacao"></span>
+                    </div>
+
+                    <!-- Locador (SAP) - abaixo do resumo e antes das ações -->
+                    <div class="info-section">
+                        <div class="info-section-title">Locador <span class="origin-tag">SAP</span></div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Parceiro de Negócios</label>
+                                <span id="detParceiro"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Endereço</label>
+                                <span id="detEnderecoContrato"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Número</label>
+                                <span id="detNumeroEndereco"></span>
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <label>Tipo de Contrato</label>
-                            <span id="detTipoContrato"></span>
+                    </div>
+
+                    <!-- Índice interno da aba Contrato (posicionado logo abaixo do resumo) -->
+                    <div class="info-section">
+                        <div class="section-index">
+                            <a href="#sec-identificacao">Identificação</a>
+                            <a href="#sec-vigencia">Vigência</a>
+                            <a href="#sec-gestao">Gestão e Publicação</a>
+                            <a href="#sec-valores">Valores</a>
+                            <a href="#sec-compliance">Compliance e Riscos</a>
                         </div>
-                        <div class="info-item">
-                            <label>Data de Início</label>
-                            <span id="detDataInicio"></span>
+                    </div>
+
+                    <!-- Identificação (SAP/SICLG) -->
+                    <div class="info-section collapsible" id="sec-identificacao">
+                        <div class="info-section-title">
+                            Identificação <span class="origin-tag">SAP/SICLG</span>
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-identificacao">Expandir</button>
                         </div>
-                        <div class="info-item">
-                            <label>Data de Término</label>
-                            <span id="detDataFim"></span>
+                        <div class="collapsible-content" id="content-identificacao">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <label>Denominação</label>
+                                    <span id="detDenominacao"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Tipo de Contrato</label>
+                                    <span id="detTipoContrato"></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <label>Parceiro de Negócios</label>
-                            <span id="detParceiro"></span>
+                    </div>
+
+                    <!-- Vigência (SAP/SICLG) -->
+                    <div class="info-section collapsible" id="sec-vigencia">
+                        <div class="info-section-title">
+                            Vigência <span class="origin-tag">SAP/SICLG</span>
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-vigencia">Expandir</button>
                         </div>
-                        <div class="info-item">
-                            <label>Endereço</label>
-                            <span id="detEnderecoContrato"></span>
+                        <div class="collapsible-content" id="content-vigencia">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <label>Data de Início</label>
+                                    <span id="detDataInicio"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Data de Término</label>
+                                    <span id="detDataFim"></span>
+                                </div>
+                                <div class="info-item">
+                                    <label>Rescisão em</label>
+                                    <span id="detRescisaoEm"></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="info-item">
-                            <label>Número</label>
-                            <span id="detNumeroEndereco"></span>
+                    </div>
+
+
+
+                    <!-- Gestão e Publicação (SICLG) -->
+                    <div class="info-section collapsible" id="sec-gestao">
+                        <div class="info-section-title">
+                            Gestão e Publicação <span class="origin-tag">SICLG</span>
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-gestao">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-gestao">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Número do Processo</label>
+                                <span id="detNumeroProcesso"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Número do Instrumento</label>
+                                <span id="detNumeroInstrumento"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Número da Licitação</label>
+                                <span id="detNumeroLicitacao"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Tipo do Instrumento</label>
+                                <span id="detTipoInstrumento"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Situação</label>
+                                <span id="detSituacao"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>ID Contrato PNCP</label>
+                                <span id="detIdPncp"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Descrição do Objeto</label>
+                                <span id="detDescricaoObjeto"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Enquadramento Legal</label>
+                                <span id="detEnquadramentoLegal"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data de Assinatura</label>
+                                <span id="detDataAssinatura"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Vigência Inicial</label>
+                                <span id="detVigenciaInicial"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Vigência Final</label>
+                                <span id="detVigenciaFinal"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Fornecedor</label>
+                                <span id="detFornecedor"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Modalidade</label>
+                                <span id="detModalidade"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Gestor formal</label>
+                                <span id="detGestorFormal"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Gestão operacional</label>
+                                <span id="detGestaoOperacional"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data de publicação</label>
+                                <span id="detDataPublicacao"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Equipe responsável</label>
+                                <span id="detEquipeResponsavel"></span>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- Valores (SICLG) -->
+                    <div class="info-section collapsible" id="sec-valores">
+                        <div class="info-section-title">
+                            Valores <span class="origin-tag">SICLG</span>
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-valores">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-valores">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Valor original</label>
+                                <span id="detValorOriginal"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Valor global atualizado</label>
+                                <span id="detValorGlobalAtual"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Valor vigência atual</label>
+                                <span id="detValorVigenciaAtual"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Valor global aditivado</label>
+                                <span id="detValorGlobalAditivado"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Prorrogável</label>
+                                <span id="detProrrogavel"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Tipo garantida</label>
+                                <span id="detTipoGarantida"></span>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- Compliance e Riscos (SICLG) -->
+                    <div class="info-section collapsible" id="sec-compliance">
+                        <div class="info-section-title">
+                            Compliance e Riscos <span class="origin-tag">SICLG</span>
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-compliance">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-compliance">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Risco social</label>
+                                <span id="detRiscoSocial"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Risco ambiental</label>
+                                <span id="detRiscoAmbiental"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Risco climático</label>
+                                <span id="detRiscoClimatico"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Código conduta assinado</label>
+                                <span id="detCodigoCondutaAssinado"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Partes relacionadas</label>
+                                <span id="detPartesRelacionadas"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Fornecedor terceiro relevante</label>
+                                <span id="detFornecedorTerceiroRelevante"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Fornecedor condenado por crime ambiental</label>
+                                <span id="detFornecedorCondenadoCrimeAmbiental"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Fornecedor sujeito a licenciamento ambiental</label>
+                                <span id="detFornecedorSujeitoLicenciamentoAmbiental"></span>
+                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Aba: Dados do Imóvel -->
                 <div id="tab-imovel" class="tab-content">
-                    <div class="info-grid">
+                    <div class="info-section">
+                        <div class="info-section-title">Resumo</div>
+                        <div class="summary-row">
+                            <div class="summary-chip">Endereço: <strong id="detEnderecoCompleto"></strong></div>
+                        </div>
+                    </div>
+                    <!-- Índice interno da aba Imóvel -->
+                    <div class="info-section">
+                        <div class="section-index">
+                            <a href="#sec-endereco-imovel">Endereço</a>
+                            <a href="#sec-caracteristicas-imovel">Características</a>
+                        </div>
+                    </div>
+                    <div class="info-section collapsible" id="sec-endereco-imovel">
+                        <div class="info-section-title">
+                            Endereço <span class="origin-tag">SAP</span>
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-endereco-imovel">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-endereco-imovel">
+                        <div class="info-grid">
                         <div class="info-item">
                             <label>Código Postal</label>
                             <span id="detCodPostal"></span>
@@ -276,6 +506,16 @@
                             <label>CEP</label>
                             <span id="detCep"></span>
                         </div>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="info-section collapsible" id="sec-caracteristicas-imovel">
+                        <div class="info-section-title">
+                            Características
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-caracteristicas-imovel">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-caracteristicas-imovel">
+                        <div class="info-grid">
                         <div class="info-item">
                             <label>Tipo de Edifício</label>
                             <span id="detTipoEdificio"></span>
@@ -288,12 +528,34 @@
                             <label>Valor</label>
                             <span id="detValor"></span>
                         </div>
+                        </div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Aba: Dados do Locador -->
                 <div id="tab-locador" class="tab-content">
-                    <div class="info-grid">
+                    <div class="info-section">
+                        <div class="info-section-title">Resumo</div>
+                        <div class="summary-row">
+                            <div class="summary-chip">Locador: <strong id="detNomeLocador"></strong></div>
+                            <div class="summary-chip">Documento: <strong id="detLocadorDoc"></strong></div>
+                        </div>
+                    </div>
+                    <!-- Índice interno da aba Locador -->
+                    <div class="info-section">
+                        <div class="section-index">
+                            <a href="#sec-identificacao-locador">Identificação</a>
+                            <a href="#sec-contato-locador">Contato</a>
+                        </div>
+                    </div>
+                    <div class="info-section collapsible" id="sec-identificacao-locador">
+                        <div class="info-section-title">
+                            Identificação <span class="origin-tag">SAP</span>
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-identificacao-locador">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-identificacao-locador">
+                        <div class="info-grid">
                         <div class="info-item">
                             <label>Parceiro de Negócios</label>
                             <span id="detParceiroNegocios"></span>
@@ -318,6 +580,16 @@
                             <label>Nome</label>
                             <span id="detNomeLocador"></span>
                         </div>
+                        </div>
+                        </div>
+                    </div>
+                    <div class="info-section collapsible" id="sec-contato-locador">
+                        <div class="info-section-title">
+                            Contato
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-contato-locador">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-contato-locador">
+                        <div class="info-grid">
                         <div class="info-item">
                             <label>Código postal</label>
                             <span id="detLocadorCep"></span>
@@ -354,6 +626,8 @@
                             <label>Telefone celular</label>
                             <span id="detLocadorTelefoneCelular"></span>
                         </div>
+                        </div>
+                        </div>
                     </div>
                 </div>
 
@@ -380,6 +654,9 @@
                                                     #wizAcao { grid-template-columns: 1fr !important; }
                                                     #wizCategoria { grid-template-columns: 1fr !important; }
                                                 }
+                                                /* Forçar ocultação inicial contra regras !important globais */
+                                                #wizAcaoBlock { display: none !important; }
+                                                #wizModalidadeBlock { display: none !important; }
                     </style>
                                                 <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
                                                 <div id="wizCategoriaBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:6px;">
@@ -397,20 +674,29 @@
                             <div id="wizModalidade" class="chip-row" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                         </div>
 
+                        <div id="wizCenarioBlock" class="info-item" style="grid-column: 1 / -1; display:grid; gap:8px;">
+                                    <label style="font-weight:600; margin-bottom:2px;">Cenário de dados</label>
+                            <div id="wizCenario" class="chip-row" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+                        </div>
+
                         <div class="info-item" style="grid-column: 1 / -1;">
                             <div id="servicoDescricao" style="margin-top:.5rem;color:#555"></div>
                         </div>
-                        <div class="info-item" style="grid-column: 1 / -1; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-                            <div>
+                        <!-- Toggle de detalhes técnicos -->
+                        <div class="info-item" style="grid-column: 1 / -1; display:flex; justify-content:flex-end; align-items:center;">
+                            <button id="toggleDetalhesTecnicos" class="btn-clear">Mostrar detalhes técnicos</button>
+                        </div>
+                        <div id="detalhesDadosBlock" class="info-item" style="grid-column: 1 / -1; display:none !important; grid-template-columns: 1fr 1fr; gap:12px;">
+                            <div id="dadosPreenchidosCol">
                                 <label>Dados que serão enviados</label>
                                 <ul id="dadosPreenchidos" style="list-style: none; padding-left: 0;"></ul>
                             </div>
-                            <div>
+                            <div id="dadosPendentesCol">
                                 <label>Dados faltantes</label>
                                 <ul id="dadosPendentes" style="list-style: none; padding-left: 0;"></ul>
                             </div>
                         </div>
-                        <div class="info-item" style="grid-column: 1 / -1;">
+                        <div id="payloadBlock" class="info-item" style="grid-column: 1 / -1; display:none !important;">
                             <label>Pré-visualização do payload</label>
                             <pre id="payloadPreview" style="background:#f6f8fa;border:1px solid #e1e4e8;border-radius:6px;padding:6px;overflow:auto;max-height:180px"></pre>
                         </div>
