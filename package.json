@@ -1,7 +1,7 @@
 {
   "name": "silic-call-for-tenders",
   "private": false,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Form Renderer para o Gerador de Edital CAIXA",
   "homepage": "https://osvaldojeronymo.github.io/silic-input-doc/",
