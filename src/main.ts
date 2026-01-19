@@ -329,6 +329,8 @@ export class SistemaSILIC {
 
     // Configurar tabs
     this.configurarTabs();
+    this.configurarCollapsibles();
+    this.configurarSectionIndex();
 
     // Inicializar aba de serviços com o imóvel atual
     this.inicializarAbaServicos(imovel);
@@ -345,44 +347,93 @@ export class SistemaSILIC {
     }
 
     // Tab Contrato (read-only spans) - alinhado ao index.html
-    this.setElementText('detNumeroContrato', imovel.codigo || '-');
-    this.setElementText('detDenominacao', imovel.denominacao || `${imovel.endereco}, ${imovel.bairro}`);
-    this.setElementText('detTipoContrato', imovel.tipoContrato || 'Contrato de Locação - Imóveis');
-    this.setElementText('detDataInicio', imovel.dataRegistro ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR') : '-');
-    this.setElementText('detDataFim', imovel.fimValidade || '-');
-    this.setElementText('detParceiro', imovel.parceiroNegocios || '-');
-    this.setElementText('detEnderecoContrato', imovel.endereco || '-');
-    this.setElementText('detNumeroEndereco', imovel.numeroPN || '-');
+    this.setElementText('detNumeroContrato', imovel.codigo || '-'); this.setElementOrigin('detNumeroContrato', 'SAP');
+    this.setElementText('detDenominacao', imovel.denominacao || `${imovel.endereco}, ${imovel.bairro}`); this.setElementOrigin('detDenominacao', 'SAP');
+    this.setElementText('detTipoContrato', imovel.tipoContrato || 'Contrato de Locação - Imóveis'); this.setElementOrigin('detTipoContrato', 'SAP');
+    this.setElementText('detDataInicio', imovel.dataRegistro ? new Date(imovel.dataRegistro).toLocaleDateString('pt-BR') : '-'); this.setElementOrigin('detDataInicio', 'SAP');
+    this.setElementText('detDataFim', imovel.fimValidade || imovel.contratoFimValidade || '-'); this.setElementOrigin('detDataFim', 'SAP');
+    this.setElementText('detRescisaoEm', imovel.contratoRescisaoEm || '-'); this.setElementOrigin('detRescisaoEm', 'SAP');
+    // Status calculado do contrato
+    const status = this.calcularStatusContrato(imovel);
+    this.setElementText('detContratoStatus', status);
+    this.setElementText('detParceiro', imovel.parceiroNegocios || '-'); this.setElementOrigin('detParceiro', 'SAP');
+    this.setElementText('detEnderecoContrato', imovel.endereco || '-'); this.setElementOrigin('detEnderecoContrato', 'SAP');
+    this.setElementText('detNumeroEndereco', imovel.numeroPN || '-'); this.setElementOrigin('detNumeroEndereco', 'SAP');
 
     // Tab Imóvel (read-only spans)
-    this.setElementText('detCodPostal', imovel.cep || '-');
-    this.setElementText('detLocal', imovel.estado || '-');
-    this.setElementText('detRua', imovel.endereco || '-');
-    this.setElementText('detBairro', imovel.bairro || '-');
-    this.setElementText('detCidade', imovel.cidade || '-');
-    this.setElementText('detEstado', imovel.estado || '-');
-    this.setElementText('detCep', imovel.cep || '-');
-    this.setElementText('detTipoEdificio', imovel.tipoEdificioCodigo || '-');
-    this.setElementText('detArea', imovel.area ? `${imovel.area} m²` : '-');
-    this.setElementText('detValor', imovel.valor ? `R$ ${imovel.valor.toFixed(2)}` : '-');
+    this.setElementText('detCodPostal', imovel.cep || '-'); this.setElementOrigin('detCodPostal', 'SAP');
+    this.setElementText('detLocal', imovel.estado || '-'); this.setElementOrigin('detLocal', 'SAP');
+    this.setElementText('detRua', imovel.endereco || '-'); this.setElementOrigin('detRua', 'SAP');
+    this.setElementText('detBairro', imovel.bairro || '-'); this.setElementOrigin('detBairro', 'SAP');
+    this.setElementText('detCidade', imovel.cidade || '-'); this.setElementOrigin('detCidade', 'SAP');
+    this.setElementText('detEstado', imovel.estado || '-'); this.setElementOrigin('detEstado', 'SAP');
+    this.setElementText('detCep', imovel.cep || '-'); this.setElementOrigin('detCep', 'SAP');
+    this.setElementText('detTipoEdificio', imovel.tipoEdificioCodigo || '-'); this.setElementOrigin('detTipoEdificio', 'SAP');
+    this.setElementText('detArea', imovel.area ? `${imovel.area} m²` : '-'); this.setElementOrigin('detArea', 'SAP');
+    this.setElementText('detValor', imovel.valor ? `R$ ${imovel.valor.toFixed(2)}` : '-'); this.setElementOrigin('detValor', 'SAP');
+    // Endereço completo (resumo)
+    const enderecoCompleto = [imovel.endereco, imovel.bairro].filter(Boolean).join(', ')
+      + (imovel.cidade || imovel.estado ? `, ${[imovel.cidade, imovel.estado].filter(Boolean).join(' - ')}` : '')
+      + (imovel.cep ? `, ${imovel.cep}` : '');
+    this.setElementText('detEnderecoCompleto', enderecoCompleto || '-'); this.setElementOrigin('detEnderecoCompleto', 'SAP');
 
     // Tab Locador (read-only spans) - usando dados básicos se disponíveis
     const locador = this.locadores.find(l => l.status === 'ativo');
-    this.setElementText('detParceiroNegocios', locador ? locador.nome : '-');
-    this.setElementText('detTipoIdFiscal', locador ? (locador.tipo === 'fisica' ? 'CPF' : 'CNPJ') : '-');
-    this.setElementText('detDenominacaoFuncao', 'Proponente Credor');
-    this.setElementText('detInicioRelacao', imovel.inicioRelacao || '-');
-    this.setElementText('detFimRelacao', imovel.fimRelacao || '-');
-    this.setElementText('detNomeLocador', locador ? locador.nome : '-');
-    this.setElementText('detLocadorCep', locador?.endereco?.cep || '-');
-    this.setElementText('detLocadorEndereco', locador?.endereco?.logradouro || '-');
-    this.setElementText('detLocadorNumero', locador?.endereco?.numero || '-');
-    this.setElementText('detLocadorBairro', locador?.endereco?.bairro || '-');
-    this.setElementText('detLocadorLocal', locador?.endereco?.cidade || '-');
-    this.setElementText('detLocadorUf', locador?.endereco?.estado || '-');
-    this.setElementText('detLocadorEmail', locador?.email || '-');
-    this.setElementText('detLocadorTelefoneFixo', locador?.telefone || '-');
-    this.setElementText('detLocadorTelefoneCelular', '-');
+    this.setElementText('detParceiroNegocios', locador ? locador.nome : '-'); this.setElementOrigin('detParceiroNegocios', 'SAP');
+    this.setElementText('detTipoIdFiscal', locador ? (locador.tipo === 'fisica' ? 'CPF' : 'CNPJ') : '-'); this.setElementOrigin('detTipoIdFiscal', 'SAP');
+    this.setElementText('detDenominacaoFuncao', 'Proponente Credor'); this.setElementOrigin('detDenominacaoFuncao', 'SAP');
+    this.setElementText('detInicioRelacao', imovel.inicioRelacao || '-'); this.setElementOrigin('detInicioRelacao', 'SAP');
+    this.setElementText('detFimRelacao', imovel.fimRelacao || '-'); this.setElementOrigin('detFimRelacao', 'SAP');
+    this.setElementText('detNomeLocador', locador ? locador.nome : '-'); this.setElementOrigin('detNomeLocador', 'SAP');
+    this.setElementText('detLocadorCep', locador?.endereco?.cep || '-'); this.setElementOrigin('detLocadorCep', 'SAP');
+    this.setElementText('detLocadorEndereco', locador?.endereco?.logradouro || '-'); this.setElementOrigin('detLocadorEndereco', 'SAP');
+    this.setElementText('detLocadorNumero', locador?.endereco?.numero || '-'); this.setElementOrigin('detLocadorNumero', 'SAP');
+    this.setElementText('detLocadorBairro', locador?.endereco?.bairro || '-'); this.setElementOrigin('detLocadorBairro', 'SAP');
+    this.setElementText('detLocadorLocal', locador?.endereco?.cidade || '-'); this.setElementOrigin('detLocadorLocal', 'SAP');
+    this.setElementText('detLocadorUf', locador?.endereco?.estado || '-'); this.setElementOrigin('detLocadorUf', 'SAP');
+    this.setElementText('detLocadorEmail', locador?.email || '-'); this.setElementOrigin('detLocadorEmail', 'SAP');
+    this.setElementText('detLocadorTelefoneFixo', locador?.telefone || '-'); this.setElementOrigin('detLocadorTelefoneFixo', 'SAP');
+    this.setElementText('detLocadorTelefoneCelular', '-'); this.setElementOrigin('detLocadorTelefoneCelular', 'SAP');
+    this.setElementText('detLocadorDoc', locador?.documento || '-'); this.setElementOrigin('detLocadorDoc', 'SAP');
+
+    // SICLG - Gestão e Publicação
+    this.setElementText('detNumeroProcesso', imovel.numeroProcesso || '-'); this.setElementOrigin('detNumeroProcesso', 'SICLG');
+    this.setElementText('detNumeroInstrumento', imovel.numeroInstrumento || '-'); this.setElementOrigin('detNumeroInstrumento', 'SICLG');
+    this.setElementText('detNumeroLicitacao', imovel.numeroLicitacao || '-'); this.setElementOrigin('detNumeroLicitacao', 'SICLG');
+    this.setElementText('detTipoInstrumento', imovel.tipoInstrumento || '-'); this.setElementOrigin('detTipoInstrumento', 'SICLG');
+    this.setElementText('detSituacao', imovel.situacao || '-'); this.setElementOrigin('detSituacao', 'SICLG');
+    this.setElementText('detIdPncp', imovel.idContratoPncp || '-'); this.setElementOrigin('detIdPncp', 'SICLG');
+    this.setElementText('detDescricaoObjeto', imovel.descricaoObjeto || '-'); this.setElementOrigin('detDescricaoObjeto', 'SICLG');
+    this.setElementText('detEnquadramentoLegal', imovel.enquadramentoLegal || '-'); this.setElementOrigin('detEnquadramentoLegal', 'SICLG');
+    this.setElementText('detDataAssinatura', this.formatDate(imovel.dataAssinatura)); this.setElementOrigin('detDataAssinatura', 'SICLG');
+    this.setElementText('detVigenciaInicial', this.formatDate(imovel.vigenciaInicial)); this.setElementOrigin('detVigenciaInicial', 'SICLG');
+    this.setElementText('detVigenciaFinal', this.formatDate(imovel.vigenciaFinal)); this.setElementOrigin('detVigenciaFinal', 'SICLG');
+    this.setElementText('detFornecedor', imovel.fornecedor || '-'); this.setElementOrigin('detFornecedor', 'SICLG');
+    this.setElementText('detModalidade', imovel.modalidade || '-'); this.setElementOrigin('detModalidade', 'SICLG');
+    this.setElementText('detGestorFormal', imovel.gestorFormal || '-'); this.setElementOrigin('detGestorFormal', 'SICLG');
+    this.setElementText('detGestaoOperacional', imovel.gestaoOperacional || '-'); this.setElementOrigin('detGestaoOperacional', 'SICLG');
+    this.setElementText('detDataPublicacao', this.formatDate(imovel.dataPublicacao)); this.setElementOrigin('detDataPublicacao', 'SICLG');
+    this.setElementText('detEquipeResponsavel', imovel.equipeResponsavel || '-'); this.setElementOrigin('detEquipeResponsavel', 'SICLG');
+
+    // SICLG - Valores
+    this.setElementText('detValorOriginal', this.formatCurrency(imovel.valorOriginal)); this.setElementOrigin('detValorOriginal', 'SICLG');
+    this.setElementText('detValorGlobalAtual', this.formatCurrency(imovel.valorGlobalAtualizado)); this.setElementOrigin('detValorGlobalAtual', 'SICLG');
+    this.setElementText('detValorVigenciaAtual', this.formatCurrency(imovel.valorVigenciaAtual)); this.setElementOrigin('detValorVigenciaAtual', 'SICLG');
+    this.setElementText('detValorGlobalAditivado', this.formatCurrency(imovel.valorGlobalAditivado)); this.setElementOrigin('detValorGlobalAditivado', 'SICLG');
+    const pror = imovel.prorrogavel;
+    this.setElementText('detProrrogavel', typeof pror === 'boolean' ? (pror ? 'Sim' : 'Não') : (pror || '-')); this.setElementOrigin('detProrrogavel', 'SICLG');
+    this.setElementText('detTipoGarantida', imovel.tipoGarantida || '-'); this.setElementOrigin('detTipoGarantida', 'SICLG');
+
+    // SICLG - Compliance e Riscos
+    this.setElementText('detRiscoSocial', imovel.riscoSocial || '-'); this.setElementOrigin('detRiscoSocial', 'SICLG');
+    this.setElementText('detRiscoAmbiental', imovel.riscoAmbiental || '-'); this.setElementOrigin('detRiscoAmbiental', 'SICLG');
+    this.setElementText('detRiscoClimatico', imovel.riscoClimatico || '-'); this.setElementOrigin('detRiscoClimatico', 'SICLG');
+    const cond = imovel.codigoCondutaAssinado;
+    this.setElementText('detCodigoCondutaAssinado', typeof cond === 'boolean' ? (cond ? 'Sim' : 'Não') : (cond || '-')); this.setElementOrigin('detCodigoCondutaAssinado', 'SICLG');
+    this.setElementText('detPartesRelacionadas', imovel.partesRelacionadas || '-'); this.setElementOrigin('detPartesRelacionadas', 'SICLG');
+    this.setElementText('detFornecedorTerceiroRelevante', imovel.fornecedorTerceiroRelevante || '-'); this.setElementOrigin('detFornecedorTerceiroRelevante', 'SICLG');
+    this.setElementText('detFornecedorCondenadoCrimeAmbiental', imovel.fornecedorCondenadoCrimeAmbiental || '-'); this.setElementOrigin('detFornecedorCondenadoCrimeAmbiental', 'SICLG');
+    this.setElementText('detFornecedorSujeitoLicenciamentoAmbiental', imovel.fornecedorSujeitoLicenciamentoAmbiental || '-'); this.setElementOrigin('detFornecedorSujeitoLicenciamentoAmbiental', 'SICLG');
   }
 
   // --- Aba Solicitar Serviços ---
@@ -392,18 +443,41 @@ export class SistemaSILIC {
     const acaoBlock = document.getElementById('wizAcaoBlock') as HTMLDivElement | null;
     const modRow = document.getElementById('wizModalidade') as HTMLDivElement | null;
     const modBlock = document.getElementById('wizModalidadeBlock') as HTMLDivElement | null;
+    const cenarioRow = document.getElementById('wizCenario') as HTMLDivElement | null;
+    const cenarioBlock = document.getElementById('wizCenarioBlock') as HTMLDivElement | null;
     const descricao = document.getElementById('servicoDescricao') as HTMLDivElement | null;
     const listaPreenchidos = document.getElementById('dadosPreenchidos') as HTMLUListElement | null;
     const listaPendentes = document.getElementById('dadosPendentes') as HTMLUListElement | null;
     const payloadPreview = document.getElementById('payloadPreview') as HTMLPreElement | null;
+    const payloadBlock = document.getElementById('payloadBlock') as HTMLDivElement | null;
+    const detalhesBlock = document.getElementById('detalhesDadosBlock') as HTMLDivElement | null;
+    const toggleDetalhes = document.getElementById('toggleDetalhesTecnicos') as HTMLButtonElement | null;
     const btn = document.getElementById('btnSolicitarServico') as HTMLButtonElement | null;
 
     if (!catGrid || !acaoGrid || !modRow || !descricao || !listaPreenchidos || !listaPendentes || !btn) return;
 
     const mapa = this.carregarServicosHierarquia();
-    let categoriaSel = '';
+    // Categoria única: Ato Formal
+    let categoriaSel = 'ato-formal';
     let acaoSel = '';
     let modalidadeSel = '';
+    let cenarioSel: 'completo' | 'pendencias' = 'completo';
+    const imovelBase: Imovel = { ...imovel };
+
+    const aplicarPendencias = (def: {requisitos: string[]}, base: Imovel): Imovel => {
+      const clone: Imovel = { ...base };
+      for (const req of def.requisitos) {
+        switch (req) {
+          case 'cep': clone.cep = ''; break;
+          case 'endereco': clone.endereco = ''; break;
+          case 'cidade': clone.cidade = ''; break;
+          case 'estado': clone.estado = ''; break;
+          case 'fimValidade': clone.fimValidade = ''; break;
+          default: break;
+        }
+      }
+      return clone;
+    };
 
     
 
@@ -451,16 +525,22 @@ export class SistemaSILIC {
       const def = mapa[categoriaSel]?.[acaoSel]?.[modalidadeSel];
       if (!def) { descricao.textContent = ''; listaPreenchidos.innerHTML = ''; listaPendentes.innerHTML = ''; if(payloadPreview) payloadPreview.textContent=''; btn.disabled = true; return; }
       descricao.textContent = def.descricao;
-      const resumo = this.montarResumoCampos(def, imovel);
+      const imovelUsado = cenarioSel === 'pendencias' ? aplicarPendencias(def, imovelBase) : imovelBase;
+      const resumo = this.montarResumoCampos(def, imovelUsado);
       this.atualizarResumoDados(listaPreenchidos, listaPendentes, resumo);
-      const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovel);
+      const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovelUsado);
       if (payloadPreview) payloadPreview.textContent = JSON.stringify(payload, null, 2);
-      btn.disabled = !this.validarRequisitos(def, imovel);
+      btn.disabled = !this.validarRequisitos(def, imovelUsado);
+      if (toggleDetalhes) {
+        const count = resumo.pendentes.length;
+        const aberto = detalhesBlock && detalhesBlock.style.display !== 'none';
+        toggleDetalhes.textContent = aberto ? 'Ocultar detalhes técnicos' : (count > 0 ? `Mostrar detalhes técnicos (${count} pendências)` : 'Mostrar detalhes técnicos');
+      }
     };
 
     const renderCategorias = () => {
       catGrid.innerHTML = '';
-      const categorias = Object.keys(mapa);
+      const categorias = Object.keys(mapa).filter(c => c === 'ato-formal');
       for (const c of categorias) {
         const label = labelCategoria(c);
         const card = makeCard(label);
@@ -469,18 +549,13 @@ export class SistemaSILIC {
           acaoSel = '';
           modalidadeSel = '';
           renderCategorias();
-          if (categoriaSel === 'ato-formal') {
-            if (acaoGrid) acaoGrid.innerHTML = '';
-            renderAcoes();
-          } else {
-            // Para categorias sem ação, fixar "Não se aplica" e ocultar bloco
-            acaoSel = 'nao-se-aplica';
-            if (acaoGrid) acaoGrid.innerHTML = '';
-          }
+          // Com categoria única, sempre renderiza ações
+          if (acaoGrid) acaoGrid.innerHTML = '';
+          renderAcoes();
           renderModalidades();
           atualizarResumo();
-          // Mostrar/ocultar bloco de Ação conforme categoria
-          if (acaoBlock) acaoBlock.style.display = (categoriaSel === 'ato-formal') ? 'grid' : 'none';
+          // Mostrar/ocultar bloco de Ação conforme categoria (forçando prioridade)
+          if (acaoBlock) acaoBlock.style.setProperty('display', 'grid', 'important');
         };
         if (categoriaSel === c) card.classList.add('selected');
         catGrid.appendChild(card);
@@ -498,7 +573,10 @@ export class SistemaSILIC {
         card.onclick = () => {
           acaoSel = a;
           modalidadeSel = '';
+          // Re-render para refletir seleção visual
+          renderAcoes();
           renderModalidades();
+          renderCenario();
           atualizarResumo();
         };
         if (acaoSel === a) card.classList.add('selected');
@@ -512,10 +590,10 @@ export class SistemaSILIC {
       const modalidades = Object.keys(mapa[categoriaSel]?.[acaoSel] || {});
       if (modalidades.length === 1 && modalidades[0] === 'nao-se-aplica') {
         modalidadeSel = 'nao-se-aplica';
-        if (modBlock) modBlock.style.display = 'none';
+        if (modBlock) modBlock.style.setProperty('display', 'none', 'important');
         return;
       }
-      if (modBlock) modBlock.style.display = 'grid';
+      if (modBlock) modBlock.style.setProperty('display', 'grid', 'important');
       for (const m of modalidades) {
         const label = labelModalidade(m);
         const chip = makeChip(label);
@@ -525,12 +603,27 @@ export class SistemaSILIC {
       }
     };
 
+    const renderCenario = () => {
+      if (!cenarioRow || !cenarioBlock) return;
+      cenarioRow.innerHTML = '';
+      cenarioBlock.style.setProperty('display', 'grid', 'important');
+      const chipCompleto = makeChip('Completo');
+      const chipPend = makeChip('Pendências');
+      chipCompleto.onclick = () => { cenarioSel = 'completo'; renderCenario(); atualizarResumo(); };
+      chipPend.onclick = () => { cenarioSel = 'pendencias'; renderCenario(); atualizarResumo(); };
+      if (cenarioSel === 'completo') chipCompleto.classList.add('selected');
+      if (cenarioSel === 'pendencias') chipPend.classList.add('selected');
+      cenarioRow.appendChild(chipCompleto);
+      cenarioRow.appendChild(chipPend);
+    };
+
     // Busca removida: lista completa de ações por categoria
 
     btn.addEventListener('click', () => {
       const def = mapa[categoriaSel]?.[acaoSel]?.[modalidadeSel];
       if (!def) return;
-      const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovel);
+      const imovelUsado = cenarioSel === 'pendencias' ? aplicarPendencias(def, imovelBase) : imovelBase;
+      const payload = this.montarPayloadSolicitacao({ id: def.id, nome: def.nome }, imovelUsado);
       console.log('📦 Solicitação (protótipo):', payload);
       const mensagem = 'Solicitação registrada. Seus dados foram encaminhados ao módulo "Solicitar serviços". Em breve você poderá acompanhar o andamento.';
       this.showToast(mensagem);
@@ -538,9 +631,26 @@ export class SistemaSILIC {
 
     // Inicialização
     renderCategorias();
-    if (acaoBlock) acaoBlock.style.display = (categoriaSel === 'ato-formal') ? 'grid' : 'none';
-    if (modBlock) modBlock.style.display = 'none';
+    // Com categoria única, renderiza ações imediatamente
+    renderAcoes();
+    renderCenario();
+    if (acaoBlock) acaoBlock.style.setProperty('display', 'grid', 'important');
+    if (modBlock) modBlock.style.setProperty('display', 'none', 'important');
     atualizarResumo();
+
+    // Toggle de detalhes técnicos: oculto por padrão
+    if (toggleDetalhes && payloadBlock && detalhesBlock) {
+      let visivel = false;
+      toggleDetalhes.textContent = 'Mostrar detalhes técnicos';
+      payloadBlock.style.setProperty('display', 'none', 'important');
+      detalhesBlock.style.setProperty('display', 'none', 'important');
+      toggleDetalhes.onclick = () => {
+        visivel = !visivel;
+        payloadBlock.style.setProperty('display', visivel ? 'block' : 'none', 'important');
+        detalhesBlock.style.setProperty('display', visivel ? 'grid' : 'none', 'important');
+        toggleDetalhes.textContent = visivel ? 'Ocultar detalhes técnicos' : 'Mostrar detalhes técnicos';
+      };
+    }
   }
 
   private carregarServicosHierarquia(): Record<string, Record<string, Record<string, {id:string; nome:string; descricao:string; requisitos: Array<'cep'|'endereco'|'cidade'|'estado'|'fimValidade'>}>>> {
@@ -659,6 +769,8 @@ export class SistemaSILIC {
   private atualizarResumoDados(preenchidosEl: HTMLUListElement, pendentesEl: HTMLUListElement, resumo: { preenchidos: Array<{label:string;value:string}>, pendentes: Array<{label:string}> }): void {
     preenchidosEl.innerHTML = '';
     pendentesEl.innerHTML = '';
+    const pendentesCol = document.getElementById('dadosPendentesCol') as HTMLDivElement | null;
+    const preenchidosCol = document.getElementById('dadosPreenchidosCol') as HTMLDivElement | null;
     for (const p of resumo.preenchidos) {
       const li = document.createElement('li');
       li.textContent = `${p.label}: ${p.value}`;
@@ -671,6 +783,10 @@ export class SistemaSILIC {
       li.style.color = '#b26a00';
       pendentesEl.appendChild(li);
     }
+    // Oculta coluna de pendentes quando não houver itens
+    if (pendentesCol) pendentesCol.style.display = resumo.pendentes.length ? 'block' : 'none';
+    // Mantém coluna de preenchidos visível quando houver pelo menos um item
+    if (preenchidosCol) preenchidosCol.style.display = resumo.preenchidos.length ? 'block' : 'none';
   }
 
   private montarPayloadSolicitacao(servico: {id:string; nome:string}, imovel: Imovel): Record<string, unknown> {
@@ -704,6 +820,111 @@ export class SistemaSILIC {
     const element = document.getElementById(id);
     if (element) {
       element.textContent = text;
+    }
+  }
+
+  private setElementOrigin(id: string, origin?: 'SAP' | 'SICLG'): void {
+    const element = document.getElementById(id);
+    if (!element) return;
+    if (origin) (element as HTMLElement).setAttribute('data-origin', origin);
+    else (element as HTMLElement).removeAttribute('data-origin');
+  }
+
+  private formatDate(value?: string): string {
+    if (!value) return '-';
+    // aceita DD/MM/AAAA ou ISO
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) return value;
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? (value || '-') : d.toLocaleDateString('pt-BR');
+  }
+
+  private formatCurrency(value?: number | string): string {
+    if (value === undefined || value === null || value === '') return '-';
+    const num = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.,-]/g, '').replace(',', '.')) : value;
+    if (isNaN(num as number)) return String(value);
+    try {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num as number);
+    } catch {
+      return `R$ ${(num as number).toFixed(2)}`;
+    }
+  }
+
+  /**
+   * Calcula o status do contrato com base nas datas.
+   */
+  private calcularStatusContrato(imovel: Imovel): string {
+    const hoje = new Date();
+    const inicio = this.parseDate(imovel.contratoInicio || imovel.dataRegistro);
+    const fim = this.parseDate(imovel.contratoFimValidade || imovel.fimValidade);
+    const rescisao = this.parseDate(imovel.contratoRescisaoEm);
+
+    if (rescisao && rescisao <= hoje) return 'Rescindido';
+    if (fim && fim < hoje) return 'Vencido';
+    if (inicio && inicio > hoje) return 'Aguardando início';
+    if (inicio && (!fim || fim >= hoje)) return 'Vigente';
+    return 'Indefinido';
+  }
+
+  private parseDate(value?: string): Date | null {
+    if (!value) return null;
+    // Aceita formatos DD/MM/AAAA ou ISO
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [d, m, y] = value.split('/').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    const d = new Date(value);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  private configurarCollapsibles(): void {
+    const sections = Array.from(document.querySelectorAll('.info-section.collapsible')) as HTMLElement[];
+    for (const sec of sections) {
+      const btn = sec.querySelector('.collapse-toggle') as HTMLButtonElement | null;
+      if (!btn) continue;
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      sec.classList.toggle('collapsed', !expanded);
+      btn.textContent = expanded ? 'Recolher' : 'Expandir';
+      btn.addEventListener('click', () => {
+        const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', (!isExpanded).toString());
+        btn.textContent = !isExpanded ? 'Recolher' : 'Expandir';
+        sec.classList.toggle('collapsed', isExpanded);
+      });
+    }
+  }
+
+  private configurarSectionIndex(): void {
+    const indices = Array.from(document.querySelectorAll('.section-index')) as HTMLElement[];
+    if (!indices.length) return;
+    for (const index of indices) {
+      const links = Array.from(index.querySelectorAll('a')) as HTMLAnchorElement[];
+      for (const link of links) {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const href = link.getAttribute('href') || '';
+          const id = href.startsWith('#') ? href.slice(1) : href;
+          const target = document.getElementById(id);
+          if (!target) return;
+          // Expand section if collapsed
+          if (target.classList.contains('collapsible') && target.classList.contains('collapsed')) {
+            const tbtn = target.querySelector('.collapse-toggle') as HTMLButtonElement | null;
+            if (tbtn) {
+              tbtn.setAttribute('aria-expanded', 'true');
+              tbtn.textContent = 'Recolher';
+              target.classList.remove('collapsed');
+            }
+          }
+          try {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+          } catch {
+            const modal = document.querySelector('.modal') as HTMLElement | null;
+            if (modal) {
+              const top = target.getBoundingClientRect().top - modal.getBoundingClientRect().top + modal.scrollTop - 60;
+              modal.scrollTo({ top, behavior: 'smooth' });
+            }
+          }
+        });
+      }
     }
   }
 

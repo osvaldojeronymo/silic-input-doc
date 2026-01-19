@@ -12,6 +12,25 @@ Este projeto é uma migração completa do sistema SILIC Input Doc original (Jav
 
 **🆕 Integrado com dados do SAP da Caixa Econômica Federal!** O sistema agora pode carregar dados reais de contratos de locação de imóveis.
 
+## 📝 Notas de Versão 1.0.1
+
+Principais melhorias nesta release do protótipo:
+
+- UI: índice interno movido logo abaixo do resumo e todas as seções abaixo iniciam colapsadas (melhor escaneabilidade).
+- Contrato: "Partes Relacionadas" renomeado para "Locador" e reposicionado logo abaixo do resumo.
+- Abas Imóvel e Locador: adicionados índices internos e seções colapsáveis com navegação por chips e rolagem suave.
+- Origem dos dados: etiqueta por campo (SAP/SICLG) visível para transparência.
+- Serviços: simplificado para categoria única "Ato Formal" com destaque visual da ação selecionada.
+- Detalhes técnicos: botão toggle que mostra/oculta payload e listas de dados; quando fechado, exibe contador de pendências.
+- Cenários de dados: chips "Completo" e "Pendências" para demonstrar validações e campos faltantes conforme cada ação.
+
+Como testar rapidamente:
+
+- Build e preview local:
+  - `npm run build`
+  - `npm run preview`
+- No modal, use as abas Contrato/Imóvel/Locador e os índices para navegar; na aba "Solicitar serviços", selecione uma ação e alterne o cenário de dados.
+
 ## 🛠️ Tecnologias
 
 - **TypeScript** - Tipagem estática e melhor experiência de desenvolvimento

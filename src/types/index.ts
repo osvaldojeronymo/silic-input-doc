@@ -70,6 +70,39 @@ export interface Imovel {
   emailPN?: string;                  // Endereço de e-mail (PN)
   telefonePN?: string;               // Nº telefone (PN)
   celularPN?: string;                // Telefone celular (PN)
+
+  // Módulo SICLG (Instrumento Contratual)
+  numeroProcesso?: string;
+  numeroInstrumento?: string;
+  numeroLicitacao?: string;
+  tipoInstrumento?: string;
+  situacao?: string;
+  idContratoPncp?: string;
+  descricaoObjeto?: string;
+  enquadramentoLegal?: string;
+  dataAssinatura?: string;          // DD/MM/AAAA ou ISO
+  vigenciaInicial?: string;         // DD/MM/AAAA ou ISO
+  vigenciaFinal?: string;           // DD/MM/AAAA ou ISO
+  fornecedor?: string;
+  modalidade?: string;
+  gestorFormal?: string;
+  gestaoOperacional?: string;
+  dataPublicacao?: string;
+  equipeResponsavel?: string;
+  valorOriginal?: number | string;
+  valorGlobalAtualizado?: number | string;
+  prorrogavel?: boolean | string;
+  tipoGarantida?: string;
+  valorVigenciaAtual?: number | string;
+  valorGlobalAditivado?: number | string;
+  riscoSocial?: string;
+  riscoAmbiental?: string;
+  codigoCondutaAssinado?: boolean | string;
+  partesRelacionadas?: string;
+  fornecedorTerceiroRelevante?: string;
+  riscoClimatico?: string;
+  fornecedorCondenadoCrimeAmbiental?: string;
+  fornecedorSujeitoLicenciamentoAmbiental?: string;
 }
 
 export interface Locador {
