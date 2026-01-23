@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-DQWV2R43.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-ox-hnz0R.js"></script>
   <link rel="modulepreload" crossorigin href="/silic-input-doc/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-CoP3scr9.css">
+  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-YTYr44NX.css">
 </head>
 <body>
     <header class="modern-header">
@@ -98,6 +98,10 @@
                     <div class="stat-label">Em Desmobilização</div>
                 </div>
             </div>
+
+            <!-- Cobertura de Cenários de Participação (A–D) -->
+            <div class="mini-label" style="margin-top:12px">Cobertura de cenários</div>
+            <div id="cenariosCoverage" class="chip-row" style="margin-top:6px"></div>
         </section>
 
         <!-- Seção de Listagem de Imóveis -->
@@ -203,6 +207,7 @@
                 <button class="tab-btn active" data-tab="contrato">Contrato</button>
                 <button class="tab-btn" data-tab="imovel">Imóvel</button>
                 <button class="tab-btn" data-tab="locador">Locador</button>
+                <button class="tab-btn" data-tab="aditivos">Aditivos</button>
                 <button class="tab-btn" data-tab="servicos">Solicitar serviços</button>
             </div>
 
@@ -456,6 +461,7 @@
                     </div>
                 </div>
 
+
                 <!-- Aba: Dados do Imóvel -->
                 <div id="tab-imovel" class="tab-content">
                     <div class="info-section">
@@ -547,6 +553,7 @@
                         <div class="section-index">
                             <a href="#sec-identificacao-locador">Identificação</a>
                             <a href="#sec-contato-locador">Contato</a>
+                            <a href="#sec-participacao-pagamento">Participação e Pagamento</a>
                         </div>
                     </div>
                     <div class="info-section collapsible" id="sec-identificacao-locador">
@@ -629,6 +636,124 @@
                         </div>
                         </div>
                     </div>
+                    <div class="info-section collapsible" id="sec-participacao-pagamento">
+                        <div class="info-section-title">
+                            Participação e Pagamento
+                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-participacao-pagamento">Expandir</button>
+                        </div>
+                        <div class="collapsible-content" id="content-participacao-pagamento">
+                        <div class="info-grid">
+                        <div class="info-item">
+                            <label>Valor mensal do aluguel</label>
+                            <span id="detValorAluguelMensal"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Data de vencimento</label>
+                            <span id="detDataVencimentoAluguel"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Forma de pagamento</label>
+                            <span id="detFormaPagamentoAluguel"></span>
+                        </div>
+                        </div>
+                        <div class="info-subsection">
+                            <div class="info-section-subtitle">Distribuição entre locadores</div>
+                            <div id="listaParticipacaoLocadores" class="list-cards"></div>
+                        </div>
+                        <div class="info-subsection">
+                            <div class="info-section-subtitle">Histórico de Pagamentos</div>
+                            <div class="table-wrapper">
+                                <table class="imoveis-table" id="tabelaHistoricoPagamentos">
+                                    <thead>
+                                        <tr>
+                                            <th>Competência</th>
+                                            <th>Vencimento</th>
+                                            <th>Valor</th>
+                                            <th>Status</th>
+                                            <th>Pago em</th>
+                                            <th>Multa</th>
+                                            <th>Juros</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                            <div class="mini-label" id="resumoEncargosAtraso" style="margin-top:8px"></div>
+                        </div>
+                        </div>
+                    </div>
+
+                    
+                </div>
+
+                <!-- Aba: Resumo de Termos Aditivos (ordenado conforme botões) -->
+                <div id="tab-aditivos" class="tab-content">
+                    <div class="info-section">
+                        <div class="info-section-title">Valores Originais</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Valor Mensal Estimado</label>
+                                <span id="detValMensalEstimadoOriginal"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Valor Original</label>
+                                <span id="detValorOriginalContrato"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data Vigência Início</label>
+                                <span id="detDataVigenciaInicioOriginal"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data Vigência Fim</label>
+                                <span id="detDataVigenciaFimOriginal"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Qtd. Meses</label>
+                                <span id="detQtdMesesOriginal"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">Resumo do Contrato</div>
+                        <div class="table-wrapper">
+                            <table class="imoveis-table" id="tabelaTermosAditivos">
+                                <thead>
+                                    <tr>
+                                        <th>Nº do TA</th>
+                                        <th>Tipo de Demanda</th>
+                                        <th>Vr. Mensal Estimado</th>
+                                        <th>Vr. Global Estimado do Aditivo</th>
+                                        <th>Vr. Global Atualizado</th>
+                                        <th>Data Início Efeitos</th>
+                                        <th>Vigência Início</th>
+                                        <th>Vigência Fim</th>
+                                        <th>Qtd Meses</th>
+                                        <th>% Acréscimo</th>
+                                        <th>% Supressão</th>
+                                        <th>% Revisão Preço</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">Resumo Geral</div>
+                        <div class="info-grid">
+                            <div class="info-item"><label>A — Valor Original</label><span id="resA"></span></div>
+                            <div class="info-item"><label>B — Soma dos TAs</label><span id="resB"></span></div>
+                            <div class="info-item"><label>C — Acumulado (A+B)</label><span id="resC"></span></div>
+                            <div class="info-item"><label>D — Vigência Atual</label><span id="resD"></span></div>
+                            <div class="info-item"><label>E — Empenhado</label><span id="resE"></span></div>
+                            <div class="info-item"><label>F — Pago</label><span id="resF"></span></div>
+                            <div class="info-item"><label>G — Pago no SIPLO</label><span id="resG"></span></div>
+                            <div class="info-item"><label>H — Saldo Estimado (C−F)</label><span id="resH"></span></div>
+                            <div class="info-item"><label>I — Saldo Disponível (E−G)</label><span id="resI"></span></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Aba: Solicitar Serviços -->
@@ -706,35 +831,7 @@
                     </div>
                 </div>
 
-                <!-- Aba: Dados do Locador -->
-                <div id="tab-locador" class="tab-content">
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <label>Nome Completo</label>
-                            <span id="detNomeLocador"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>CPF/CNPJ</label>
-                            <span id="detCpfCnpj"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Tipo</label>
-                            <span id="detTipoLocador"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Telefone</label>
-                            <span id="detTelefone"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Celular</label>
-                            <span id="detCelular"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>E-mail</label>
-                            <span id="detEmail"></span>
-                        </div>
-                    </div>
-                </div>
+                
             </div>
         </div>
     </div>
