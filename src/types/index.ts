@@ -28,6 +28,8 @@ export interface Imovel {
   dataRegistro: string;
   dataAtualizacao?: string;
 
+  
+
   // Campos adicionais (Banco de dados completo)
   // Módulo Imóvel
   edificio?: string;                 // Edifício
@@ -103,6 +105,21 @@ export interface Imovel {
   riscoClimatico?: string;
   fornecedorCondenadoCrimeAmbiental?: string;
   fornecedorSujeitoLicenciamentoAmbiental?: string;
+  
+  // — Pagamento de aluguel —
+  valorAluguelMensal?: number;           // Valor mensal do aluguel
+  dataVencimentoAluguel?: string;        // Data de vencimento (DD/MM/AAAA ou ISO)
+  formaPagamentoAluguel?: FormaPagamento; // Forma de pagamento (geral)
+  locadoresParticipacao?: ParticipacaoLocadorImovel[]; // Distribuição entre locadores
+  beneficiariosImovel?: Beneficiario[];  // Beneficiários adicionais do imóvel
+  historicoPagamentos?: Pagamento[];     // Histórico de pagamentos do aluguel
+  // — Aditivos / Revisões —
+  valorMensalEstimadoOriginal?: number;  // Valor mensal original do contrato
+  valorOriginalContrato?: number;        // Valor global original
+  dataVigenciaInicioOriginal?: string;   // Início da vigência original (DD/MM/AAAA ou ISO)
+  dataVigenciaFimOriginal?: string;      // Fim da vigência original (DD/MM/AAAA ou ISO)
+  qtdMesesOriginal?: number;             // Quantidade de meses da vigência original
+  termosAditivos?: TermoAditivo[];       // Lista de termos aditivos
 }
 
 export interface Locador {
@@ -120,9 +137,82 @@ export interface Locador {
     estado?: string;
     cep?: string;
   };
+  parteRelacionada?: boolean; // Indica se é Parte Relacionada
   status: 'ativo' | 'inativo';
   dataRegistro: string;
   dataAtualizacao?: string;
+}
+
+// Dados bancários para transferência
+export interface DadosBancarios {
+  banco?: string;
+  agencia?: string;
+  dvAgencia?: string;
+  operacaoProduto?: string;
+  conta?: string;
+  dvConta?: string;
+}
+
+export type FormaPagamento = 'transferencia' | 'gru' | 'boleto';
+
+// Representante Legal
+export interface RepresentanteLegal {
+  nome: string;
+  documento: string; // CPF ou CNPJ
+  email?: string;
+  telefone?: string;
+}
+
+// Recebedor divergente (quando quem recebe não é o locador)
+export interface RecebedorDivergente {
+  nome: string;
+  documento: string; // CPF ou CNPJ
+  dadosBancarios?: DadosBancarios;
+}
+
+// Beneficiário do imóvel
+export interface Beneficiario {
+  nome: string;
+  documento: string; // CPF ou CNPJ
+  dadosBancarios?: DadosBancarios;
+  percentual?: number; // percentual do aluguel que recebe
+}
+
+// Participação e pagamento por locador no contexto do imóvel
+export interface ParticipacaoLocadorImovel {
+  locadorId: string;
+  percentual: number; // Percentual do aluguel devido a este locador
+  formaPagamento: FormaPagamento;
+  dadosBancarios?: DadosBancarios; // obrigatório se formaPagamento = transferencia
+  representanteLegal?: RepresentanteLegal | null;
+  recebedorDivergente?: RecebedorDivergente | null;
+  beneficiarios?: Beneficiario[]; // Beneficiários vinculados ao recebimento
+}
+
+// Pagamento mensal de aluguel (competência)
+export interface Pagamento {
+  competencia: string;       // AAAA-MM (competência)
+  vencimento: string;        // DD/MM/AAAA
+  valor: number;             // valor do aluguel no mês
+  pagoEm?: string | null;    // data do pagamento (DD/MM/AAAA ou ISO), ausente se não pago
+  valorPago?: number | null; // valor efetivamente pago
+  forma?: FormaPagamento;    // forma do pagamento realizado
+}
+
+// Termo Aditivo
+export interface TermoAditivo {
+  numeroTA: string;                        // Nº do TA
+  tipoDemanda: string;                     // Tipo de demanda
+  valorMensalEstimado: number;             // Valor mensal estimado após o TA
+  valorGlobalEstimadoAditivo: number;      // Valor global estimado do aditivo
+  valorGlobalAtualizado: number;           // Valor global atualizado após o TA
+  dataInicioEfeitosFinanceiros: string;    // Data de início dos efeitos financeiros (DD/MM/AAAA)
+  dataVigenciaInicio: string;              // Início da vigência do TA
+  dataVigenciaFim: string;                 // Fim da vigência do TA
+  qtdMeses: number;                        // Quantidade de meses do TA
+  percentualAcrescimo?: number;            // Percentual de acréscimo
+  percentualSupressao?: number;            // Percentual de supressão
+  percentualRevisaoPreco?: number;         // Percentual de revisão de preço
 }
 
 export interface FiltroImoveis {

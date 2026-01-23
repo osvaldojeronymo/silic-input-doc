@@ -1,4 +1,4 @@
-import { Imovel, Locador, DashboardStats, VisualizationMode } from './types/index.js';
+import { Imovel, Locador, DashboardStats, VisualizationMode, ParticipacaoLocadorImovel, Pagamento, FormaPagamento, TermoAditivo } from './types/index.js';
 import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
 import { labelCategoria, labelAcao, labelModalidade } from './labels.js';
@@ -107,6 +107,7 @@ export class SistemaSILIC {
         email: 'joao.silva@example.com',
         telefone: this.gerarTelefone(),
         endereco: { logradouro: 'Rua das Flores', numero: '123', bairro: 'Centro', cidade: 'São Paulo', estado: 'SP', cep: '01000-000' },
+        parteRelacionada: false,
         status: 'ativo',
         dataRegistro: new Date().toISOString()
       },
@@ -118,6 +119,43 @@ export class SistemaSILIC {
         email: 'contato@imoveisxyz.com.br',
         telefone: this.gerarTelefone(),
         endereco: { logradouro: 'Av. Paulista', numero: '1500', bairro: 'Bela Vista', cidade: 'São Paulo', estado: 'SP', cep: '01310-000' },
+        parteRelacionada: true,
+        status: 'ativo',
+        dataRegistro: new Date().toISOString()
+      },
+      {
+        id: 'loc-3',
+        nome: 'Maria Fernanda Alves',
+        tipo: 'fisica',
+        documento: this.gerarCPF(),
+        email: 'maria.alves@example.com',
+        telefone: this.gerarTelefone(),
+        endereco: { logradouro: 'Rua do Lago', numero: '45', bairro: 'Jardim', cidade: 'Curitiba', estado: 'PR', cep: '80000-100' },
+        parteRelacionada: false,
+        status: 'ativo',
+        dataRegistro: new Date().toISOString()
+      },
+      {
+        id: 'loc-4',
+        nome: 'Construtora Alfa S/A',
+        tipo: 'juridica',
+        documento: this.gerarCNPJ(),
+        email: 'financeiro@alfa.com.br',
+        telefone: this.gerarTelefone(),
+        endereco: { logradouro: 'Av. Brasil', numero: '2000', bairro: 'Industrial', cidade: 'Porto Alegre', estado: 'RS', cep: '90000-200' },
+        parteRelacionada: false,
+        status: 'ativo',
+        dataRegistro: new Date().toISOString()
+      },
+      {
+        id: 'loc-5',
+        nome: 'Roberto Lima',
+        tipo: 'fisica',
+        documento: this.gerarCPF(),
+        email: 'roberto.lima@example.com',
+        telefone: this.gerarTelefone(),
+        endereco: { logradouro: 'Rua das Acácias', numero: '789', bairro: 'Vila Nova', cidade: 'Recife', estado: 'PE', cep: '50000-300' },
+        parteRelacionada: true,
         status: 'ativo',
         dataRegistro: new Date().toISOString()
       }
@@ -146,7 +184,7 @@ export class SistemaSILIC {
       const ano = String(2026 + Math.floor(Math.random() * 4));
       const fimValidade = `${dia}/${mes}/${ano}`;
 
-      out.push({
+      const imovel: Imovel = {
         id: `imo-${i+1}`,
         codigo,
         denominacao: `Contrato ${codigo} - Unidade ${cidade}`,
@@ -175,10 +213,245 @@ export class SistemaSILIC {
         numeroIdFiscal: this.locadores[i % this.locadores.length].documento,
         denominacaoFuncaoPN: 'Proponente Credor',
         inicioRelacao: `01/01/2025`,
-        fimRelacao: `31/12/${ano}`
-      });
+        fimRelacao: `31/12/${ano}`,
+
+        // Pagamento de aluguel (demo)
+        valorAluguelMensal: +(1500 + Math.random() * 8500).toFixed(2),
+        dataVencimentoAluguel: `${dia}/${mes}/${ano}`,
+        formaPagamentoAluguel: (i % 3 === 0 ? 'transferencia' : (i % 3 === 1 ? 'gru' : 'boleto')),
+        locadoresParticipacao: this.gerarParticipacoesParaImovel(i),
+        beneficiariosImovel: []
+      };
+
+      // Campos originais do contrato (para aba Aditivos)
+      const mensalBase = imovel.valorAluguelMensal || imovel.valor || 0;
+      imovel.valorMensalEstimadoOriginal = mensalBase;
+      imovel.qtdMesesOriginal = 48 + (i % 25); // entre 48 e 72 meses
+      imovel.dataVigenciaInicioOriginal = imovel.inicioRelacao || '01/01/2025';
+      imovel.dataVigenciaFimOriginal = imovel.fimValidade || `31/12/${ano}`;
+      imovel.valorOriginalContrato = (imovel.valorMensalEstimadoOriginal || 0) * (imovel.qtdMesesOriginal || 0);
+
+      // Gera histórico de pagamentos (últimos 6 meses)
+      imovel.historicoPagamentos = this.gerarHistoricoPagamentosDemo(imovel, i);
+
+      // Gera termos aditivos (demo)
+      imovel.termosAditivos = this.gerarTermosAditivosDemo(imovel, i);
+
+      out.push(imovel);
     }
     return out;
+  }
+
+  /**
+   * Gera cenários variados de participação de locadores
+   */
+  private gerarParticipacoesParaImovel(i: number): ParticipacaoLocadorImovel[] {
+    const l = this.locadores;
+    const bankCaixa = {
+      banco: '104 - CAIXA', agencia: '1234', dvAgencia: '5', operacaoProduto: '013', conta: '987654', dvConta: '2'
+    };
+    const bankBradesco = {
+      banco: '237 - Bradesco', agencia: '0001', dvAgencia: '0', operacaoProduto: 'Conta Corrente', conta: '123456', dvConta: '7'
+    };
+    const bankItau = {
+      banco: '341 - Itaú', agencia: '4321', dvAgencia: '1', operacaoProduto: 'Conta Corrente', conta: '654321', dvConta: '3'
+    };
+
+    const scenarios: ParticipacaoLocadorImovel[][] = [
+      // A: 1 locador 100% por transferência
+      [
+        { locadorId: l[0 % l.length].id, percentual: 100, formaPagamento: 'transferencia', dadosBancarios: bankCaixa, representanteLegal: null, recebedorDivergente: null, beneficiarios: [] }
+      ],
+      // B: 60/40 transferência + boleto, com recebedor divergente e beneficiário
+      [
+        { locadorId: l[1 % l.length].id, percentual: 60, formaPagamento: 'transferencia', dadosBancarios: bankItau, representanteLegal: null, recebedorDivergente: null, beneficiarios: [] },
+        { locadorId: l[2 % l.length].id, percentual: 40, formaPagamento: 'boleto', representanteLegal: { nome: 'Ana Prado', documento: this.gerarCPF(), email: 'ana.prado@example.com' }, recebedorDivergente: { nome: 'Carlos Lima', documento: this.gerarCPF(), dadosBancarios: bankBradesco }, beneficiarios: [ { nome: 'Assoc. Benef.', documento: this.gerarCNPJ(), percentual: 10 } ] }
+      ],
+      // C: 50/30/20 com transferência/GRU/boleto e vários beneficiários
+      [
+        { locadorId: l[3 % l.length].id, percentual: 50, formaPagamento: 'transferencia', dadosBancarios: bankCaixa, representanteLegal: null, recebedorDivergente: null, beneficiarios: [ { nome: 'ONG Apoio', documento: this.gerarCNPJ(), percentual: 5 } ] },
+        { locadorId: l[4 % l.length].id, percentual: 30, formaPagamento: 'gru', representanteLegal: null, recebedorDivergente: null, beneficiarios: [] },
+        { locadorId: l[0 % l.length].id, percentual: 20, formaPagamento: 'boleto', representanteLegal: { nome: 'Representante Legal', documento: this.gerarCPF(), email: 'rep.legal@example.com' }, recebedorDivergente: null, beneficiarios: [] }
+      ],
+      // D: 90/10 com recebedor divergente no 10% por transferência
+      [
+        { locadorId: l[2 % l.length].id, percentual: 90, formaPagamento: 'boleto', representanteLegal: null, recebedorDivergente: null, beneficiarios: [] },
+        { locadorId: l[1 % l.length].id, percentual: 10, formaPagamento: 'transferencia', dadosBancarios: bankItau, representanteLegal: null, recebedorDivergente: { nome: 'Terceiro Recebedor', documento: this.gerarCPF(), dadosBancarios: bankItau }, beneficiarios: [] }
+      ]
+    ];
+
+    return scenarios[i % scenarios.length];
+  }
+
+  /**
+   * Gera histórico de pagamentos para o imóvel com cenários variados
+   */
+  private gerarHistoricoPagamentosDemo(imovel: Imovel, idx: number): Pagamento[] {
+    const hoje = new Date();
+    const pagamentos: Pagamento[] = [];
+    const diaVenc = (() => {
+      const v = imovel.dataVencimentoAluguel;
+      if (v && /^\d{2}\/\d{2}\/\d{4}$/.test(v)) return parseInt(v.slice(0, 2), 10);
+      return 10;
+    })();
+    const valor = imovel.valorAluguelMensal || 3000;
+    for (let m = 0; m < 6; m++) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - m, 1);
+      const competencia = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const venc = new Date(d.getFullYear(), d.getMonth(), diaVenc);
+      const vencStr = venc.toLocaleDateString('pt-BR');
+      // alterna cenários com base em idx e m
+      const pick = (idx + m) % 4; // 0..3
+      if (pick === 0) {
+        // pago em dia
+        const pagoEm = new Date(venc.getTime());
+        pagamentos.push({ competencia, vencimento: vencStr, valor, pagoEm: pagoEm.toISOString(), valorPago: valor, forma: 'transferencia' as FormaPagamento });
+      } else if (pick === 1) {
+        // pago com atraso de 5 dias
+        const pagoEm = new Date(venc.getTime());
+        pagoEm.setDate(pagoEm.getDate() + 5);
+        pagamentos.push({ competencia, vencimento: vencStr, valor, pagoEm: pagoEm.toISOString(), valorPago: valor, forma: 'boleto' as FormaPagamento });
+      } else if (pick === 2) {
+        // não pago ainda (se vencido)
+        const pagoEm = null;
+        pagamentos.push({ competencia, vencimento: vencStr, valor, pagoEm, valorPago: null, forma: undefined });
+      } else {
+        // pago com atraso de 15 dias
+        const pagoEm = new Date(venc.getTime());
+        pagoEm.setDate(pagoEm.getDate() + 15);
+        pagamentos.push({ competencia, vencimento: vencStr, valor, pagoEm: pagoEm.toISOString(), valorPago: valor, forma: 'gru' as FormaPagamento });
+      }
+    }
+    return pagamentos;
+  }
+
+  // Regras de encargos por atraso (padrão Brasil): 2% multa + 1% a.m. juros
+  private readonly multaPercent = 2; // % sobre principal
+  private readonly jurosMesPercent = 1; // % ao mês
+
+  private calcularEncargos(valor: number, vencimento: string, pagoEm?: string | null) {
+    const due = this.parseDate(vencimento);
+    const refDate = pagoEm ? this.parseDate(pagoEm) : new Date();
+    if (!due || !refDate) return { dias: 0, multa: 0, juros: 0, total: valor };
+    const ms = refDate.getTime() - due.getTime();
+    const dias = Math.floor(ms / (24 * 60 * 60 * 1000));
+    if (dias <= 0) return { dias: 0, multa: 0, juros: 0, total: valor };
+    const multa = (this.multaPercent / 100) * valor;
+    const jurosDia = (this.jurosMesPercent / 100) / 30;
+    const juros = valor * jurosDia * dias;
+    const total = valor + multa + juros;
+    return { dias, multa, juros, total };
+  }
+
+  /**
+   * Gera termos aditivos de demonstração
+   */
+  private gerarTermosAditivosDemo(imovel: Imovel, idx: number): TermoAditivo[] {
+    const baseMensal = imovel.valorMensalEstimadoOriginal || imovel.valorAluguelMensal || imovel.valor || 5000;
+    const inicio = this.parseDate(imovel.dataVigenciaInicioOriginal) || new Date();
+    const addMonths = (d: Date, m: number) => new Date(d.getFullYear(), d.getMonth() + m, d.getDate());
+    const fmtBR = (d: Date) => d.toLocaleDateString('pt-BR');
+
+    const ta1: TermoAditivo = {
+      numeroTA: `TA-${idx + 1}-01`,
+      tipoDemanda: 'Acréscimo',
+      valorMensalEstimado: Math.round(baseMensal * 1.10),
+      valorGlobalEstimadoAditivo: Math.round(baseMensal * 1.10 * 12),
+      valorGlobalAtualizado: Math.round(baseMensal * 1.10 * (imovel.qtdMesesOriginal || 60)),
+      dataInicioEfeitosFinanceiros: fmtBR(addMonths(inicio, 18)),
+      dataVigenciaInicio: fmtBR(addMonths(inicio, 18)),
+      dataVigenciaFim: fmtBR(addMonths(inicio, 30)),
+      qtdMeses: 12,
+      percentualAcrescimo: 10
+    };
+
+    const ta2: TermoAditivo = {
+      numeroTA: `TA-${idx + 1}-02`,
+      tipoDemanda: 'Supressão',
+      valorMensalEstimado: Math.round(baseMensal * 0.95),
+      valorGlobalEstimadoAditivo: Math.round(baseMensal * 0.95 * 10),
+      valorGlobalAtualizado: Math.round(baseMensal * 0.95 * (imovel.qtdMesesOriginal || 60)),
+      dataInicioEfeitosFinanceiros: fmtBR(addMonths(inicio, 30)),
+      dataVigenciaInicio: fmtBR(addMonths(inicio, 30)),
+      dataVigenciaFim: fmtBR(addMonths(inicio, 40)),
+      qtdMeses: 10,
+      percentualSupressao: 5
+    };
+
+    const ta3: TermoAditivo = {
+      numeroTA: `TA-${idx + 1}-03`,
+      tipoDemanda: 'Revisão de Preço',
+      valorMensalEstimado: Math.round(baseMensal * 1.06),
+      valorGlobalEstimadoAditivo: Math.round(baseMensal * 1.06 * 6),
+      valorGlobalAtualizado: Math.round(baseMensal * 1.06 * (imovel.qtdMesesOriginal || 60)),
+      dataInicioEfeitosFinanceiros: fmtBR(addMonths(inicio, 40)),
+      dataVigenciaInicio: fmtBR(addMonths(inicio, 40)),
+      dataVigenciaFim: fmtBR(addMonths(inicio, 46)),
+      qtdMeses: 6,
+      percentualRevisaoPreco: 6
+    };
+
+    return [ta1, ta2, ta3];
+  }
+
+  /**
+   * Renderiza aba de Aditivos
+   */
+  private renderAditivos(imovel: Imovel): void {
+    const setText = (id: string, text: string) => this.setElementText(id, text);
+    const fmt = (v?: number) => this.formatCurrency(v ?? 0);
+
+    // Valores originais
+    setText('detValMensalEstimadoOriginal', fmt(imovel.valorMensalEstimadoOriginal || imovel.valorAluguelMensal || imovel.valor));
+    setText('detValorOriginalContrato', fmt(imovel.valorOriginalContrato));
+    setText('detDataVigenciaInicioOriginal', imovel.dataVigenciaInicioOriginal ? this.formatDate(imovel.dataVigenciaInicioOriginal) : '-');
+    setText('detDataVigenciaFimOriginal', imovel.dataVigenciaFimOriginal ? this.formatDate(imovel.dataVigenciaFimOriginal) : '-');
+    setText('detQtdMesesOriginal', (imovel.qtdMesesOriginal ?? '-').toString());
+
+    // Tabela Termos Aditivos
+    const tbody = document.querySelector('#tabelaTermosAditivos tbody') as HTMLTableSectionElement | null;
+    if (tbody) {
+      tbody.innerHTML = '';
+      for (const ta of (imovel.termosAditivos || [])) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${ta.numeroTA}</td>
+          <td>${ta.tipoDemanda}</td>
+          <td>${fmt(ta.valorMensalEstimado)}</td>
+          <td>${fmt(ta.valorGlobalEstimadoAditivo)}</td>
+          <td>${fmt(ta.valorGlobalAtualizado)}</td>
+          <td>${this.formatDate(ta.dataInicioEfeitosFinanceiros)}</td>
+          <td>${this.formatDate(ta.dataVigenciaInicio)}</td>
+          <td>${this.formatDate(ta.dataVigenciaFim)}</td>
+          <td>${ta.qtdMeses ?? '-'}</td>
+          <td>${ta.percentualAcrescimo ?? '-'}</td>
+          <td>${ta.percentualSupressao ?? '-'}</td>
+          <td>${ta.percentualRevisaoPreco ?? '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Resumo Geral
+    const A = imovel.valorOriginalContrato || 0;
+    const B = (imovel.termosAditivos || []).reduce((acc, ta) => acc + (ta.valorGlobalEstimadoAditivo || 0), 0);
+    const C = A + B;
+    const D = `${this.formatDate(imovel.dataVigenciaInicioOriginal)} — ${this.formatDate(imovel.dataVigenciaFimOriginal)}`;
+    const E = C * 0.7; // empenhado (demo)
+    const F = (imovel.historicoPagamentos || []).reduce((acc, p) => acc + (p.valorPago || 0), 0);
+    const G = F * 0.85; // pago no SIPLO (demo)
+    const H = C - F;
+    const I = E - G;
+
+    setText('resA', fmt(A));
+    setText('resB', fmt(B));
+    setText('resC', fmt(C));
+    setText('resD', D);
+    setText('resE', fmt(E));
+    setText('resF', fmt(F));
+    setText('resG', fmt(G));
+    setText('resH', fmt(H));
+    setText('resI', fmt(I));
   }
 
   // Métodos de interface (serão implementados nas próximas partes)
@@ -395,6 +668,125 @@ export class SistemaSILIC {
     this.setElementText('detLocadorTelefoneFixo', locador?.telefone || '-'); this.setElementOrigin('detLocadorTelefoneFixo', 'SAP');
     this.setElementText('detLocadorTelefoneCelular', '-'); this.setElementOrigin('detLocadorTelefoneCelular', 'SAP');
     this.setElementText('detLocadorDoc', locador?.documento || '-'); this.setElementOrigin('detLocadorDoc', 'SAP');
+
+    // Participação e Pagamento
+    this.setElementText('detValorAluguelMensal', this.formatCurrency(imovel.valorAluguelMensal));
+    this.setElementText('detDataVencimentoAluguel', imovel.dataVencimentoAluguel || '-');
+    const formaMap: Record<string, string> = { transferencia: 'Transferência', gru: 'GRU', boleto: 'Boleto' };
+    this.setElementText('detFormaPagamentoAluguel', imovel.formaPagamentoAluguel ? formaMap[imovel.formaPagamentoAluguel] : '-');
+
+    const lista = document.getElementById('listaParticipacaoLocadores');
+    if (lista) {
+      lista.innerHTML = '';
+      const parts = imovel.locadoresParticipacao || [];
+      parts.forEach(p => {
+        const l = this.locadores.find(lo => lo.id === p.locadorId);
+        const card = document.createElement('div');
+        card.className = 'card-item';
+        const title = document.createElement('div');
+        title.className = 'title-row';
+        const name = document.createElement('strong');
+        name.textContent = l?.nome || 'Locador';
+        title.appendChild(name);
+        if (l) {
+          const badgeTipo = document.createElement('span');
+          badgeTipo.className = `badge ${l.tipo === 'fisica' ? 'pf' : 'pj'}`;
+          badgeTipo.textContent = l.tipo === 'fisica' ? 'PF' : 'PJ';
+          title.appendChild(badgeTipo);
+          if (l.parteRelacionada) {
+            const badgePR = document.createElement('span');
+            badgePR.className = 'badge flag';
+            badgePR.textContent = 'Parte Relacionada';
+            title.appendChild(badgePR);
+          }
+        }
+        card.appendChild(title);
+
+        const chips = document.createElement('div');
+        chips.className = 'chip-row';
+        const chipPerc = document.createElement('span');
+        chipPerc.className = 'badge';
+        chipPerc.textContent = `Percentual: ${p.percentual}%`;
+        chips.appendChild(chipPerc);
+        const chipForma = document.createElement('span');
+        chipForma.className = `badge pay-${p.formaPagamento}`;
+        chipForma.textContent = `Pagamento: ${formaMap[p.formaPagamento]}`;
+        chips.appendChild(chipForma);
+        card.appendChild(chips);
+        if (p.formaPagamento === 'transferencia' && p.dadosBancarios) {
+          const bank = document.createElement('div');
+          bank.style.marginTop = '6px';
+          bank.innerHTML = `<div class="mini-label">Dados bancários</div>
+            <div>${p.dadosBancarios.banco || '-'} · Agência ${p.dadosBancarios.agencia || '-'}-${p.dadosBancarios.dvAgencia || '-'} · Operação ${p.dadosBancarios.operacaoProduto || '-'} · Conta ${p.dadosBancarios.conta || '-'}-${p.dadosBancarios.dvConta || '-'}</div>`;
+          card.appendChild(bank);
+        }
+
+        if (p.representanteLegal) {
+          const rep = document.createElement('div');
+          rep.style.marginTop = '6px';
+          rep.innerHTML = `<div class="mini-label">Representante Legal</div>
+            <div>${p.representanteLegal.nome} (${p.representanteLegal.documento})</div>`;
+          card.appendChild(rep);
+        }
+
+        if (p.recebedorDivergente) {
+          const rec = document.createElement('div');
+          rec.style.marginTop = '6px';
+          rec.innerHTML = `<div class="mini-label">Recebedor Divergente</div>
+            <div>${p.recebedorDivergente.nome} (${p.recebedorDivergente.documento})</div>`;
+          card.appendChild(rec);
+        }
+
+        const beneCount = (p.beneficiarios || []).length;
+        if (beneCount > 0) {
+          const ben = document.createElement('div');
+          ben.style.marginTop = '6px';
+          const items = (p.beneficiarios || []).map(b => `${b.nome} (${b.documento})${typeof b.percentual === 'number' ? ` – ${b.percentual}%` : ''}`).join('<br/>');
+          ben.innerHTML = `<div class="mini-label">Beneficiários</div><div>${items}</div>`;
+          card.appendChild(ben);
+        }
+
+        lista.appendChild(card);
+      });
+
+      // Resumo da soma de percentuais
+      const total = parts.reduce((acc, p) => acc + (p.percentual || 0), 0);
+      const resumo = document.createElement('div');
+      resumo.className = 'card-item';
+      const ok = Math.abs(total - 100) < 0.001;
+      resumo.innerHTML = `<div class="mini-label">Soma dos percentuais</div><div style="font-weight:600; ${ok ? 'color:#0F5132;' : 'color:#842029;'}">${total.toFixed(2)}%</div>`;
+      lista.appendChild(resumo);
+    }
+
+    // Renderiza histórico de pagamentos após a distribuição dos locadores
+    this.renderHistoricoPagamentos(imovel);
+
+    // Renderiza aba de Aditivos (resumo e tabela)
+    this.renderAditivos(imovel);
+
+    const beneList = document.getElementById('listaBeneficiariosImovel');
+    if (beneList) {
+      beneList.innerHTML = '';
+      (imovel.beneficiariosImovel || []).forEach(b => {
+        const card = document.createElement('div');
+        card.className = 'card-item';
+        const title = document.createElement('div');
+        title.className = 'title-row';
+        const name = document.createElement('strong');
+        name.textContent = b.nome;
+        title.appendChild(name);
+        card.appendChild(title);
+        const data = document.createElement('div');
+        data.innerHTML = `<div class="mini-label">Documento</div><div>${b.documento}</div>`;
+        card.appendChild(data);
+        if (typeof b.percentual === 'number') {
+          const perc = document.createElement('div');
+          perc.innerHTML = `<div class="mini-label">Percentual</div><div>${b.percentual}%</div>`;
+          card.appendChild(perc);
+        }
+        beneList.appendChild(card);
+      });
+    }
 
     // SICLG - Gestão e Publicação
     this.setElementText('detNumeroProcesso', imovel.numeroProcesso || '-'); this.setElementOrigin('detNumeroProcesso', 'SICLG');
@@ -876,6 +1268,46 @@ export class SistemaSILIC {
     return isNaN(d.getTime()) ? null : d;
   }
 
+  private renderHistoricoPagamentos(imovel: Imovel): void {
+    const table = document.getElementById('tabelaHistoricoPagamentos') as HTMLTableElement | null;
+    const resumo = document.getElementById('resumoEncargosAtraso');
+    if (!table) return;
+    const tbody = table.querySelector('tbody')!;
+    tbody.innerHTML = '';
+    let totalMulta = 0, totalJuros = 0;
+    const rows = (imovel.historicoPagamentos || []);
+    rows.forEach(p => {
+      const enc = this.calcularEncargos(p.valor, p.vencimento, p.pagoEm);
+      totalMulta += enc.multa;
+      totalJuros += enc.juros;
+      const tr = document.createElement('tr');
+      const status = (() => {
+        if (p.pagoEm) {
+          const due = this.parseDate(p.vencimento)!;
+          const pay = this.parseDate(p.pagoEm)!;
+          return pay > due ? 'Pago com atraso' : 'Pago em dia';
+        }
+        const due = this.parseDate(p.vencimento)!;
+        return new Date() > due ? 'Em atraso' : 'Em aberto';
+      })();
+      const total = p.pagoEm ? (p.valorPago ?? (enc.total)) : enc.total;
+      tr.innerHTML = `
+        <td>${p.competencia}</td>
+        <td>${p.vencimento}</td>
+        <td>${this.formatCurrency(p.valor)}</td>
+        <td>${status}</td>
+        <td>${p.pagoEm ? this.formatDate(p.pagoEm) : '-'}</td>
+        <td>${enc.multa > 0 ? this.formatCurrency(enc.multa) : '-'}</td>
+        <td>${enc.juros > 0 ? this.formatCurrency(enc.juros) : '-'}</td>
+        <td>${this.formatCurrency(total)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    if (resumo) {
+      resumo.textContent = `Multas acumuladas: ${this.formatCurrency(totalMulta)} · Juros acumulados: ${this.formatCurrency(totalJuros)}`;
+    }
+  }
+
   private configurarCollapsibles(): void {
     const sections = Array.from(document.querySelectorAll('.info-section.collapsible')) as HTMLElement[];
     for (const sec of sections) {
@@ -1287,6 +1719,9 @@ export class SistemaSILIC {
     this.setElementText('imoveisProspeccao', stats.imoveisProspeccao.toString());
     this.setElementText('imoveisMobilizacao', stats.imoveisMobilizacao.toString());
     this.setElementText('imoveisDesmobilizacao', stats.imoveisDesmobilizacao.toString());
+
+    // Relatório de cobertura dos cenários A–D
+    this.atualizarCoberturaCenarios();
   }
 
   private calcularEstatisticas(): DashboardStats {
@@ -1298,6 +1733,45 @@ export class SistemaSILIC {
       imoveisDesmobilizacao: this.imoveis.filter(i => i.status === 'desmobilizacao').length,
       totalLocadores: this.locadores.length
     };
+  }
+
+  /**
+   * Atualiza a cobertura de cenários A–D na UI e loga no console
+   */
+  private atualizarCoberturaCenarios(): void {
+    const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0 };
+    const scenarioLetters = ['A','B','C','D'];
+    this.imoveis.forEach(imo => {
+      const idx = this.extrairIndiceImovel(imo.id);
+      if (idx !== null) {
+        const s = scenarioLetters[idx % scenarioLetters.length];
+        counts[s] = (counts[s] || 0) + 1;
+      }
+    });
+
+    const covEl = document.getElementById('cenariosCoverage');
+    if (covEl) {
+      covEl.innerHTML = '';
+      scenarioLetters.forEach(letter => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.textContent = `${letter}: ${counts[letter]}`;
+        covEl.appendChild(chip);
+      });
+    }
+
+    console.log(`📊 Cobertura de cenários A–D: A=${counts.A}, B=${counts.B}, C=${counts.C}, D=${counts.D}`);
+  }
+
+  /**
+   * Extrai o índice numérico a partir de ids no formato 'imo-<n>'
+   */
+  private extrairIndiceImovel(id: string): number | null {
+    const m = id.match(/^imo-(\d+)$/);
+    if (!m) return null;
+    const n = parseInt(m[1], 10);
+    if (Number.isNaN(n)) return null;
+    return n - 1; // índice zero-based usado na geração
   }
 }
 
