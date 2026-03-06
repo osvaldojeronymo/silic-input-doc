@@ -1,4 +1,4 @@
-import { Imovel, Locador, DashboardStats, VisualizationMode, ParticipacaoLocadorImovel, Pagamento, FormaPagamento, TermoAditivo } from './types/index.js';
+import { Imovel, Locador, DashboardStats, VisualizationMode, ParticipacaoLocadorImovel, Pagamento, FormaPagamento, TermoAditivo, PainelVencimentosContrato } from './types/index.js';
 import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
 import { labelCategoria, labelAcao, labelModalidade } from './labels.js';
@@ -11,6 +11,8 @@ export class SistemaSILIC {
   private imoveis: Imovel[] = [];
   private imoveisOriginais: Imovel[] = []; // Lista completa sem filtros
   private locadores: Locador[] = [];
+  private painelVencimentos: PainelVencimentosContrato[] = [];
+  private painelVencimentosFiltrado: PainelVencimentosContrato[] = [];
   private usandoDadosSAP = false;
   
   // Paginação
@@ -23,10 +25,14 @@ export class SistemaSILIC {
   constructor() {
     this.usandoDadosSAP = false;
     this.carregarDadosDemo();
+    this.inicializarPainelVencimentos();
     this.configurarFiltrosImoveisImediato();
+    this.configurarExportacaoPortfolio();
+    this.configurarPainelVencimentos();
     this.configurarItemsPorPagina();
     this.atualizarTabelaImoveis();
     this.atualizarDashboard();
+    this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
   }
   
 
@@ -348,16 +354,19 @@ export class SistemaSILIC {
    */
   private gerarTermosAditivosDemo(imovel: Imovel, idx: number): TermoAditivo[] {
     const baseMensal = imovel.valorMensalEstimadoOriginal || imovel.valorAluguelMensal || imovel.valor || 5000;
+    const valorTa1 = Math.round(baseMensal * 1.10); // acréscimo de área
+    const valorTa2 = valorTa1; // alteração de titularidade não altera valor
+    const valorTa3 = Math.round(valorTa2 * 1.08); // reajuste anual INPC sobre o valor vigente
     const inicio = this.parseDate(imovel.dataVigenciaInicioOriginal) || new Date();
     const addMonths = (d: Date, m: number) => new Date(d.getFullYear(), d.getMonth() + m, d.getDate());
     const fmtBR = (d: Date) => d.toLocaleDateString('pt-BR');
 
     const ta1: TermoAditivo = {
       numeroTA: `TA-${idx + 1}-01`,
-      tipoDemanda: 'Acréscimo',
-      valorMensalEstimado: Math.round(baseMensal * 1.10),
-      valorGlobalEstimadoAditivo: Math.round(baseMensal * 1.10 * 12),
-      valorGlobalAtualizado: Math.round(baseMensal * 1.10 * (imovel.qtdMesesOriginal || 60)),
+      tipoDemanda: 'Acréscimo de área',
+      valorMensalEstimado: valorTa1,
+      valorGlobalEstimadoAditivo: Math.round(valorTa1 * 12),
+      valorGlobalAtualizado: Math.round(valorTa1 * (imovel.qtdMesesOriginal || 60)),
       dataInicioEfeitosFinanceiros: fmtBR(addMonths(inicio, 18)),
       dataVigenciaInicio: fmtBR(addMonths(inicio, 18)),
       dataVigenciaFim: fmtBR(addMonths(inicio, 30)),
@@ -367,28 +376,28 @@ export class SistemaSILIC {
 
     const ta2: TermoAditivo = {
       numeroTA: `TA-${idx + 1}-02`,
-      tipoDemanda: 'Supressão',
-      valorMensalEstimado: Math.round(baseMensal * 0.95),
-      valorGlobalEstimadoAditivo: Math.round(baseMensal * 0.95 * 10),
-      valorGlobalAtualizado: Math.round(baseMensal * 0.95 * (imovel.qtdMesesOriginal || 60)),
+      tipoDemanda: 'Alteração de titularidade',
+      valorMensalEstimado: valorTa2,
+      valorGlobalEstimadoAditivo: Math.round(valorTa2 * 10),
+      valorGlobalAtualizado: Math.round(valorTa2 * (imovel.qtdMesesOriginal || 60)),
       dataInicioEfeitosFinanceiros: fmtBR(addMonths(inicio, 30)),
       dataVigenciaInicio: fmtBR(addMonths(inicio, 30)),
       dataVigenciaFim: fmtBR(addMonths(inicio, 40)),
       qtdMeses: 10,
-      percentualSupressao: 5
+      percentualSupressao: 0
     };
 
     const ta3: TermoAditivo = {
       numeroTA: `TA-${idx + 1}-03`,
-      tipoDemanda: 'Revisão de Preço',
-      valorMensalEstimado: Math.round(baseMensal * 1.06),
-      valorGlobalEstimadoAditivo: Math.round(baseMensal * 1.06 * 6),
-      valorGlobalAtualizado: Math.round(baseMensal * 1.06 * (imovel.qtdMesesOriginal || 60)),
+      tipoDemanda: 'Reajuste anual - INPC',
+      valorMensalEstimado: valorTa3,
+      valorGlobalEstimadoAditivo: Math.round(valorTa3 * 6),
+      valorGlobalAtualizado: Math.round(valorTa3 * (imovel.qtdMesesOriginal || 60)),
       dataInicioEfeitosFinanceiros: fmtBR(addMonths(inicio, 40)),
       dataVigenciaInicio: fmtBR(addMonths(inicio, 40)),
       dataVigenciaFim: fmtBR(addMonths(inicio, 46)),
       qtdMeses: 6,
-      percentualRevisaoPreco: 6
+      percentualRevisaoPreco: 8
     };
 
     return [ta1, ta2, ta3];
@@ -562,6 +571,7 @@ export class SistemaSILIC {
   }
 
   private fecharModalDetalhes(): void {
+    this.fecharTodosDrawersDetalhes();
     const modal = document.getElementById('modalDetalhes');
     if (modal) {
       modal.classList.remove('active');
@@ -604,6 +614,7 @@ export class SistemaSILIC {
     this.configurarTabs();
     this.configurarCollapsibles();
     this.configurarSectionIndex();
+    this.configurarDrawersDetalhes();
 
     // Inicializar aba de serviços com o imóvel atual
     this.inicializarAbaServicos(imovel);
@@ -616,7 +627,7 @@ export class SistemaSILIC {
     // Título do modal
     const modalTitle = document.querySelector('.modal-header h2');
     if (modalTitle) {
-      modalTitle.textContent = `Detalhes`;
+      modalTitle.textContent = `Contrato (Visão 360°)`;
     }
 
     // Tab Contrato (read-only spans) - alinhado ao index.html
@@ -826,6 +837,151 @@ export class SistemaSILIC {
     this.setElementText('detFornecedorTerceiroRelevante', imovel.fornecedorTerceiroRelevante || '-'); this.setElementOrigin('detFornecedorTerceiroRelevante', 'SICLG');
     this.setElementText('detFornecedorCondenadoCrimeAmbiental', imovel.fornecedorCondenadoCrimeAmbiental || '-'); this.setElementOrigin('detFornecedorCondenadoCrimeAmbiental', 'SICLG');
     this.setElementText('detFornecedorSujeitoLicenciamentoAmbiental', imovel.fornecedorSujeitoLicenciamentoAmbiental || '-'); this.setElementOrigin('detFornecedorSujeitoLicenciamentoAmbiental', 'SICLG');
+
+    // Blocos estratégicos transversais
+    this.renderAlertasContrato(imovel);
+    this.renderTimelineContrato(imovel);
+  }
+
+  private renderAlertasContrato(imovel: Imovel): void {
+    const lista = document.getElementById('listaAlertasContrato');
+    if (!lista) return;
+
+    const hoje = new Date();
+    const alertas: Array<{ nivel: 'alto' | 'medio' | 'baixo'; titulo: string; detalhe: string }> = [];
+
+    const fim = this.parseDate(imovel.fimValidade || imovel.contratoFimValidade);
+    if (fim) {
+      const dias = Math.ceil((fim.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      if (dias <= 0) {
+        alertas.push({ nivel: 'alto', titulo: 'Contrato vencido', detalhe: `Vencimento em ${this.formatDate(imovel.fimValidade || imovel.contratoFimValidade)}.` });
+      } else if (dias <= 120) {
+        alertas.push({ nivel: 'medio', titulo: 'Contrato próximo do vencimento', detalhe: `Faltam ${dias} dia(s) para o vencimento.` });
+      }
+    }
+
+    const condutaAssinada = typeof imovel.codigoCondutaAssinado === 'boolean'
+      ? imovel.codigoCondutaAssinado
+      : String(imovel.codigoCondutaAssinado || '').toLowerCase() === 'sim';
+    if (!condutaAssinada) {
+      alertas.push({ nivel: 'medio', titulo: 'Compliance pendente', detalhe: 'Código de conduta não confirmado para o contrato.' });
+    }
+
+    if (!imovel.tipoGarantida || imovel.tipoGarantida === '-') {
+      alertas.push({ nivel: 'baixo', titulo: 'Garantia não informada', detalhe: 'Tipo de garantia ausente para acompanhamento de risco.' });
+    }
+
+    const possuiAditivos = (imovel.termosAditivos || []).length > 0;
+    if (!possuiAditivos) {
+      alertas.push({ nivel: 'baixo', titulo: 'Índice de reajuste sem histórico', detalhe: 'Não há reajustes/aditivos registrados para análise financeira.' });
+    }
+
+    lista.innerHTML = '';
+
+    // Notificação remanejada da antiga aba Ciclo de Vida
+    const notificacao = document.createElement('div');
+    notificacao.className = 'card-item';
+    notificacao.innerHTML = '<strong>Notificações</strong><div class="mini-label" style="margin-top:6px">Alertas de vigência e conformidade ativos</div>';
+    lista.appendChild(notificacao);
+
+    if (!alertas.length) {
+      const ok = document.createElement('div');
+      ok.className = 'card-item';
+      ok.innerHTML = '<strong>Sem alertas críticos no momento</strong><div class="mini-label" style="margin-top:6px">Monitoramento automático ativo para este contrato.</div>';
+      lista.appendChild(ok);
+      return;
+    }
+
+    const corNivel: Record<'alto' | 'medio' | 'baixo', string> = {
+      alto: '#842029',
+      medio: '#664d03',
+      baixo: '#0c5460'
+    };
+
+    alertas.forEach((alerta) => {
+      const card = document.createElement('div');
+      card.className = 'card-item';
+      card.innerHTML = `
+        <div class="title-row">
+          <strong>${alerta.titulo}</strong>
+          <span class="badge" style="border-color:${corNivel[alerta.nivel]};color:${corNivel[alerta.nivel]}">${alerta.nivel.toUpperCase()}</span>
+        </div>
+        <div class="mini-label" style="margin-top:6px">${alerta.detalhe}</div>
+      `;
+      lista.appendChild(card);
+    });
+  }
+
+  private renderTimelineContrato(imovel: Imovel): void {
+    const timeline = document.getElementById('timelineContrato');
+    if (!timeline) return;
+
+    const valorAssinatura = Number(
+      imovel.valorMensalEstimadoOriginal
+      || imovel.valorAluguelMensal
+      || imovel.valor
+      || 0
+    );
+
+    const detalheAssinatura = valorAssinatura > 0
+      ? `Formalização inicial do contrato. (${this.formatCurrency(valorAssinatura)})`
+      : 'Formalização inicial do contrato.';
+
+    const eventoAssinatura: { data: Date | null; dataTexto: string; titulo: string; detalhe: string } = {
+      data: this.parseDate(imovel.dataAssinatura || imovel.dataRegistro),
+      dataTexto: this.formatDate(imovel.dataAssinatura || imovel.dataRegistro),
+      titulo: 'Assinatura',
+      detalhe: detalheAssinatura
+    };
+
+    const eventosAditivos: Array<{ data: Date | null; dataTexto: string; titulo: string; detalhe: string }> = [];
+
+    (imovel.termosAditivos || []).forEach((ta, idx) => {
+      const ref = ta.dataInicioEfeitosFinanceiros || ta.dataVigenciaInicio || ta.dataVigenciaFim;
+      const numeros = (ta.numeroTA || '').match(/\d+/g) || [];
+      const numeroExtraido = parseInt(numeros[numeros.length - 1] || '', 10);
+      const sequencial = Number.isFinite(numeroExtraido) ? numeroExtraido : (idx + 1);
+      const sequencialFormatado = String(Math.min(Math.max(sequencial, 1), 99)).padStart(2, '0');
+      eventosAditivos.push({
+        data: this.parseDate(ref),
+        dataTexto: this.formatDate(ref),
+        titulo: `Aditivo TA-${sequencialFormatado}`,
+        detalhe: `${ta.tipoDemanda || 'Alteração contratual'} (${this.formatCurrency(ta.valorMensalEstimado || ta.valorGlobalEstimadoAditivo || 0)})`
+      });
+    });
+
+    const eventoEncerramento: { data: Date | null; dataTexto: string; titulo: string; detalhe: string } = {
+      data: this.parseDate(imovel.fimValidade || imovel.contratoFimValidade),
+      dataTexto: this.formatDate(imovel.fimValidade || imovel.contratoFimValidade),
+      titulo: 'Encerramento previsto',
+      detalhe: 'Marco de fim da vigência contratual.'
+    };
+
+    const aditivosOrdenados = eventosAditivos.sort((a, b) => {
+      const ta = a.data ? a.data.getTime() : Number.MAX_SAFE_INTEGER;
+      const tb = b.data ? b.data.getTime() : Number.MAX_SAFE_INTEGER;
+      return ta - tb;
+    });
+
+    const ordenados: Array<{ data: Date | null; dataTexto: string; titulo: string; detalhe: string }> = [
+      eventoAssinatura,
+      ...aditivosOrdenados,
+      eventoEncerramento
+    ];
+
+    timeline.innerHTML = '';
+    ordenados.forEach((evento) => {
+      const card = document.createElement('div');
+      card.className = 'card-item';
+      card.innerHTML = `
+        <div class="title-row">
+          <strong>${evento.titulo}</strong>
+          <span class="badge">${evento.dataTexto}</span>
+        </div>
+        <div class="mini-label" style="margin-top:6px">${evento.detalhe}</div>
+      `;
+      timeline.appendChild(card);
+    });
   }
 
   // --- Aba Solicitar Serviços ---
@@ -849,6 +1005,13 @@ export class SistemaSILIC {
     if (!catGrid || !acaoGrid || !modRow || !descricao || !listaPreenchidos || !listaPendentes || !btn) return;
 
     const mapa = this.carregarServicosHierarquia();
+    const acoesEmAndamento = new Set<string>();
+    (imovel.termosAditivos || []).forEach((ta) => {
+      const tipo = (ta.tipoDemanda || '').toLowerCase();
+      if (tipo.includes('titularidade')) {
+        acoesEmAndamento.add('alteracao-titularidade');
+      }
+    });
     // Categoria única: Ato Formal
     let categoriaSel = 'ato-formal';
     let acaoSel = '';
@@ -961,8 +1124,10 @@ export class SistemaSILIC {
       const filtradas = termo ? acoes.filter(a => this.capitalize(a.replace(/-/g,' ')).toLowerCase().includes(termo)) : acoes;
       for (const a of filtradas) {
         const label = labelAcao(categoriaSel, a);
-        const card = makeCard(label);
+        const bloqueada = acoesEmAndamento.has(a);
+        const card = makeCard(label, bloqueada ? 'Solicitado em: 17/02/2026 - Status: Em andamento' : undefined);
         card.onclick = () => {
+          if (bloqueada) return;
           acaoSel = a;
           modalidadeSel = '';
           // Re-render para refletir seleção visual
@@ -971,6 +1136,16 @@ export class SistemaSILIC {
           renderCenario();
           atualizarResumo();
         };
+        if (bloqueada) {
+          card.disabled = true;
+          card.style.opacity = '0.65';
+          card.style.cursor = 'not-allowed';
+          card.title = 'Serviço já solicitado anteriormente e em andamento';
+          if (acaoSel === a) {
+            acaoSel = '';
+            modalidadeSel = '';
+          }
+        }
         if (acaoSel === a) card.classList.add('selected');
         acaoGrid.appendChild(card);
       }
@@ -1360,6 +1535,120 @@ export class SistemaSILIC {
     }
   }
 
+  private configurarDrawersDetalhes(): void {
+    this.configurarDrawerPorTab('tab-contrato', 'contratoDrawerSources', 'contratoDrawer', 'contratoDrawerBackdrop', 'contratoDrawerContent', 'contratoDrawerTitle', 'contratoDrawerClose');
+    this.configurarDrawerPorTab('tab-imovel', 'imovelDrawerSources', 'imovelDrawer', 'imovelDrawerBackdrop', 'imovelDrawerContent', 'imovelDrawerTitle', 'imovelDrawerClose');
+    this.configurarDrawerPorTab('tab-locador', 'locadorDrawerSources', 'locadorDrawer', 'locadorDrawerBackdrop', 'locadorDrawerContent', 'locadorDrawerTitle', 'locadorDrawerClose');
+    this.configurarDrawerPorTab('tab-aditivos', 'aditivosDrawerSources', 'aditivosDrawer', 'aditivosDrawerBackdrop', 'aditivosDrawerContent', 'aditivosDrawerTitle', 'aditivosDrawerClose');
+    this.configurarDrawerPorTab('tab-alertas', 'alertasDrawerSources', 'alertasDrawer', 'alertasDrawerBackdrop', 'alertasDrawerContent', 'alertasDrawerTitle', 'alertasDrawerClose');
+    this.configurarDrawerPorTab('tab-timeline', 'timelineDrawerSources', 'timelineDrawer', 'timelineDrawerBackdrop', 'timelineDrawerContent', 'timelineDrawerTitle', 'timelineDrawerClose');
+    this.configurarDrawerPorTab('tab-servicos', 'servicosDrawerSources', 'servicosDrawer', 'servicosDrawerBackdrop', 'servicosDrawerContent', 'servicosDrawerTitle', 'servicosDrawerClose');
+  }
+
+  private configurarDrawerPorTab(
+    tabId: string,
+    sourcesId: string,
+    drawerId: string,
+    backdropId: string,
+    contentId: string,
+    titleId: string,
+    closeId: string
+  ): void {
+    const tab = document.getElementById(tabId);
+    const drawer = document.getElementById(drawerId);
+    const drawerBackdrop = document.getElementById(backdropId);
+    const drawerContent = document.getElementById(contentId);
+    const drawerTitle = document.getElementById(titleId);
+    const drawerClose = document.getElementById(closeId);
+    const drawerSources = document.getElementById(sourcesId);
+
+    if (!tab || !drawer || !drawerBackdrop || !drawerContent || !drawerTitle || !drawerClose || !drawerSources) {
+      return;
+    }
+
+    const configAttr = `data-drawer-configured-${drawerId}`;
+    if (tab.getAttribute(configAttr) === 'true') {
+      return;
+    }
+    tab.setAttribute(configAttr, 'true');
+
+    const triggers = Array.from(tab.querySelectorAll('.detail-card-trigger')) as HTMLButtonElement[];
+    const fecharAtual = (): void => this.fecharDrawerPorTab(tabId, sourcesId, drawerId, backdropId, contentId);
+
+    const abrirDrawer = (trigger: HTMLButtonElement): void => {
+      const sectionId = trigger.dataset.drawerTarget;
+      if (!sectionId) return;
+
+      const section = document.getElementById(sectionId) as HTMLElement | null;
+      if (!section || !drawerSources.contains(section)) return;
+
+      fecharAtual();
+
+      const title = trigger.dataset.drawerTitle || trigger.querySelector('strong')?.textContent || 'Detalhes';
+      drawerTitle.textContent = title;
+
+      drawerContent.appendChild(section);
+      drawer.classList.add('active');
+      drawer.setAttribute('aria-hidden', 'false');
+      drawerBackdrop.classList.add('active');
+      drawerBackdrop.setAttribute('aria-hidden', 'false');
+
+      triggers.forEach((btn) => btn.classList.remove('is-active'));
+      trigger.classList.add('is-active');
+    };
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('click', () => abrirDrawer(trigger));
+    });
+
+    drawerClose.addEventListener('click', () => fecharAtual());
+    drawerBackdrop.addEventListener('click', () => fecharAtual());
+
+    document.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && drawer.classList.contains('active')) {
+        fecharAtual();
+      }
+    });
+  }
+
+  private fecharDrawerPorTab(tabId: string, sourcesId: string, drawerId: string, backdropId: string, contentId: string): void {
+    const tab = document.getElementById(tabId);
+    const drawer = document.getElementById(drawerId);
+    const drawerBackdrop = document.getElementById(backdropId);
+    const drawerContent = document.getElementById(contentId);
+    const drawerSources = document.getElementById(sourcesId);
+
+    if (tab) {
+      const triggers = Array.from(tab.querySelectorAll('.detail-card-trigger')) as HTMLButtonElement[];
+      triggers.forEach((btn) => btn.classList.remove('is-active'));
+    }
+
+    if (drawerContent && drawerSources) {
+      const sections = Array.from(drawerContent.querySelectorAll('.drawer-section')) as HTMLElement[];
+      sections.forEach((section) => drawerSources.appendChild(section));
+    }
+
+    if (drawer) {
+      drawer.classList.remove('active');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+
+    if (drawerBackdrop) {
+      drawerBackdrop.classList.remove('active');
+      drawerBackdrop.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  private fecharTodosDrawersDetalhes(): void {
+    this.fecharDrawerPorTab('tab-contrato', 'contratoDrawerSources', 'contratoDrawer', 'contratoDrawerBackdrop', 'contratoDrawerContent');
+    this.fecharDrawerPorTab('tab-imovel', 'imovelDrawerSources', 'imovelDrawer', 'imovelDrawerBackdrop', 'imovelDrawerContent');
+    this.fecharDrawerPorTab('tab-locador', 'locadorDrawerSources', 'locadorDrawer', 'locadorDrawerBackdrop', 'locadorDrawerContent');
+    this.fecharDrawerPorTab('tab-aditivos', 'aditivosDrawerSources', 'aditivosDrawer', 'aditivosDrawerBackdrop', 'aditivosDrawerContent');
+    this.fecharDrawerPorTab('tab-alertas', 'alertasDrawerSources', 'alertasDrawer', 'alertasDrawerBackdrop', 'alertasDrawerContent');
+    this.fecharDrawerPorTab('tab-timeline', 'timelineDrawerSources', 'timelineDrawer', 'timelineDrawerBackdrop', 'timelineDrawerContent');
+    this.fecharDrawerPorTab('tab-servicos', 'servicosDrawerSources', 'servicosDrawer', 'servicosDrawerBackdrop', 'servicosDrawerContent');
+  }
+
   private setInputValue(id: string, value: string): void {
     const el = document.getElementById(id) as HTMLInputElement | null;
     if (el) el.value = value || '';
@@ -1611,6 +1900,246 @@ export class SistemaSILIC {
         this.aplicarFiltrosImoveis();
       }
     });
+  }
+
+  private configurarExportacaoPortfolio(): void {
+    this.addEventListenerSafe('exportarPortfolio', 'click', () => {
+      this.exportarPortfolioCSV();
+    });
+  }
+
+  private exportarPortfolioCSV(): void {
+    const headers = [
+      'Contrato',
+      'Denominacao',
+      'TipoContrato',
+      'Unidade',
+      'Status',
+      'FimValidade',
+      'Cidade',
+      'UF',
+      'ValorAluguelMensal'
+    ];
+
+    const escapeCSV = (value: string | number | undefined | null): string => {
+      const text = (value ?? '').toString().replace(/\r?\n|\r/g, ' ');
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+
+    const linhas = this.imoveis.map((imovel) => [
+      escapeCSV(imovel.codigo),
+      escapeCSV(imovel.denominacao),
+      escapeCSV(imovel.tipoContrato || 'Contrato de Locação - Imóveis'),
+      escapeCSV(imovel.utilizacaoPrincipal || '-'),
+      escapeCSV(this.formatarStatus(imovel.status)),
+      escapeCSV(imovel.fimValidade || '-'),
+      escapeCSV(imovel.cidade || '-'),
+      escapeCSV(imovel.estado || '-'),
+      escapeCSV(typeof imovel.valorAluguelMensal === 'number' ? imovel.valorAluguelMensal.toFixed(2) : '-')
+    ].join(','));
+
+    const csv = [headers.join(','), ...linhas].join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const data = new Date();
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, '0');
+    const d = String(data.getDate()).padStart(2, '0');
+    a.href = url;
+    a.download = `portfolio-imoveis-${y}${m}${d}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  private inicializarPainelVencimentos(): void {
+    this.painelVencimentos = this.imoveisOriginais.map((imovel) => this.montarReadModelPainelVencimentos(imovel));
+    this.painelVencimentosFiltrado = [...this.painelVencimentos];
+  }
+
+  private montarReadModelPainelVencimentos(imovel: Imovel): PainelVencimentosContrato {
+    const locador = this.locadores.find((l) => l.id === imovel.locadorId) || this.locadores.find((l) => l.status === 'ativo');
+    const historico = (imovel.historicoPagamentos || []).filter((p) => !!p.pagoEm);
+    const ultimoPgto = historico.sort((a, b) => {
+      const ta = this.parseDate(a.pagoEm || '')?.getTime() || 0;
+      const tb = this.parseDate(b.pagoEm || '')?.getTime() || 0;
+      return tb - ta;
+    })[0];
+
+    const vigenciaSap = imovel.fimValidade || imovel.contratoFimValidade || '-';
+    const vigenciaSiclg = imovel.vigenciaFinal || '-';
+    const vencimentoReferencia = this.calcularVencimentoReferencia(vigenciaSap, vigenciaSiclg);
+    const dataRef = this.parseDate(vencimentoReferencia);
+    const diasParaVencimento = dataRef
+      ? Math.ceil((dataRef.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    const conciliacaoStatus: 'conciliado' | 'pendente_conciliacao' = imovel.numeroInstrumento
+      ? 'conciliado'
+      : 'pendente_conciliacao';
+
+    const fase = this.classificarFaseVencimento(diasParaVencimento, imovel);
+    const decisaoOperacional = this.classificarDecisaoOperacional(diasParaVencimento, conciliacaoStatus);
+
+    const valorMensal = imovel.valorAluguelMensal || imovel.valor || 0;
+    const valorAnual = valorMensal * 12;
+    const valorAcordado = Number(imovel.valorGlobalAtualizado || imovel.valorOriginalContrato || valorAnual || 0);
+
+    const limiteAr = diasParaVencimento !== null && diasParaVencimento > 30 && dataRef
+      ? this.formatDate(new Date(dataRef.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString())
+      : this.formatDate(vencimentoReferencia);
+
+    const previsaoColegiado = diasParaVencimento !== null && diasParaVencimento > 60 && dataRef
+      ? this.formatDate(new Date(dataRef.getTime() - (60 * 24 * 60 * 60 * 1000)).toISOString())
+      : '-';
+
+    return {
+      contratoId: imovel.id,
+      numeroContratoSap: imovel.codigo || '-',
+      numeroContratoSiclg: imovel.numeroInstrumento || '-',
+      uf: imovel.estado || '-',
+      locadorSap: locador?.nome || imovel.parceiroNegocios || '-',
+
+      vigenciaSap,
+      descricaoSap: imovel.denominacao || '-',
+      ultimoValorPagoSap: Number(ultimoPgto?.valorPago || ultimoPgto?.valor || 0),
+      ultimoPgtoSap: ultimoPgto?.pagoEm ? this.formatDate(ultimoPgto.pagoEm) : '-',
+
+      vigenciaSiclg,
+      situacaoSiclg: imovel.situacao || this.formatarStatus(imovel.status),
+      descricaoSiclg: imovel.descricaoObjeto || '-',
+      demandaSiclg: (imovel.termosAditivos || []).length > 0 ? 'Aditivo' : '-',
+      situacaoDemanda: imovel.status === 'ativo' ? 'Em curso' : 'Pendente',
+      cnpjCpfLocadorSiclg: locador?.documento || imovel.numeroIdFiscal || '-',
+
+      decisaoOperacional,
+      fase,
+      valorProrrogacaoMensal: valorMensal,
+      valorProrrogacaoAnual: valorAnual,
+      valorAcordado,
+      previsaoColegiado,
+      colegiado: 'Colegiado Regional',
+      tipoColegiado: 'Ordinário',
+      situacaoColegiado: previsaoColegiado !== '-' ? 'Previsto' : 'Não previsto',
+      limiteAr,
+      codigoSijur: `SIJUR-${(imovel.codigo || '00000000').slice(-6)}`,
+      situacaoProcessoAr: fase === 'Encerramento' ? 'Concluir AR' : 'Acompanhar',
+
+      vencimentoReferencia,
+      diasParaVencimento,
+      conciliacaoStatus
+    };
+  }
+
+  private calcularVencimentoReferencia(vigenciaSap: string, vigenciaSiclg: string): string {
+    const sap = this.parseDate(vigenciaSap);
+    const siclg = this.parseDate(vigenciaSiclg);
+    if (sap && siclg) return sap.getTime() <= siclg.getTime() ? vigenciaSap : vigenciaSiclg;
+    return vigenciaSap !== '-' ? vigenciaSap : vigenciaSiclg;
+  }
+
+  private classificarFaseVencimento(diasParaVencimento: number | null, imovel: Imovel): string {
+    if (diasParaVencimento === null) return 'Monitoramento';
+    if (diasParaVencimento <= 0) return 'Encerramento';
+    if (diasParaVencimento <= 30) return 'Notificação';
+    if (diasParaVencimento <= 60) return 'Negociação';
+    if ((imovel.termosAditivos || []).length > 0) return 'Aditivo';
+    return 'Monitoramento';
+  }
+
+  private classificarDecisaoOperacional(diasParaVencimento: number | null, conciliacaoStatus: 'conciliado' | 'pendente_conciliacao'): string {
+    if (conciliacaoStatus === 'pendente_conciliacao') return 'Conciliação SAP/SICLG';
+    if (diasParaVencimento === null) return 'Acompanhar vigência';
+    if (diasParaVencimento <= 30) return 'Aguardar Notificação';
+    if (diasParaVencimento <= 60) return 'Preparar negociação';
+    if (diasParaVencimento <= 90) return 'Análise de prorrogação';
+    return 'Acompanhamento regular';
+  }
+
+  private configurarPainelVencimentos(): void {
+    this.addEventListenerSafe('painelBuscarBtn', 'click', () => this.aplicarFiltrosPainelVencimentos());
+    this.addEventListenerSafe('painelLimparBtn', 'click', () => this.limparFiltrosPainelVencimentos());
+  }
+
+  private aplicarFiltrosPainelVencimentos(): void {
+    const uf = (document.getElementById('painelUfFiltro') as HTMLSelectElement | null)?.value || '';
+    const ate = (document.getElementById('painelAteFiltro') as HTMLInputElement | null)?.value || '';
+    const status = (document.getElementById('painelStatusFiltro') as HTMLSelectElement | null)?.value || '';
+
+    const ateDate = ate ? new Date(ate) : null;
+
+    this.painelVencimentosFiltrado = this.painelVencimentos.filter((item) => {
+      if (uf && item.uf !== uf) return false;
+      if (status && item.conciliacaoStatus !== status) return false;
+
+      if (ateDate) {
+        const v = this.parseDate(item.vencimentoReferencia);
+        if (!v) return false;
+        if (v > ateDate) return false;
+      }
+
+      return true;
+    });
+
+    this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+  }
+
+  private limparFiltrosPainelVencimentos(): void {
+    const uf = document.getElementById('painelUfFiltro') as HTMLSelectElement | null;
+    const ate = document.getElementById('painelAteFiltro') as HTMLInputElement | null;
+    const status = document.getElementById('painelStatusFiltro') as HTMLSelectElement | null;
+    if (uf) uf.value = '';
+    if (ate) ate.value = '';
+    if (status) status.value = '';
+    this.painelVencimentosFiltrado = [...this.painelVencimentos];
+    this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+  }
+
+  private atualizarPainelVencimentos(dados: PainelVencimentosContrato[]): void {
+    const tbody = document.getElementById('painelVencimentosBody') as HTMLTableSectionElement | null;
+    const resumo = document.getElementById('painelResumo');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    dados.forEach((item) => {
+      const tr = document.createElement('tr');
+      const conciliacaoLabel = item.conciliacaoStatus === 'conciliado' ? 'Conciliado' : 'Pendente';
+      const badgeClass = item.conciliacaoStatus === 'conciliado' ? 'badge badge-ativo' : 'badge badge-desmobilizacao';
+
+      tr.innerHTML = `
+        <td>${item.numeroContratoSap}</td>
+        <td>${item.numeroContratoSiclg}</td>
+        <td>${item.uf}</td>
+        <td>${item.locadorSap}</td>
+        <td>${item.vigenciaSap}</td>
+        <td>${item.vigenciaSiclg}</td>
+        <td>${item.situacaoSiclg}</td>
+        <td>${item.ultimoPgtoSap}</td>
+        <td>${this.formatCurrency(item.ultimoValorPagoSap)}</td>
+        <td>${item.decisaoOperacional}</td>
+        <td>${item.fase}</td>
+        <td>${item.situacaoProcessoAr}</td>
+        <td><span class="${badgeClass}">${conciliacaoLabel}</span></td>
+        <td><button class="btn-table-action" data-id="${item.contratoId}">Detalhar</button></td>
+      `;
+
+      const btn = tr.querySelector('.btn-table-action');
+      if (btn) {
+        btn.addEventListener('click', () => this.abrirModalDetalhes(item.contratoId));
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    if (resumo) {
+      const qtd = dados.length;
+      const pendentes = dados.filter((d) => d.conciliacaoStatus === 'pendente_conciliacao').length;
+      const d30 = dados.filter((d) => typeof d.diasParaVencimento === 'number' && d.diasParaVencimento <= 30).length;
+      resumo.textContent = `${qtd} contrato(s) no painel • ${pendentes} pendente(s) de conciliação • ${d30} em janela D-30`;
+    }
   }
 
   private aplicarFiltrosImoveis(): void {

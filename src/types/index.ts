@@ -239,6 +239,47 @@ export interface DashboardStats {
   totalLocadores: number;
 }
 
+/**
+ * Read model consolidado do Painel de Vencimentos (visão SAP + SICLG + Gestão).
+ * Mantém rastreabilidade de origem sem substituir serviços atuais.
+ */
+export interface PainelVencimentosContrato {
+  contratoId: string;                  // ID canônico do domínio
+  numeroContratoSap: string;           // ContratoSAP
+  numeroContratoSiclg: string;         // ContratoSICLG
+  uf: string;                          // UF
+  locadorSap: string;                  // LocadorSAP
+
+  vigenciaSap: string;                 // VigenciaSAP
+  descricaoSap: string;                // DescricaoSAP
+  ultimoValorPagoSap: number;          // UltimoValorPagoSAP
+  ultimoPgtoSap: string;               // UltimoPgtoSAP
+
+  vigenciaSiclg: string;               // VigenciaSICLG
+  situacaoSiclg: string;               // SituacaoSICLG
+  descricaoSiclg: string;              // DescricaoSICLG
+  demandaSiclg: string;                // DemandaSICLG
+  situacaoDemanda: string;             // SituacaoDemanda
+  cnpjCpfLocadorSiclg: string;         // CnpjCpfLocadorSiclg
+
+  decisaoOperacional: string;          // DecisaoOperacional
+  fase: string;                        // Fase
+  valorProrrogacaoMensal: number;      // ValorProrrogacaoMensal
+  valorProrrogacaoAnual: number;       // ValorProrrogacaoAnual
+  valorAcordado: number;               // ValorAcordado
+  previsaoColegiado: string;           // PrevisaoColegiado
+  colegiado: string;                   // Colegiado
+  tipoColegiado: string;               // TipoColegiado
+  situacaoColegiado: string;           // SituacaoColegiado
+  limiteAr: string;                    // LimiteAR
+  codigoSijur: string;                 // CodigoSIJUR
+  situacaoProcessoAr: string;          // SituacaoProcessoAR
+
+  vencimentoReferencia: string;        // Regra de referência para vencimento (painel)
+  diasParaVencimento: number | null;
+  conciliacaoStatus: 'conciliado' | 'pendente_conciliacao';
+}
+
 export interface PaginationConfig {
   currentPage: number;
   itemsPerPage: number;

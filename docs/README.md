@@ -15,6 +15,12 @@
   - Regras de negócio
   - Exemplos de código
 
+### 🧭 Arquitetura de Produto
+- **[ARQUITETURA_GESTAO_IMOVEIS.md](ARQUITETURA_GESTAO_IMOVEIS.md)** - Arquitetura estrutural do domínio
+  - Contrato como eixo estruturante
+  - Visão 360° por contrato
+  - Painel de Vencimentos como read model
+
 - **[RESUMO_INTEGRACAO.md](RESUMO_INTEGRACAO.md)** - Resumo executivo
   - O que foi implementado
   - Checklist de entrega
@@ -47,6 +53,7 @@
 ```
 docs/
 ├── README.md                   # Este arquivo (índice)
+├── ARQUITETURA_GESTAO_IMOVEIS.md # 🧭 Arquitetura estrutural do domínio
 ├── GUIA_RAPIDO.md             # ⚡ Guia rápido - 3 passos
 ├── INTEGRACAO_SAP.md          # 🗂️ Documentação técnica completa
 └── RESUMO_INTEGRACAO.md       # 📊 Resumo executivo
@@ -71,6 +78,7 @@ docs/
 
 | O que precisa | Onde encontrar |
 |--------------|----------------|
+| Arquitetura estrutural | [ARQUITETURA_GESTAO_IMOVEIS.md](ARQUITETURA_GESTAO_IMOVEIS.md) |
 | Importar dados | [GUIA_RAPIDO.md](GUIA_RAPIDO.md#-passo-a-passo-detalhado) |
 | Estrutura do Excel | [INTEGRACAO_SAP.md](INTEGRACAO_SAP.md#-estrutura-dos-dados-sap) |
 | Mapeamento de campos | [INTEGRACAO_SAP.md](INTEGRACAO_SAP.md#mapeamento-sap--protótipo) |

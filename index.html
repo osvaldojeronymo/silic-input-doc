@@ -33,6 +33,7 @@
         <!-- Dashboard de Estatísticas -->
         <section class="dashboard-section">
             <h2 class="section-title">Gestão de Imóveis</h2>
+            <div class="mini-label" style="margin-top: 8px; margin-bottom: 8px;">Portfólio • Indicadores Rápidos</div>
             
             <div class="stats-grid">
                 <!-- Card Principal -->
@@ -107,11 +108,79 @@
         <!-- Seção de Listagem de Imóveis -->
         <section class="table-section">
             <div class="section-header">
-                <h3 class="section-subtitle">Lista de Imóveis</h3>
+                <h3 class="section-subtitle">Portfólio — Painel de Vencimentos</h3>
+            </div>
+
+            <div class="mini-label" style="margin-bottom: 10px;">
+                Visão consolidada (read model) SAP + SICLG + Gestão, com rastreabilidade por contrato.
+            </div>
+
+            <div class="filters-container">
+                <div class="filter-group">
+                    <select id="painelUfFiltro" class="filter-select">
+                        <option value="">Todas as UFs</option>
+                        <option value="SP">SP</option>
+                        <option value="RJ">RJ</option>
+                        <option value="DF">DF</option>
+                        <option value="BA">BA</option>
+                        <option value="CE">CE</option>
+                        <option value="MG">MG</option>
+                        <option value="AM">AM</option>
+                        <option value="PR">PR</option>
+                        <option value="PE">PE</option>
+                        <option value="GO">GO</option>
+                    </select>
+
+                    <input type="date" id="painelAteFiltro" class="filter-date" placeholder="Vencimento até">
+
+                    <select id="painelStatusFiltro" class="filter-select">
+                        <option value="">Todos os status de conciliação</option>
+                        <option value="conciliado">Conciliado</option>
+                        <option value="pendente_conciliacao">Pendente de conciliação</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button id="painelLimparBtn" class="btn-clear">Limpar</button>
+                    <button id="painelBuscarBtn" class="btn-primary">Aplicar filtros</button>
+                </div>
+            </div>
+
+            <div class="mini-label" id="painelResumo" style="margin-bottom: 8px;"></div>
+
+            <div class="table-wrapper">
+                <table class="imoveis-table">
+                    <thead>
+                        <tr>
+                            <th>Contrato SAP</th>
+                            <th>Contrato SICLG</th>
+                            <th>UF</th>
+                            <th>Locador</th>
+                            <th>Vigência SAP</th>
+                            <th>Vigência SICLG</th>
+                            <th>Situação SICLG</th>
+                            <th>Últ. Pgto SAP</th>
+                            <th>Últ. Valor Pago SAP</th>
+                            <th>Decisão Operacional</th>
+                            <th>Fase</th>
+                            <th>Situação Processo AR</th>
+                            <th>Conciliação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="painelVencimentosBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <div class="section-header">
+                <h3 class="section-subtitle">Portfólio — Lista Geral</h3>
             </div>
 
             <!-- Filtros -->
             <div class="filters-container">
+                <div class="mini-label" style="margin-bottom: 10px;">Filtros do Portfólio</div>
                 <div class="filter-group">
                     <input type="text" id="filtroContrato" class="filter-search" placeholder="🔍 Contrato (ex: 10000000)">
                     
@@ -143,6 +212,15 @@
                             <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
                         </svg>
                         Limpar
+                    </button>
+
+                    <button id="exportarPortfolio" class="btn-clear" title="Exportar lista filtrada em CSV">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <path d="m7 10 5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Exportar
                     </button>
                     
                     <button id="pesquisarImoveis" class="btn-primary">
@@ -199,20 +277,22 @@
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Detalhes</h2>
+                <h2>Contrato (Visão 360°)</h2>
                 <button class="modal-close">×</button>
             </div>
             
             <div class="tabs">
-                <button class="tab-btn active" data-tab="contrato">Contrato</button>
+                <button class="tab-btn active" data-tab="contrato">Dados Gerais</button>
                 <button class="tab-btn" data-tab="imovel">Imóvel</button>
                 <button class="tab-btn" data-tab="locador">Locador</button>
-                <button class="tab-btn" data-tab="aditivos">Aditivos</button>
-                <button class="tab-btn" data-tab="servicos">Solicitar serviços</button>
+                <button class="tab-btn" data-tab="aditivos">Financeiro</button>
+                <button class="tab-btn" data-tab="alertas">Alertas</button>
+                <button class="tab-btn" data-tab="timeline">Timeline</button>
+                <button class="tab-btn" data-tab="servicos">Serviços</button>
             </div>
 
             <div class="modal-body">
-                <!-- Aba: Dados do Contrato -->
+                <!-- Aba: 1. Dados Gerais -->
                 <div id="tab-contrato" class="tab-content active">
                     <!-- Resumo rápido do contrato -->
                     <div class="info-section">
@@ -224,9 +304,9 @@
                         </div>
                     </div>
 
-                    <!-- Locador (SAP) - abaixo do resumo e antes das ações -->
+                    <!-- Bloco de referência (Unidade) -->
                     <div class="info-section">
-                        <div class="info-section-title">Locador <span class="origin-tag">SAP</span></div>
+                        <div class="info-section-title">Unidade <span class="origin-tag">SAP</span></div>
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Parceiro de Negócios</label>
@@ -243,70 +323,76 @@
                         </div>
                     </div>
 
-                    <!-- Índice interno da aba Contrato (posicionado logo abaixo do resumo) -->
                     <div class="info-section">
-                        <div class="section-index">
-                            <a href="#sec-identificacao">Identificação</a>
-                            <a href="#sec-vigencia">Vigência</a>
-                            <a href="#sec-gestao">Gestão e Publicação</a>
-                            <a href="#sec-valores">Valores</a>
-                            <a href="#sec-compliance">Compliance e Riscos</a>
+                        <div class="info-section-title">Detalhamento de Dados Gerais</div>
+                        <div class="detail-cards-grid">
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-identificacao" data-drawer-title="Identificação">
+                                <strong>Identificação</strong>
+                                <span>Número, denominação e tipo do contrato.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-vigencia" data-drawer-title="Vigência">
+                                <strong>Vigência</strong>
+                                <span>Datas principais e marco de rescisão.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-gestao" data-drawer-title="Gestão e Publicação">
+                                <strong>Gestão e Publicação</strong>
+                                <span>Dados processuais, responsáveis e publicações.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-valores" data-drawer-title="Valores">
+                                <strong>Valores</strong>
+                                <span>Valores-base, atualização e prorrogação.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-compliance" data-drawer-title="Compliance e Riscos">
+                                <strong>Compliance e Riscos</strong>
+                                <span>Indicadores socioambientais e de conformidade.</span>
+                            </button>
                         </div>
                     </div>
 
+                    <div id="contratoDrawerSources" class="drawer-sources" aria-hidden="true">
                     <!-- Identificação (SAP/SICLG) -->
-                    <div class="info-section collapsible" id="sec-identificacao">
+                    <div class="info-section drawer-section" id="sec-identificacao">
                         <div class="info-section-title">
                             Identificação <span class="origin-tag">SAP/SICLG</span>
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-identificacao">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-identificacao">
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <label>Denominação</label>
-                                    <span id="detDenominacao"></span>
-                                </div>
-                                <div class="info-item">
-                                    <label>Tipo de Contrato</label>
-                                    <span id="detTipoContrato"></span>
-                                </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Denominação</label>
+                                <span id="detDenominacao"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Tipo de Contrato</label>
+                                <span id="detTipoContrato"></span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Vigência (SAP/SICLG) -->
-                    <div class="info-section collapsible" id="sec-vigencia">
+                    <div class="info-section drawer-section" id="sec-vigencia">
                         <div class="info-section-title">
                             Vigência <span class="origin-tag">SAP/SICLG</span>
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-vigencia">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-vigencia">
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <label>Data de Início</label>
-                                    <span id="detDataInicio"></span>
-                                </div>
-                                <div class="info-item">
-                                    <label>Data de Término</label>
-                                    <span id="detDataFim"></span>
-                                </div>
-                                <div class="info-item">
-                                    <label>Rescisão em</label>
-                                    <span id="detRescisaoEm"></span>
-                                </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Data de Início</label>
+                                <span id="detDataInicio"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data de Término</label>
+                                <span id="detDataFim"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Rescisão em</label>
+                                <span id="detRescisaoEm"></span>
                             </div>
                         </div>
                     </div>
 
-
-
                     <!-- Gestão e Publicação (SICLG) -->
-                    <div class="info-section collapsible" id="sec-gestao">
+                    <div class="info-section drawer-section" id="sec-gestao">
                         <div class="info-section-title">
                             Gestão e Publicação <span class="origin-tag">SICLG</span>
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-gestao">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-gestao">
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Número do Processo</label>
@@ -377,16 +463,13 @@
                                 <span id="detEquipeResponsavel"></span>
                             </div>
                         </div>
-                        </div>
                     </div>
 
                     <!-- Valores (SICLG) -->
-                    <div class="info-section collapsible" id="sec-valores">
+                    <div class="info-section drawer-section" id="sec-valores">
                         <div class="info-section-title">
                             Valores <span class="origin-tag">SICLG</span>
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-valores">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-valores">
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Valor original</label>
@@ -413,16 +496,13 @@
                                 <span id="detTipoGarantida"></span>
                             </div>
                         </div>
-                        </div>
                     </div>
 
                     <!-- Compliance e Riscos (SICLG) -->
-                    <div class="info-section collapsible" id="sec-compliance">
+                    <div class="info-section drawer-section" id="sec-compliance">
                         <div class="info-section-title">
                             Compliance e Riscos <span class="origin-tag">SICLG</span>
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-compliance">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-compliance">
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Risco social</label>
@@ -457,12 +537,21 @@
                                 <span id="detFornecedorSujeitoLicenciamentoAmbiental"></span>
                             </div>
                         </div>
-                        </div>
                     </div>
+                    </div>
+
+                    <div id="contratoDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+                    <aside id="contratoDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="contratoDrawerTitle">
+                        <div class="details-drawer-header">
+                            <h3 id="contratoDrawerTitle">Detalhes</h3>
+                            <button type="button" id="contratoDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
+                        </div>
+                        <div id="contratoDrawerContent" class="details-drawer-content"></div>
+                    </aside>
                 </div>
 
 
-                <!-- Aba: Dados do Imóvel -->
+                <!-- Aba: 2. Imóvel -->
                 <div id="tab-imovel" class="tab-content">
                     <div class="info-section">
                         <div class="info-section-title">Resumo</div>
@@ -470,19 +559,26 @@
                             <div class="summary-chip">Endereço: <strong id="detEnderecoCompleto"></strong></div>
                         </div>
                     </div>
-                    <!-- Índice interno da aba Imóvel -->
+
                     <div class="info-section">
-                        <div class="section-index">
-                            <a href="#sec-endereco-imovel">Endereço</a>
-                            <a href="#sec-caracteristicas-imovel">Características</a>
+                        <div class="info-section-title">Detalhamento do Imóvel</div>
+                        <div class="detail-cards-grid">
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-endereco-imovel" data-drawer-title="Endereço">
+                                <strong>Endereço</strong>
+                                <span>Dados de localização e identificação do imóvel.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-caracteristicas-imovel" data-drawer-title="Características">
+                                <strong>Características</strong>
+                                <span>Tipologia, área e valor de referência.</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="info-section collapsible" id="sec-endereco-imovel">
+
+                    <div id="imovelDrawerSources" class="drawer-sources" aria-hidden="true">
+                    <div class="info-section drawer-section" id="sec-endereco-imovel">
                         <div class="info-section-title">
                             Endereço <span class="origin-tag">SAP</span>
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-endereco-imovel">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-endereco-imovel">
                         <div class="info-grid">
                         <div class="info-item">
                             <label>Código Postal</label>
@@ -513,14 +609,12 @@
                             <span id="detCep"></span>
                         </div>
                         </div>
-                        </div>
                     </div>
-                    <div class="info-section collapsible" id="sec-caracteristicas-imovel">
+
+                    <div class="info-section drawer-section" id="sec-caracteristicas-imovel">
                         <div class="info-section-title">
                             Características
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-caracteristicas-imovel">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-caracteristicas-imovel">
                         <div class="info-grid">
                         <div class="info-item">
                             <label>Tipo de Edifício</label>
@@ -535,11 +629,20 @@
                             <span id="detValor"></span>
                         </div>
                         </div>
-                        </div>
                     </div>
+                    </div>
+
+                    <div id="imovelDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+                    <aside id="imovelDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="imovelDrawerTitle">
+                        <div class="details-drawer-header">
+                            <h3 id="imovelDrawerTitle">Detalhes</h3>
+                            <button type="button" id="imovelDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
+                        </div>
+                        <div id="imovelDrawerContent" class="details-drawer-content"></div>
+                    </aside>
                 </div>
 
-                <!-- Aba: Dados do Locador -->
+                <!-- Aba: 3. Locador -->
                 <div id="tab-locador" class="tab-content">
                     <div class="info-section">
                         <div class="info-section-title">Resumo</div>
@@ -548,20 +651,29 @@
                             <div class="summary-chip">Documento: <strong id="detLocadorDoc"></strong></div>
                         </div>
                     </div>
-                    <!-- Índice interno da aba Locador -->
                     <div class="info-section">
-                        <div class="section-index">
-                            <a href="#sec-identificacao-locador">Identificação</a>
-                            <a href="#sec-contato-locador">Contato</a>
-                            <a href="#sec-participacao-pagamento">Participação e Pagamento</a>
+                        <div class="info-section-title">Detalhamento do Locador</div>
+                        <div class="detail-cards-grid">
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-identificacao-locador" data-drawer-title="Identificação">
+                                <strong>Identificação</strong>
+                                <span>Dados cadastrais e vínculo com o contrato.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-contato-locador" data-drawer-title="Contato">
+                                <strong>Contato</strong>
+                                <span>Endereço, e-mail e telefones de contato.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-participacao-pagamento" data-drawer-title="Dados Bancários e Relacionamento">
+                                <strong>Dados Bancários</strong>
+                                <span>Participação, forma de pagamento e histórico.</span>
+                            </button>
                         </div>
                     </div>
-                    <div class="info-section collapsible" id="sec-identificacao-locador">
+
+                    <div id="locadorDrawerSources" class="drawer-sources" aria-hidden="true">
+                    <div class="info-section drawer-section" id="sec-identificacao-locador">
                         <div class="info-section-title">
                             Identificação <span class="origin-tag">SAP</span>
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-identificacao-locador">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-identificacao-locador">
                         <div class="info-grid">
                         <div class="info-item">
                             <label>Parceiro de Negócios</label>
@@ -588,14 +700,12 @@
                             <span id="detNomeLocador"></span>
                         </div>
                         </div>
-                        </div>
                     </div>
-                    <div class="info-section collapsible" id="sec-contato-locador">
+
+                    <div class="info-section drawer-section" id="sec-contato-locador">
                         <div class="info-section-title">
                             Contato
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-contato-locador">Expandir</button>
                         </div>
-                        <div class="collapsible-content" id="content-contato-locador">
                         <div class="info-grid">
                         <div class="info-item">
                             <label>Código postal</label>
@@ -634,14 +744,12 @@
                             <span id="detLocadorTelefoneCelular"></span>
                         </div>
                         </div>
-                        </div>
                     </div>
-                    <div class="info-section collapsible" id="sec-participacao-pagamento">
+
+                    <div class="info-section drawer-section" id="sec-participacao-pagamento">
                         <div class="info-section-title">
-                            Participação e Pagamento
-                            <button type="button" class="collapse-toggle" aria-expanded="false" aria-controls="content-participacao-pagamento">Expandir</button>
+                            Dados Bancários e Relacionamento
                         </div>
-                        <div class="collapsible-content" id="content-participacao-pagamento">
                         <div class="info-grid">
                         <div class="info-item">
                             <label>Valor mensal do aluguel</label>
@@ -681,16 +789,42 @@
                             </div>
                             <div class="mini-label" id="resumoEncargosAtraso" style="margin-top:8px"></div>
                         </div>
+                    </div>
+                    </div>
+
+                    <div id="locadorDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+                    <aside id="locadorDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="locadorDrawerTitle">
+                        <div class="details-drawer-header">
+                            <h3 id="locadorDrawerTitle">Detalhes</h3>
+                            <button type="button" id="locadorDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
+                        </div>
+                        <div id="locadorDrawerContent" class="details-drawer-content"></div>
+                    </aside>
+                </div>
+
+                <!-- Aba: 4. Financeiro -->
+                <div id="tab-aditivos" class="tab-content">
+                    <div class="info-section">
+                        <div class="info-section-title">Detalhamento Financeiro</div>
+                        <div class="detail-cards-grid">
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-financeiro-base" data-drawer-title="Valor Atual e Base Contratual">
+                                <strong>Base Contratual</strong>
+                                <span>Valores de referência e vigência original.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-financeiro-aditivos" data-drawer-title="Histórico de Reajustes (Aditivos)">
+                                <strong>Aditivos</strong>
+                                <span>Evolução de reajustes e alterações de valores.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-financeiro-projecao" data-drawer-title="Projeção até o Fim da Vigência">
+                                <strong>Projeção</strong>
+                                <span>Consolidação de saldo e execução financeira.</span>
+                            </button>
                         </div>
                     </div>
 
-                    
-                </div>
-
-                <!-- Aba: Resumo de Termos Aditivos (ordenado conforme botões) -->
-                <div id="tab-aditivos" class="tab-content">
-                    <div class="info-section">
-                        <div class="info-section-title">Valores Originais</div>
+                    <div id="aditivosDrawerSources" class="drawer-sources" aria-hidden="true">
+                    <div class="info-section drawer-section" id="sec-financeiro-base">
+                        <div class="info-section-title">Valor Atual e Base Contratual</div>
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>Valor Mensal Estimado</label>
@@ -715,8 +849,8 @@
                         </div>
                     </div>
 
-                    <div class="info-section">
-                        <div class="info-section-title">Resumo do Contrato</div>
+                    <div class="info-section drawer-section" id="sec-financeiro-aditivos">
+                        <div class="info-section-title">Histórico de Reajustes (Aditivos)</div>
                         <div class="table-wrapper">
                             <table class="imoveis-table" id="tabelaTermosAditivos">
                                 <thead>
@@ -740,8 +874,8 @@
                         </div>
                     </div>
 
-                    <div class="info-section">
-                        <div class="info-section-title">Resumo Geral</div>
+                    <div class="info-section drawer-section" id="sec-financeiro-projecao">
+                        <div class="info-section-title">Projeção até o Fim da Vigência</div>
                         <div class="info-grid">
                             <div class="info-item"><label>A — Valor Original</label><span id="resA"></span></div>
                             <div class="info-item"><label>B — Soma dos TAs</label><span id="resB"></span></div>
@@ -754,10 +888,122 @@
                             <div class="info-item"><label>I — Saldo Disponível (E−G)</label><span id="resI"></span></div>
                         </div>
                     </div>
+                    </div>
+
+                    <div id="aditivosDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+                    <aside id="aditivosDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="aditivosDrawerTitle">
+                        <div class="details-drawer-header">
+                            <h3 id="aditivosDrawerTitle">Detalhes</h3>
+                            <button type="button" id="aditivosDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
+                        </div>
+                        <div id="aditivosDrawerContent" class="details-drawer-content"></div>
+                    </aside>
                 </div>
 
-                <!-- Aba: Solicitar Serviços -->
+                <!-- Aba: Alertas -->
+                <div id="tab-alertas" class="tab-content">
+                    <div class="info-section">
+                        <div class="info-section-title">Detalhamento de Alertas</div>
+                        <div class="detail-cards-grid">
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-alertas-compliance" data-drawer-title="Compliance e Riscos">
+                                <strong>Compliance e Riscos</strong>
+                                <span>Controles preventivos e indicadores de risco.</span>
+                            </button>
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-alertas-contrato" data-drawer-title="Alertas do Contrato">
+                                <strong>Alertas do Contrato</strong>
+                                <span>Eventos críticos de vigência, conformidade e reajustes.</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="alertasDrawerSources" class="drawer-sources" aria-hidden="true">
+                    <div class="info-section drawer-section" id="sec-alertas-compliance">
+                        <div class="info-section-title">Compliance e Riscos</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Certidões</label>
+                                <span>Controle de validade e pendências documentais</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Garantias</label>
+                                <span>Vínculo com cláusulas e instrumentos de mitigação</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Seguro</label>
+                                <span>Acompanhamento de cobertura e renovações</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Obrigações Contratuais</label>
+                                <span>Checklist de obrigações por fase contratual</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Alertas Automáticos</label>
+                                <span>Geração automática de alertas preventivos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section drawer-section" id="sec-alertas-contrato">
+                        <div class="info-section-title">Alertas do Contrato</div>
+                        <div class="mini-label" style="margin-bottom:8px;">Gestão transversal de vencimentos, conformidade e reajustes</div>
+                        <div id="listaAlertasContrato" class="list-cards"></div>
+                    </div>
+                    </div>
+
+                    <div id="alertasDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+                    <aside id="alertasDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="alertasDrawerTitle">
+                        <div class="details-drawer-header">
+                            <h3 id="alertasDrawerTitle">Detalhes</h3>
+                            <button type="button" id="alertasDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
+                        </div>
+                        <div id="alertasDrawerContent" class="details-drawer-content"></div>
+                    </aside>
+                </div>
+
+                <!-- Aba: Timeline -->
+                <div id="tab-timeline" class="tab-content">
+                    <div class="info-section">
+                        <div class="info-section-title">Detalhamento da Timeline</div>
+                        <div class="detail-cards-grid">
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-timeline-contrato" data-drawer-title="Linha do Tempo do Contrato">
+                                <strong>Linha do Tempo</strong>
+                                <span>Marcos da assinatura até o encerramento previsto.</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="timelineDrawerSources" class="drawer-sources" aria-hidden="true">
+                    <div class="info-section drawer-section" id="sec-timeline-contrato">
+                        <div class="info-section-title">Linha do Tempo do Contrato</div>
+                        <div class="mini-label" style="margin-bottom:8px;">Principais marcos da vigência e evolução contratual</div>
+                        <div id="timelineContrato" class="list-cards"></div>
+                    </div>
+                    </div>
+
+                    <div id="timelineDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+                    <aside id="timelineDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="timelineDrawerTitle">
+                        <div class="details-drawer-header">
+                            <h3 id="timelineDrawerTitle">Detalhes</h3>
+                            <button type="button" id="timelineDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
+                        </div>
+                        <div id="timelineDrawerContent" class="details-drawer-content"></div>
+                    </aside>
+                </div>
+
+                <!-- Aba: 7. Serviços Vinculados -->
                 <div id="tab-servicos" class="tab-content">
+                    <div class="info-section">
+                        <div class="info-section-title">Detalhamento de Serviços</div>
+                        <div class="detail-cards-grid">
+                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-servicos-operacao" data-drawer-title="Serviços Vinculados">
+                                <strong>Serviços Vinculados</strong>
+                                <span>Configuração, cenário e solicitação operacional.</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="servicosDrawerSources" class="drawer-sources" aria-hidden="true">
+                    <div class="info-section drawer-section" id="sec-servicos-operacao">
                                         <style>
                         .card-grid .card{background:#fff;color:#24292f;transition:box-shadow .15s,border-color .15s,background .15s,color .15s}
                         .card-grid .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#9da7b1}
@@ -829,6 +1075,17 @@
                             <button id="btnSolicitarServico" class="btn-primary" disabled>Solicitar serviços</button>
                         </div>
                     </div>
+                    </div>
+                    </div>
+
+                    <div id="servicosDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+                    <aside id="servicosDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="servicosDrawerTitle">
+                        <div class="details-drawer-header">
+                            <h3 id="servicosDrawerTitle">Detalhes</h3>
+                            <button type="button" id="servicosDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
+                        </div>
+                        <div id="servicosDrawerContent" class="details-drawer-content"></div>
+                    </aside>
                 </div>
 
                 
