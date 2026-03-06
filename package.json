@@ -7,7 +7,7 @@
   "homepage": "https://osvaldojeronymo.github.io/silic-input-doc/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/osvaldojeronymo/silic-call-for-tenders.git"
+    "url": "https://github.com/osvaldojeronymo/silic-input-doc.git"
   },
   "scripts": {
     "dev": "vite",
