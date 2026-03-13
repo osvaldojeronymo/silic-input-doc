@@ -4,6 +4,122 @@ import { SAPDataLoader } from './utils/sapDataLoader.js';
 import { labelCategoria, labelAcao, labelModalidade } from './labels.js';
 import './styles/style.css';
 
+interface Fase1OperacionalRow {
+  dataNotificacao: string;
+  listaA: number;
+  listaB: number;
+  listaC: number;
+  listaD: number;
+  total: number;
+  contratoReferenciaId: string;
+}
+
+interface Fase2OperacionalRow {
+  contratoId: string;
+  contratoSap: string;
+  vigenciaSap: string;
+  contratoSiclg: string;
+  vigenciaSiclg: string;
+  fornecedor: string;
+  descricao: string;
+  limiteArGo: string;
+  uf: string;
+  fimVigenciaDate: Date | null;
+}
+
+interface Fase3OperacionalRow {
+  contratoId: string;
+  contratoSapSiclg: string;
+  fornecedor: string;
+  descricaoContrato: string;
+  inicioVigencia: string;
+  fimVigencia: string;
+  situacaoLaudo: string;
+  uf: string;
+  fimVigenciaDate: Date | null;
+}
+
+interface Fase4OperacionalRow {
+  contratoId: string;
+  contratoSapSiclg: string;
+  fornecedor: string;
+  descricaoContratoSap: string;
+  inicioVigencia: string;
+  fimVigencia: string;
+  valorMaximo: number;
+  incluirNoSiclg: string;
+  limiteArGo: string;
+  uf: string;
+  fimVigenciaDate: Date | null;
+}
+
+interface Fase5OperacionalRow {
+  contratoId: string;
+  contratoSapSiclg: string;
+  fornecedor: string;
+  descricaoContratoSap: string;
+  inicioVigencia: string;
+  fimVigencia: string;
+  decisaoOperacional: string;
+  houveAcordo: string;
+  incluirNoSiclg: string;
+  situacaoAr: string;
+  uf: string;
+  fimVigenciaDate: Date | null;
+}
+
+interface Fase61OperacionalRow {
+  contratoId: string;
+  contratoSapSiclg: string;
+  fornecedor: string;
+  objeto: string;
+  demandante: string;
+  equipeRemota: string;
+  responsavel: string;
+  protocoloSiclg: string;
+  modalidade: string;
+  progressoAtual: string;
+  situacaoPrazo: string;
+  incluidoEmDate: Date | null;
+  concluidoEmDate: Date | null;
+  tipoProcesso: string;
+  statusContratacao: string;
+  valorReferencia: number;
+  uf: string;
+  fimVigenciaDate: Date | null;
+}
+
+interface Fase62OperacionalRow {
+  contratoId: string;
+  contratoSapSiclg: string;
+  fornecedor: string;
+  objeto: string;
+  gestorOperacional: string;
+  protocoloSiclg: string;
+  tipoDemanda: string;
+  faseAtual: string;
+  situacaoPrazo: string;
+  incluidoEmDate: Date | null;
+  concluidoEmDate: Date | null;
+  statusRenovacao: string;
+  qtdAditivos: number;
+  prazoLimite: string;
+  uf: string;
+  fimVigenciaDate: Date | null;
+}
+
+interface Fase7OperacionalRow {
+  contratoId: string;
+  contratoSapSiclg: string;
+  fornecedor: string;
+  objeto: string;
+  dataNotificacao: string;
+  canal: string;
+  statusResposta: string;
+  uf: string;
+  fimVigenciaDate: Date | null;
+}
+
 /**
  * Classe principal do Sistema SILIC 2.0
  */
@@ -20,9 +136,33 @@ export class SistemaSILIC {
   private itemsPerPage = 10;
   private currentPageImoveis = 1;
   private itemsPerPageImoveis = 10;
+  private currentPagePainel = 1;
+  private itemsPerPagePainel = 10;
+  private fase1Rows: Fase1OperacionalRow[] = [];
+  private fase1RowsFiltradas: Fase1OperacionalRow[] = [];
+  private fase2Rows: Fase2OperacionalRow[] = [];
+  private fase2RowsFiltradas: Fase2OperacionalRow[] = [];
+  private fase3Rows: Fase3OperacionalRow[] = [];
+  private fase3RowsFiltradas: Fase3OperacionalRow[] = [];
+  private fase4Rows: Fase4OperacionalRow[] = [];
+  private fase4RowsFiltradas: Fase4OperacionalRow[] = [];
+  private fase5Rows: Fase5OperacionalRow[] = [];
+  private fase5RowsFiltradas: Fase5OperacionalRow[] = [];
+  private fase61Rows: Fase61OperacionalRow[] = [];
+  private fase61RowsFiltradas: Fase61OperacionalRow[] = [];
+  private fase62Rows: Fase62OperacionalRow[] = [];
+  private fase62RowsFiltradas: Fase62OperacionalRow[] = [];
+  private fase7Rows: Fase7OperacionalRow[] = [];
+  private fase7RowsFiltradas: Fase7OperacionalRow[] = [];
+  private favoritosFase61: Set<string> = new Set();
+  private favoritosFase62: Set<string> = new Set();
+  private fase61PrazoSelecionado: string | null = null;
+  private fase62PrazoSelecionado: string | null = null;
   private currentView: VisualizationMode = 'table';
 
   constructor() {
+    // Garante abertura sempre na home para evitar confusão após refresh em rotas de perfil.
+    this.navegarPara('/');
     this.usandoDadosSAP = false;
     this.carregarDadosDemo();
     this.inicializarPainelVencimentos();
@@ -30,9 +170,42 @@ export class SistemaSILIC {
     this.configurarExportacaoPortfolio();
     this.configurarPainelVencimentos();
     this.configurarItemsPorPagina();
+    this.configurarPaginacaoPainelPortfolio();
+    this.configurarNavegacaoRotas();
+    this.configurarAbasPerfilOperacional();
+    this.inicializarDadosFasesOperacionais();
+    this.carregarFavoritosFases();
+    this.carregarSelecaoPrazoChips();
+    this.configurarFase1Operacional();
+    this.configurarFase2Operacional();
+    this.configurarFase3Operacional();
+    this.configurarFase4Operacional();
+    this.configurarFase5Operacional();
+    this.configurarFase61Operacional();
+    this.configurarFase62Operacional();
+    this.configurarFase7Operacional();
+    this.configurarChipsPrazoFases();
+    this.configurarResetSessaoJornada();
+    this.carregarFiltrosFasesSessao();
     this.atualizarTabelaImoveis();
     this.atualizarDashboard();
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+    this.atualizarTabelaFase1Operacional(this.fase1RowsFiltradas);
+    this.atualizarTabelaFase2Operacional(this.fase2RowsFiltradas);
+    this.atualizarTabelaFase3Operacional(this.fase3RowsFiltradas);
+    this.atualizarTabelaFase4Operacional(this.fase4RowsFiltradas);
+    this.atualizarTabelaFase5Operacional(this.fase5RowsFiltradas);
+    this.atualizarTabelaFase61Operacional(this.fase61RowsFiltradas);
+    this.atualizarTabelaFase62Operacional(this.fase62RowsFiltradas);
+    this.atualizarTabelaFase7Operacional(this.fase7RowsFiltradas);
+    this.aplicarFiltrosFase2Operacional();
+    this.aplicarFiltrosFase3Operacional();
+    this.aplicarFiltrosFase4Operacional();
+    this.aplicarFiltrosFase5Operacional();
+    this.aplicarFiltrosFase61Operacional();
+    this.aplicarFiltrosFase62Operacional();
+    this.aplicarFiltrosFase7Operacional();
+    this.aplicarRota('/');
   }
   
 
@@ -501,7 +674,7 @@ export class SistemaSILIC {
    * Atualiza a tabela de imóveis com dados paginados
    */
   private atualizarTabelaImoveis(): void {
-    const tbody = document.querySelector('.imoveis-table tbody');
+    const tbody = document.getElementById('tabelaImoveisBody') as HTMLTableSectionElement | null;
     if (!tbody) {
       console.warn('Tabela de imóveis não encontrada');
       return;
@@ -1866,6 +2039,7 @@ export class SistemaSILIC {
   private configurarItemsPorPagina(): void {
     const select = document.getElementById('imoveisPorPaginaSelect') as HTMLSelectElement | null;
     if (select) {
+      select.value = String(this.itemsPerPageImoveis);
       select.addEventListener('change', () => {
         const val = parseInt(select.value, 10);
         if (!isNaN(val) && val > 0) {
@@ -2063,6 +2237,21 @@ export class SistemaSILIC {
     this.addEventListenerSafe('painelLimparBtn', 'click', () => this.limparFiltrosPainelVencimentos());
   }
 
+  private configurarPaginacaoPainelPortfolio(): void {
+    const select = document.getElementById('painelItensPorPaginaSelect') as HTMLSelectElement | null;
+    if (!select) return;
+
+    select.value = String(this.itemsPerPagePainel);
+    select.addEventListener('change', () => {
+      const val = parseInt(select.value, 10);
+      if (!isNaN(val) && val > 0) {
+        this.itemsPerPagePainel = val;
+        this.currentPagePainel = 1;
+        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+      }
+    });
+  }
+
   private aplicarFiltrosPainelVencimentos(): void {
     const uf = (document.getElementById('painelUfFiltro') as HTMLSelectElement | null)?.value || '';
     const ate = (document.getElementById('painelAteFiltro') as HTMLInputElement | null)?.value || '';
@@ -2083,6 +2272,8 @@ export class SistemaSILIC {
       return true;
     });
 
+    this.currentPagePainel = 1;
+
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
   }
 
@@ -2094,6 +2285,7 @@ export class SistemaSILIC {
     if (ate) ate.value = '';
     if (status) status.value = '';
     this.painelVencimentosFiltrado = [...this.painelVencimentos];
+    this.currentPagePainel = 1;
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
   }
 
@@ -2104,7 +2296,11 @@ export class SistemaSILIC {
 
     tbody.innerHTML = '';
 
-    dados.forEach((item) => {
+    const inicio = (this.currentPagePainel - 1) * this.itemsPerPagePainel;
+    const fim = inicio + this.itemsPerPagePainel;
+    const dadosPaginados = dados.slice(inicio, fim);
+
+    dadosPaginados.forEach((item) => {
       const tr = document.createElement('tr');
       const conciliacaoLabel = item.conciliacaoStatus === 'conciliado' ? 'Conciliado' : 'Pendente';
       const badgeClass = item.conciliacaoStatus === 'conciliado' ? 'badge badge-ativo' : 'badge badge-desmobilizacao';
@@ -2140,6 +2336,1331 @@ export class SistemaSILIC {
       const d30 = dados.filter((d) => typeof d.diasParaVencimento === 'number' && d.diasParaVencimento <= 30).length;
       resumo.textContent = `${qtd} contrato(s) no painel • ${pendentes} pendente(s) de conciliação • ${d30} em janela D-30`;
     }
+
+    this.atualizarPaginacaoPainelPortfolio(dados.length);
+  }
+
+  private atualizarPaginacaoPainelPortfolio(total: number): void {
+    const inicio = total === 0 ? 0 : (this.currentPagePainel - 1) * this.itemsPerPagePainel + 1;
+    const fim = Math.min(this.currentPagePainel * this.itemsPerPagePainel, total);
+    this.setElementText('painelPaginationStart', String(inicio));
+    this.setElementText('painelPaginationEnd', String(fim));
+    this.setElementText('painelPaginationTotal', String(total));
+    this.gerarBotoesPaginacaoPainel(total);
+  }
+
+  private gerarBotoesPaginacaoPainel(total: number): void {
+    const controls = document.getElementById('painelPaginationControls');
+    if (!controls) return;
+
+    controls.innerHTML = '';
+
+    const totalPaginas = Math.max(1, Math.ceil(total / this.itemsPerPagePainel));
+    if (this.currentPagePainel > totalPaginas) this.currentPagePainel = totalPaginas;
+    if (totalPaginas <= 1) return;
+
+    const criarBotao = (texto: string, onClick: () => void, disabled = false, active = false): void => {
+      const button = document.createElement('button');
+      button.textContent = texto;
+      button.disabled = disabled;
+      if (active) button.classList.add('active');
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        onClick();
+      });
+      controls.appendChild(button);
+    };
+
+    criarBotao('← Anterior', () => {
+      if (this.currentPagePainel > 1) {
+        this.currentPagePainel--;
+        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+      }
+    }, this.currentPagePainel === 1);
+
+    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+      criarBotao(String(pagina), () => {
+        this.currentPagePainel = pagina;
+        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+      }, false, pagina === this.currentPagePainel);
+    }
+
+    criarBotao('Próximo →', () => {
+      if (this.currentPagePainel < totalPaginas) {
+        this.currentPagePainel++;
+        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+      }
+    }, this.currentPagePainel === totalPaginas);
+  }
+
+  private configurarNavegacaoRotas(): void {
+    const routeButtons = Array.from(document.querySelectorAll('[data-route]')) as HTMLElement[];
+    routeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const route = button.getAttribute('data-route');
+        if (!route) return;
+        this.navegarPara(route);
+      });
+    });
+  }
+
+  private configurarAbasPerfilOperacional(): void {
+    const tabs = Array.from(document.querySelectorAll('#perfilOperacionalPage [data-fase-target]')) as HTMLButtonElement[];
+    if (!tabs.length) return;
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const targetId = tab.getAttribute('data-fase-target');
+        if (!targetId) return;
+
+        tabs.forEach((item) => item.classList.remove('active'));
+        tab.classList.add('active');
+
+        const panes = Array.from(document.querySelectorAll('#perfilOperacionalPage .fase-pane')) as HTMLElement[];
+        panes.forEach((pane) => pane.classList.remove('active'));
+
+        const target = document.getElementById(targetId);
+        if (target) target.classList.add('active');
+      });
+    });
+  }
+
+  private inicializarDadosFasesOperacionais(): void {
+    const fase2 = this.painelVencimentos.map((item): Fase2OperacionalRow => {
+      const fimDate = this.parseDate(item.vigenciaSap) || this.parseDate(item.vigenciaSiclg);
+      return {
+        contratoId: item.contratoId,
+        contratoSap: item.numeroContratoSap,
+        vigenciaSap: item.vigenciaSap,
+        contratoSiclg: item.numeroContratoSiclg,
+        vigenciaSiclg: item.vigenciaSiclg,
+        fornecedor: item.locadorSap,
+        descricao: item.descricaoSap,
+        limiteArGo: item.limiteAr,
+        uf: item.uf,
+        fimVigenciaDate: fimDate
+      };
+    });
+
+    this.fase2Rows = fase2;
+    this.fase2RowsFiltradas = [...fase2];
+
+    const fase3: Fase3OperacionalRow[] = this.painelVencimentos.map((item) => {
+      const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
+      const inicio = imovel?.inicioRelacao || this.formatDate(imovel?.dataRegistro) || '-';
+      const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
+        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
+        : item.numeroContratoSap;
+
+      return {
+        contratoId: item.contratoId,
+        contratoSapSiclg: contratoComposto,
+        fornecedor: item.locadorSap,
+        descricaoContrato: item.descricaoSap,
+        inicioVigencia: inicio,
+        fimVigencia: item.vigenciaSap,
+        situacaoLaudo: item.conciliacaoStatus === 'conciliado' ? 'Concluído' : 'Pendente',
+        uf: item.uf,
+        fimVigenciaDate: this.parseDate(item.vigenciaSap)
+      };
+    });
+
+    this.fase3Rows = fase3;
+    this.fase3RowsFiltradas = [...fase3];
+
+    const fase4: Fase4OperacionalRow[] = this.painelVencimentos.map((item) => {
+      const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
+      const inicio = imovel?.inicioRelacao || this.formatDate(imovel?.dataRegistro) || '-';
+      const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
+        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
+        : item.numeroContratoSap;
+
+      return {
+        contratoId: item.contratoId,
+        contratoSapSiclg: contratoComposto,
+        fornecedor: item.locadorSap,
+        descricaoContratoSap: item.descricaoSap,
+        inicioVigencia: inicio,
+        fimVigencia: item.vigenciaSap,
+        valorMaximo: Math.max(item.valorProrrogacaoMensal, item.valorAcordado),
+        incluirNoSiclg: item.numeroContratoSiclg === '-' ? 'Sim' : 'Não',
+        limiteArGo: item.limiteAr,
+        uf: item.uf,
+        fimVigenciaDate: this.parseDate(item.vigenciaSap)
+      };
+    });
+
+    this.fase4Rows = fase4;
+    this.fase4RowsFiltradas = [...fase4];
+
+    const fase5: Fase5OperacionalRow[] = this.painelVencimentos.map((item) => {
+      const fimDate = this.parseDate(item.vigenciaSap);
+      const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
+      const inicio = imovel?.inicioRelacao || this.formatDate(imovel?.dataRegistro) || '-';
+      const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
+        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
+        : item.numeroContratoSap;
+      const decisao = item.decisaoOperacional || 'Reavaliar';
+      const houveAcordo = item.valorAcordado > 0 ? 'Sim' : 'Não';
+      const incluirNoSiclg = (item.numeroContratoSiclg !== '-' || decisao === 'Prorrogar') ? 'Sim' : 'Não';
+      const situacaoAr = item.situacaoProcessoAr || item.situacaoDemanda || '-';
+
+      return {
+        contratoId: item.contratoId,
+        contratoSapSiclg: contratoComposto,
+        fornecedor: item.locadorSap,
+        descricaoContratoSap: item.descricaoSap,
+        inicioVigencia: inicio,
+        fimVigencia: item.vigenciaSap,
+        decisaoOperacional: decisao,
+        houveAcordo,
+        incluirNoSiclg,
+        situacaoAr,
+        uf: item.uf,
+        fimVigenciaDate: fimDate
+      };
+    });
+
+    this.fase5Rows = fase5;
+    this.fase5RowsFiltradas = [...fase5];
+
+    const fase61: Fase61OperacionalRow[] = this.painelVencimentos.map((item) => {
+      const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
+      const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
+        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
+        : item.numeroContratoSap;
+      const tipoProcesso = item.numeroContratoSiclg === '-' ? 'Nova contratação' : 'Contratação complementar';
+      const fimDate = this.parseDate(item.vigenciaSap);
+      const diasParaFim = fimDate ? Math.ceil((fimDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+      const situacaoPrazo = diasParaFim === null ? 'Sem prazo' : diasParaFim <= 30 ? 'Crítico' : diasParaFim <= 90 ? 'Atenção' : 'No prazo';
+      const incluidoEmDate = this.parseDate(imovel?.dataRegistro);
+      const concluidoEmDate = (item.situacaoDemanda || '').toLowerCase().includes('conclu')
+        ? (this.parseDate(imovel?.dataAtualizacao) || this.parseDate(item.ultimoPgtoSap))
+        : null;
+
+      return {
+        contratoId: item.contratoId,
+        contratoSapSiclg: contratoComposto,
+        fornecedor: item.locadorSap,
+        objeto: imovel?.descricaoObjeto || item.descricaoSap,
+        demandante: item.demandaSiclg || 'Rede de Atendimento',
+        equipeRemota: imovel?.equipeResponsavel || 'Equipe Regional',
+        responsavel: imovel?.gestaoOperacional || 'Gestor Operacional',
+        protocoloSiclg: item.codigoSijur || item.numeroContratoSiclg || '-',
+        modalidade: item.colegiado || 'Pregão',
+        progressoAtual: item.fase || 'Análise inicial',
+        situacaoPrazo,
+        incluidoEmDate,
+        concluidoEmDate,
+        tipoProcesso,
+        statusContratacao: item.situacaoDemanda || (item.situacaoSiclg === 'Ativo' ? 'Em andamento' : 'A iniciar'),
+        valorReferencia: Math.max(item.valorAcordado, item.valorProrrogacaoMensal),
+        uf: item.uf,
+        fimVigenciaDate: fimDate
+      };
+    });
+
+    this.fase61Rows = fase61;
+    this.fase61RowsFiltradas = this.ordenarPorCriticidadePrazo([...fase61]);
+
+    const fase62: Fase62OperacionalRow[] = this.painelVencimentos.map((item) => {
+      const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
+      const fimDate = this.parseDate(item.vigenciaSap);
+      const prazoLimite = fimDate ? new Date(fimDate.getTime()) : null;
+      if (prazoLimite) prazoLimite.setDate(prazoLimite.getDate() - 120);
+      const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
+        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
+        : item.numeroContratoSap;
+      const qtdAditivos = imovel?.termosAditivos?.length || 0;
+      const diasParaFim = fimDate ? Math.ceil((fimDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+      const situacaoPrazo = diasParaFim === null ? 'Sem prazo' : diasParaFim <= 30 ? 'Crítico' : diasParaFim <= 90 ? 'Atenção' : 'No prazo';
+      const incluidoEmDate = this.parseDate(imovel?.dataRegistro);
+      const concluidoEmDate = (item.situacaoDemanda || '').toLowerCase().includes('conclu')
+        ? (this.parseDate(imovel?.dataAtualizacao) || this.parseDate(item.ultimoPgtoSap))
+        : null;
+
+      return {
+        contratoId: item.contratoId,
+        contratoSapSiclg: contratoComposto,
+        fornecedor: item.locadorSap,
+        objeto: imovel?.descricaoObjeto || item.descricaoSap,
+        gestorOperacional: imovel?.gestaoOperacional || 'Gestor Operacional',
+        protocoloSiclg: item.numeroContratoSiclg || '-',
+        tipoDemanda: item.demandaSiclg || (qtdAditivos > 0 ? 'Prorrogação' : 'Renovação'),
+        faseAtual: item.fase || 'Fase 6.2',
+        situacaoPrazo,
+        incluidoEmDate,
+        concluidoEmDate,
+        statusRenovacao: qtdAditivos > 0 ? 'Renovável' : 'Avaliar renovação',
+        qtdAditivos,
+        prazoLimite: prazoLimite ? this.formatDate(prazoLimite.toISOString()) : '-',
+        uf: item.uf,
+        fimVigenciaDate: fimDate
+      };
+    });
+
+    this.fase62Rows = fase62;
+    this.fase62RowsFiltradas = this.ordenarPorCriticidadePrazo([...fase62]);
+
+    const canais = ['E-mail', 'SEI', 'Ofício'];
+    const fase7: Fase7OperacionalRow[] = this.painelVencimentos.map((item, index) => {
+      const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
+      const fimDate = this.parseDate(item.vigenciaSap);
+      const dataNotificacao = fimDate ? new Date(fimDate.getTime()) : null;
+      if (dataNotificacao) dataNotificacao.setDate(dataNotificacao.getDate() - 60);
+      const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
+        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
+        : item.numeroContratoSap;
+
+      return {
+        contratoId: item.contratoId,
+        contratoSapSiclg: contratoComposto,
+        fornecedor: item.locadorSap,
+        objeto: imovel?.descricaoObjeto || item.descricaoSap,
+        dataNotificacao: dataNotificacao ? this.formatDate(dataNotificacao.toISOString()) : '-',
+        canal: canais[index % canais.length],
+        statusResposta: index % 3 === 0 ? 'Respondido' : index % 3 === 1 ? 'Aguardando resposta' : 'Reforçar contato',
+        uf: item.uf,
+        fimVigenciaDate: fimDate
+      };
+    });
+
+    this.fase7Rows = fase7;
+    this.fase7RowsFiltradas = [...fase7];
+
+    const total = fase2.length;
+    const listaA = fase2.filter((r) => r.contratoSiclg !== '-' && r.contratoSiclg !== '').length;
+    const listaB = fase2.filter((r) => r.contratoSiclg === '-' || r.contratoSiclg === '').length;
+    const listaC = fase2.filter((r) => r.uf === 'SP' || r.uf === 'RJ').length;
+    const listaD = Math.max(total - listaA - listaB - listaC, 0);
+
+    const referencia = fase2[0]?.contratoId || this.imoveis[0]?.id || '';
+    this.fase1Rows = [
+      {
+        dataNotificacao: new Date().toLocaleDateString('pt-BR'),
+        listaA,
+        listaB,
+        listaC,
+        listaD,
+        total,
+        contratoReferenciaId: referencia
+      }
+    ];
+    this.fase1RowsFiltradas = [...this.fase1Rows];
+  }
+
+  private configurarFase1Operacional(): void {
+    this.addEventListenerSafe('fase1BuscarBtn', 'click', () => this.aplicarFiltrosFase1Operacional());
+    this.addEventListenerSafe('fase1LimparBtn', 'click', () => this.limparFiltrosFase1Operacional());
+  }
+
+  private configurarFase2Operacional(): void {
+    this.addEventListenerSafe('fase2BuscarBtn', 'click', () => this.aplicarFiltrosFase2Operacional());
+    this.addEventListenerSafe('fase2LimparBtn', 'click', () => this.limparFiltrosFase2Operacional());
+  }
+
+  private configurarFase3Operacional(): void {
+    this.addEventListenerSafe('fase3BuscarBtn', 'click', () => this.aplicarFiltrosFase3Operacional());
+    this.addEventListenerSafe('fase3LimparBtn', 'click', () => this.limparFiltrosFase3Operacional());
+  }
+
+  private configurarFase4Operacional(): void {
+    this.addEventListenerSafe('fase4BuscarBtn', 'click', () => this.aplicarFiltrosFase4Operacional());
+    this.addEventListenerSafe('fase4LimparBtn', 'click', () => this.limparFiltrosFase4Operacional());
+  }
+
+  private configurarFase5Operacional(): void {
+    this.addEventListenerSafe('fase5BuscarBtn', 'click', () => this.aplicarFiltrosFase5Operacional());
+    this.addEventListenerSafe('fase5LimparBtn', 'click', () => this.limparFiltrosFase5Operacional());
+  }
+
+  private configurarFase61Operacional(): void {
+    this.addEventListenerSafe('fase61BuscarBtn', 'click', () => this.aplicarFiltrosFase61Operacional());
+    this.addEventListenerSafe('fase61LimparBtn', 'click', () => this.limparFiltrosFase61Operacional());
+  }
+
+  private configurarFase62Operacional(): void {
+    this.addEventListenerSafe('fase62BuscarBtn', 'click', () => this.aplicarFiltrosFase62Operacional());
+    this.addEventListenerSafe('fase62LimparBtn', 'click', () => this.limparFiltrosFase62Operacional());
+  }
+
+  private configurarFase7Operacional(): void {
+    this.addEventListenerSafe('fase7BuscarBtn', 'click', () => this.aplicarFiltrosFase7Operacional());
+    this.addEventListenerSafe('fase7LimparBtn', 'click', () => this.limparFiltrosFase7Operacional());
+  }
+
+  private configurarResetSessaoJornada(): void {
+    this.addEventListenerSafe('resetSessaoJornadaBtn', 'click', () => this.abrirModalConfirmacaoReset());
+    this.addEventListenerSafe('cancelarConfirmacaoResetBtn', 'click', () => this.fecharModalConfirmacaoReset());
+    this.addEventListenerSafe('fecharConfirmacaoResetBtn', 'click', () => this.fecharModalConfirmacaoReset());
+    this.addEventListenerSafe('confirmarResetSessaoBtn', 'click', () => {
+      this.fecharModalConfirmacaoReset();
+      this.resetarSessaoJornadaOperacional();
+    });
+
+    const modal = document.getElementById('modalConfirmacaoReset');
+    if (modal) {
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) this.fecharModalConfirmacaoReset();
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const activeModal = document.getElementById('modalConfirmacaoReset');
+      if (activeModal?.classList.contains('active')) {
+        this.fecharModalConfirmacaoReset();
+      }
+    });
+  }
+
+  private abrirModalConfirmacaoReset(): void {
+    const modal = document.getElementById('modalConfirmacaoReset');
+    if (!modal) return;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  private fecharModalConfirmacaoReset(): void {
+    const modal = document.getElementById('modalConfirmacaoReset');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  private resetarSessaoJornadaOperacional(): void {
+
+    const keys = [
+      'silic-filtros-fase2',
+      'silic-filtros-fase3',
+      'silic-filtros-fase4',
+      'silic-filtros-fase5',
+      'silic-filtros-fase7',
+      'silic-filtros-fase61',
+      'silic-filtros-fase62',
+      'silic-prazo-chip-fase61',
+      'silic-prazo-chip-fase62'
+    ];
+
+    try {
+      keys.forEach((key) => sessionStorage.removeItem(key));
+    } catch {
+      // Ignora indisponibilidade de sessionStorage.
+    }
+
+    this.limparFiltrosFase2Operacional();
+    this.limparFiltrosFase3Operacional();
+    this.limparFiltrosFase4Operacional();
+    this.limparFiltrosFase5Operacional();
+    this.limparFiltrosFase61Operacional();
+    this.limparFiltrosFase62Operacional();
+    this.limparFiltrosFase7Operacional();
+    this.showToast('Sessao da jornada operacional resetada com sucesso.');
+  }
+
+  private aplicarFiltrosFase1Operacional(): void {
+    const procurar = ((document.getElementById('fase1ProcurarFiltro') as HTMLInputElement | null)?.value || '').toLowerCase();
+    this.fase1RowsFiltradas = this.fase1Rows.filter((row) => {
+      if (!procurar) return true;
+      return row.dataNotificacao.toLowerCase().includes(procurar);
+    });
+    this.atualizarTabelaFase1Operacional(this.fase1RowsFiltradas);
+  }
+
+  private limparFiltrosFase1Operacional(): void {
+    const procurar = document.getElementById('fase1ProcurarFiltro') as HTMLInputElement | null;
+    if (procurar) procurar.value = '';
+    this.fase1RowsFiltradas = [...this.fase1Rows];
+    this.atualizarTabelaFase1Operacional(this.fase1RowsFiltradas);
+  }
+
+  private aplicarFiltrosFase2Operacional(): void {
+    const uf = (document.getElementById('fase2UfFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigencia = (document.getElementById('fase2FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
+
+    this.fase2RowsFiltradas = this.fase2Rows.filter((row) => {
+      if (uf && row.uf !== uf) return false;
+      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
+      return true;
+    });
+
+    this.salvarFiltrosFaseSessao('2');
+
+    this.atualizarTabelaFase2Operacional(this.fase2RowsFiltradas);
+  }
+
+  private limparFiltrosFase2Operacional(): void {
+    const uf = document.getElementById('fase2UfFiltro') as HTMLSelectElement | null;
+    const fimVigencia = document.getElementById('fase2FimVigenciaFiltro') as HTMLInputElement | null;
+    if (uf) uf.value = '';
+    if (fimVigencia) fimVigencia.value = '';
+
+    this.salvarFiltrosFaseSessao('2');
+
+    this.fase2RowsFiltradas = [...this.fase2Rows];
+    this.atualizarTabelaFase2Operacional(this.fase2RowsFiltradas);
+  }
+
+  private aplicarFiltrosFase3Operacional(): void {
+    const uf = (document.getElementById('fase3UfFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigencia = (document.getElementById('fase3FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
+
+    this.fase3RowsFiltradas = this.fase3Rows.filter((row) => {
+      if (uf && row.uf !== uf) return false;
+      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
+      return true;
+    });
+
+    this.salvarFiltrosFaseSessao('3');
+
+    this.atualizarTabelaFase3Operacional(this.fase3RowsFiltradas);
+  }
+
+  private limparFiltrosFase3Operacional(): void {
+    const uf = document.getElementById('fase3UfFiltro') as HTMLSelectElement | null;
+    const fimVigencia = document.getElementById('fase3FimVigenciaFiltro') as HTMLInputElement | null;
+    if (uf) uf.value = '';
+    if (fimVigencia) fimVigencia.value = '';
+
+    this.salvarFiltrosFaseSessao('3');
+
+    this.fase3RowsFiltradas = [...this.fase3Rows];
+    this.atualizarTabelaFase3Operacional(this.fase3RowsFiltradas);
+  }
+
+  private aplicarFiltrosFase4Operacional(): void {
+    const uf = (document.getElementById('fase4UfFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigencia = (document.getElementById('fase4FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
+
+    this.fase4RowsFiltradas = this.fase4Rows.filter((row) => {
+      if (uf && row.uf !== uf) return false;
+      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
+      return true;
+    });
+
+    this.salvarFiltrosFaseSessao('4');
+
+    this.atualizarTabelaFase4Operacional(this.fase4RowsFiltradas);
+  }
+
+  private limparFiltrosFase4Operacional(): void {
+    const uf = document.getElementById('fase4UfFiltro') as HTMLSelectElement | null;
+    const fimVigencia = document.getElementById('fase4FimVigenciaFiltro') as HTMLInputElement | null;
+    if (uf) uf.value = '';
+    if (fimVigencia) fimVigencia.value = '';
+
+    this.salvarFiltrosFaseSessao('4');
+
+    this.fase4RowsFiltradas = [...this.fase4Rows];
+    this.atualizarTabelaFase4Operacional(this.fase4RowsFiltradas);
+  }
+
+  private aplicarFiltrosFase5Operacional(): void {
+    const uf = (document.getElementById('fase5UfFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigencia = (document.getElementById('fase5FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const decisao = (document.getElementById('fase5DecisaoFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
+
+    this.fase5RowsFiltradas = this.fase5Rows.filter((row) => {
+      if (uf && row.uf !== uf) return false;
+      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
+      if (decisao && row.decisaoOperacional !== decisao) return false;
+      return true;
+    });
+
+    this.salvarFiltrosFaseSessao('5');
+
+    this.atualizarTabelaFase5Operacional(this.fase5RowsFiltradas);
+  }
+
+  private limparFiltrosFase5Operacional(): void {
+    const uf = document.getElementById('fase5UfFiltro') as HTMLSelectElement | null;
+    const fimVigencia = document.getElementById('fase5FimVigenciaFiltro') as HTMLInputElement | null;
+    const decisao = document.getElementById('fase5DecisaoFiltro') as HTMLSelectElement | null;
+    if (uf) uf.value = '';
+    if (fimVigencia) fimVigencia.value = '';
+    if (decisao) decisao.value = '';
+
+    this.salvarFiltrosFaseSessao('5');
+
+    this.fase5RowsFiltradas = [...this.fase5Rows];
+    this.atualizarTabelaFase5Operacional(this.fase5RowsFiltradas);
+  }
+
+  private aplicarFiltrosFase61Operacional(): void {
+    const uf = (document.getElementById('fase61UfFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigencia = (document.getElementById('fase61FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const demandante = (document.getElementById('fase61DemandanteFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const equipe = (document.getElementById('fase61EquipeFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const responsavel = (document.getElementById('fase61ResponsavelFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const situacao = (document.getElementById('fase61SituacaoFiltro') as HTMLSelectElement | null)?.value || '';
+    const modalidade = (document.getElementById('fase61ModalidadeFiltro') as HTMLSelectElement | null)?.value || '';
+    const protocolo = (document.getElementById('fase61ProtocoloFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const objeto = (document.getElementById('fase61ObjetoFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const incluidoDe = this.lerDataFiltro('fase61IncluidoDeFiltro');
+    const incluidoAte = this.lerDataFiltro('fase61IncluidoAteFiltro');
+    const concluidoDe = this.lerDataFiltro('fase61ConcluidoDeFiltro');
+    const concluidoAte = this.lerDataFiltro('fase61ConcluidoAteFiltro');
+    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
+
+    this.fase61RowsFiltradas = this.fase61Rows.filter((row) => {
+      if (uf && row.uf !== uf) return false;
+      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
+      if (demandante && !row.demandante.toLowerCase().includes(demandante)) return false;
+      if (equipe && !row.equipeRemota.toLowerCase().includes(equipe)) return false;
+      if (responsavel && !row.responsavel.toLowerCase().includes(responsavel)) return false;
+      if (situacao && row.statusContratacao !== situacao) return false;
+      if (modalidade && row.modalidade !== modalidade) return false;
+      if (protocolo && !row.protocoloSiclg.toLowerCase().includes(protocolo)) return false;
+      if (objeto && !row.objeto.toLowerCase().includes(objeto)) return false;
+      if (!this.dateWithinRange(row.incluidoEmDate, incluidoDe, incluidoAte)) return false;
+      if (!this.dateWithinRange(row.concluidoEmDate, concluidoDe, concluidoAte)) return false;
+      if (this.fase61PrazoSelecionado && row.situacaoPrazo !== this.fase61PrazoSelecionado) return false;
+      return true;
+    });
+
+    this.fase61RowsFiltradas = this.ordenarPorCriticidadePrazo(this.fase61RowsFiltradas);
+    this.salvarFiltrosFaseSessao('61');
+
+    this.atualizarTabelaFase61Operacional(this.fase61RowsFiltradas);
+  }
+
+  private limparFiltrosFase61Operacional(): void {
+    const uf = document.getElementById('fase61UfFiltro') as HTMLSelectElement | null;
+    const fimVigencia = document.getElementById('fase61FimVigenciaFiltro') as HTMLInputElement | null;
+    const demandante = document.getElementById('fase61DemandanteFiltro') as HTMLInputElement | null;
+    const equipe = document.getElementById('fase61EquipeFiltro') as HTMLInputElement | null;
+    const responsavel = document.getElementById('fase61ResponsavelFiltro') as HTMLInputElement | null;
+    const situacao = document.getElementById('fase61SituacaoFiltro') as HTMLSelectElement | null;
+    const modalidade = document.getElementById('fase61ModalidadeFiltro') as HTMLSelectElement | null;
+    const protocolo = document.getElementById('fase61ProtocoloFiltro') as HTMLInputElement | null;
+    const objeto = document.getElementById('fase61ObjetoFiltro') as HTMLInputElement | null;
+    const incluidoDe = document.getElementById('fase61IncluidoDeFiltro') as HTMLInputElement | null;
+    const incluidoAte = document.getElementById('fase61IncluidoAteFiltro') as HTMLInputElement | null;
+    const concluidoDe = document.getElementById('fase61ConcluidoDeFiltro') as HTMLInputElement | null;
+    const concluidoAte = document.getElementById('fase61ConcluidoAteFiltro') as HTMLInputElement | null;
+    if (uf) uf.value = '';
+    if (fimVigencia) fimVigencia.value = '';
+    if (demandante) demandante.value = '';
+    if (equipe) equipe.value = '';
+    if (responsavel) responsavel.value = '';
+    if (situacao) situacao.value = '';
+    if (modalidade) modalidade.value = '';
+    if (protocolo) protocolo.value = '';
+    if (objeto) objeto.value = '';
+    if (incluidoDe) incluidoDe.value = '';
+    if (incluidoAte) incluidoAte.value = '';
+    if (concluidoDe) concluidoDe.value = '';
+    if (concluidoAte) concluidoAte.value = '';
+
+    this.fase61PrazoSelecionado = null;
+    this.salvarSelecaoPrazoChip('61', this.fase61PrazoSelecionado);
+    this.atualizarEstadoChipsPrazo('61');
+    this.salvarFiltrosFaseSessao('61');
+
+    this.fase61RowsFiltradas = this.ordenarPorCriticidadePrazo([...this.fase61Rows]);
+    this.atualizarTabelaFase61Operacional(this.fase61RowsFiltradas);
+  }
+
+  private aplicarFiltrosFase62Operacional(): void {
+    const uf = (document.getElementById('fase62UfFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigencia = (document.getElementById('fase62FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const gestor = (document.getElementById('fase62GestorFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const fornecedor = (document.getElementById('fase62FornecedorFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const protocolo = (document.getElementById('fase62ProtocoloFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const situacao = (document.getElementById('fase62SituacaoFiltro') as HTMLSelectElement | null)?.value || '';
+    const tipoDemanda = (document.getElementById('fase62TipoDemandaFiltro') as HTMLSelectElement | null)?.value || '';
+    const objeto = (document.getElementById('fase62ObjetoFiltro') as HTMLInputElement | null)?.value.toLowerCase() || '';
+    const incluidoDe = this.lerDataFiltro('fase62IncluidoDeFiltro');
+    const incluidoAte = this.lerDataFiltro('fase62IncluidoAteFiltro');
+    const concluidoDe = this.lerDataFiltro('fase62ConcluidoDeFiltro');
+    const concluidoAte = this.lerDataFiltro('fase62ConcluidoAteFiltro');
+    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
+
+    this.fase62RowsFiltradas = this.fase62Rows.filter((row) => {
+      if (uf && row.uf !== uf) return false;
+      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
+      if (gestor && !row.gestorOperacional.toLowerCase().includes(gestor)) return false;
+      if (fornecedor && !row.fornecedor.toLowerCase().includes(fornecedor)) return false;
+      if (protocolo && !row.protocoloSiclg.toLowerCase().includes(protocolo)) return false;
+      if (situacao && row.statusRenovacao !== situacao) return false;
+      if (tipoDemanda && row.tipoDemanda !== tipoDemanda) return false;
+      if (objeto && !row.objeto.toLowerCase().includes(objeto)) return false;
+      if (!this.dateWithinRange(row.incluidoEmDate, incluidoDe, incluidoAte)) return false;
+      if (!this.dateWithinRange(row.concluidoEmDate, concluidoDe, concluidoAte)) return false;
+      if (this.fase62PrazoSelecionado && row.situacaoPrazo !== this.fase62PrazoSelecionado) return false;
+      return true;
+    });
+
+    this.fase62RowsFiltradas = this.ordenarPorCriticidadePrazo(this.fase62RowsFiltradas);
+    this.salvarFiltrosFaseSessao('62');
+
+    this.atualizarTabelaFase62Operacional(this.fase62RowsFiltradas);
+  }
+
+  private limparFiltrosFase62Operacional(): void {
+    const uf = document.getElementById('fase62UfFiltro') as HTMLSelectElement | null;
+    const fimVigencia = document.getElementById('fase62FimVigenciaFiltro') as HTMLInputElement | null;
+    const gestor = document.getElementById('fase62GestorFiltro') as HTMLInputElement | null;
+    const fornecedor = document.getElementById('fase62FornecedorFiltro') as HTMLInputElement | null;
+    const protocolo = document.getElementById('fase62ProtocoloFiltro') as HTMLInputElement | null;
+    const situacao = document.getElementById('fase62SituacaoFiltro') as HTMLSelectElement | null;
+    const tipoDemanda = document.getElementById('fase62TipoDemandaFiltro') as HTMLSelectElement | null;
+    const objeto = document.getElementById('fase62ObjetoFiltro') as HTMLInputElement | null;
+    const incluidoDe = document.getElementById('fase62IncluidoDeFiltro') as HTMLInputElement | null;
+    const incluidoAte = document.getElementById('fase62IncluidoAteFiltro') as HTMLInputElement | null;
+    const concluidoDe = document.getElementById('fase62ConcluidoDeFiltro') as HTMLInputElement | null;
+    const concluidoAte = document.getElementById('fase62ConcluidoAteFiltro') as HTMLInputElement | null;
+    if (uf) uf.value = '';
+    if (fimVigencia) fimVigencia.value = '';
+    if (gestor) gestor.value = '';
+    if (fornecedor) fornecedor.value = '';
+    if (protocolo) protocolo.value = '';
+    if (situacao) situacao.value = '';
+    if (tipoDemanda) tipoDemanda.value = '';
+    if (objeto) objeto.value = '';
+    if (incluidoDe) incluidoDe.value = '';
+    if (incluidoAte) incluidoAte.value = '';
+    if (concluidoDe) concluidoDe.value = '';
+    if (concluidoAte) concluidoAte.value = '';
+
+    this.fase62PrazoSelecionado = null;
+    this.salvarSelecaoPrazoChip('62', this.fase62PrazoSelecionado);
+    this.atualizarEstadoChipsPrazo('62');
+    this.salvarFiltrosFaseSessao('62');
+
+    this.fase62RowsFiltradas = this.ordenarPorCriticidadePrazo([...this.fase62Rows]);
+    this.atualizarTabelaFase62Operacional(this.fase62RowsFiltradas);
+  }
+
+  private aplicarFiltrosFase7Operacional(): void {
+    const uf = (document.getElementById('fase7UfFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigencia = (document.getElementById('fase7FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
+
+    this.fase7RowsFiltradas = this.fase7Rows.filter((row) => {
+      if (uf && row.uf !== uf) return false;
+      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
+      return true;
+    });
+
+    this.salvarFiltrosFaseSessao('7');
+
+    this.atualizarTabelaFase7Operacional(this.fase7RowsFiltradas);
+  }
+
+  private limparFiltrosFase7Operacional(): void {
+    const uf = document.getElementById('fase7UfFiltro') as HTMLSelectElement | null;
+    const fimVigencia = document.getElementById('fase7FimVigenciaFiltro') as HTMLInputElement | null;
+    if (uf) uf.value = '';
+    if (fimVigencia) fimVigencia.value = '';
+
+    this.salvarFiltrosFaseSessao('7');
+
+    this.fase7RowsFiltradas = [...this.fase7Rows];
+    this.atualizarTabelaFase7Operacional(this.fase7RowsFiltradas);
+  }
+
+  private atualizarTabelaFase1Operacional(rows: Fase1OperacionalRow[]): void {
+    const tbody = document.getElementById('fase1TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.dataNotificacao}</td>
+        <td>${row.listaA}</td>
+        <td>${row.listaB}</td>
+        <td>${row.listaC}</td>
+        <td>${row.listaD}</td>
+        <td>${row.total}</td>
+        <td><button class="btn-table-action" data-id="${row.contratoReferenciaId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button && row.contratoReferenciaId) {
+        button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoReferenciaId));
+      }
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private atualizarTabelaFase2Operacional(rows: Fase2OperacionalRow[]): void {
+    const tbody = document.getElementById('fase2TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.contratoSap}</td>
+        <td>${row.vigenciaSap}</td>
+        <td>${row.contratoSiclg}</td>
+        <td>${row.vigenciaSiclg}</td>
+        <td>${row.fornecedor}</td>
+        <td>${row.descricao}</td>
+        <td>${row.limiteArGo}</td>
+        <td><button class="btn-table-action" data-id="${row.contratoId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button) {
+        button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoId));
+      }
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private atualizarTabelaFase3Operacional(rows: Fase3OperacionalRow[]): void {
+    const tbody = document.getElementById('fase3TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.contratoSapSiclg}</td>
+        <td>${row.fornecedor}</td>
+        <td>${row.descricaoContrato}</td>
+        <td>${row.inicioVigencia}</td>
+        <td>${row.fimVigencia}</td>
+        <td>${row.situacaoLaudo}</td>
+        <td><button class="btn-table-action" data-id="${row.contratoId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button) button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoId));
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private atualizarTabelaFase4Operacional(rows: Fase4OperacionalRow[]): void {
+    const tbody = document.getElementById('fase4TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.contratoSapSiclg}</td>
+        <td>${row.fornecedor}</td>
+        <td>${row.descricaoContratoSap}</td>
+        <td>${row.inicioVigencia}</td>
+        <td>${row.fimVigencia}</td>
+        <td>${this.formatCurrency(row.valorMaximo)}</td>
+        <td>${row.incluirNoSiclg}</td>
+        <td>${row.limiteArGo}</td>
+        <td><button class="btn-table-action" data-id="${row.contratoId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button) button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoId));
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private atualizarTabelaFase5Operacional(rows: Fase5OperacionalRow[]): void {
+    const tbody = document.getElementById('fase5TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.contratoSapSiclg}</td>
+        <td>${row.fornecedor}</td>
+        <td>${row.descricaoContratoSap}</td>
+        <td>${row.inicioVigencia}</td>
+        <td>${row.fimVigencia}</td>
+        <td><span class="badge ${this.getStatusBadgeClass(row.decisaoOperacional)}">${row.decisaoOperacional}</span></td>
+        <td><span class="badge ${this.getBooleanBadgeClass(row.houveAcordo)}">${row.houveAcordo}</span></td>
+        <td><span class="badge ${this.getBooleanBadgeClass(row.incluirNoSiclg)}">${row.incluirNoSiclg}</span></td>
+        <td><span class="badge ${this.getStatusBadgeClass(row.situacaoAr)}">${row.situacaoAr}</span></td>
+        <td><button class="btn-table-action" data-id="${row.contratoId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button) button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoId));
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private atualizarTabelaFase61Operacional(rows: Fase61OperacionalRow[]): void {
+    this.atualizarKpisPrazoFase61(rows);
+
+    const tbody = document.getElementById('fase61TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      const favorito = this.favoritosFase61.has(row.contratoId);
+      tr.innerHTML = `
+        <td><button class="btn-favorite${favorito ? ' active' : ''}" data-action="favorite" data-id="${row.contratoId}" title="Favoritar">${favorito ? '★' : '☆'}</button></td>
+        <td>${row.contratoSapSiclg}</td>
+        <td>${row.fornecedor}</td>
+        <td>${row.objeto}</td>
+        <td>${row.tipoProcesso}</td>
+        <td><span class="badge ${this.getStatusBadgeClass(row.statusContratacao)}">${row.statusContratacao}</span></td>
+        <td>${this.formatCurrency(row.valorReferencia)}</td>
+        <td><button class="btn-table-action" data-id="${row.contratoId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button) button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoId));
+
+      const favoriteButton = tr.querySelector('[data-action="favorite"]');
+      if (favoriteButton) {
+        favoriteButton.addEventListener('click', () => {
+          this.toggleFavorito(this.favoritosFase61, row.contratoId, 'silic-favoritos-fase61');
+          this.atualizarTabelaFase61Operacional(this.fase61RowsFiltradas);
+        });
+      }
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private atualizarTabelaFase62Operacional(rows: Fase62OperacionalRow[]): void {
+    this.atualizarKpisPrazoFase62(rows);
+
+    const tbody = document.getElementById('fase62TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      const favorito = this.favoritosFase62.has(row.contratoId);
+      tr.innerHTML = `
+        <td><button class="btn-favorite${favorito ? ' active' : ''}" data-action="favorite" data-id="${row.contratoId}" title="Favoritar">${favorito ? '★' : '☆'}</button></td>
+        <td>${row.contratoSapSiclg}</td>
+        <td>${row.fornecedor}</td>
+        <td>${row.objeto}</td>
+        <td><span class="badge ${this.getStatusBadgeClass(row.statusRenovacao)}">${row.statusRenovacao}</span></td>
+        <td>${row.qtdAditivos}</td>
+        <td><span class="badge ${this.getPrazoBadgeClass(row.situacaoPrazo)}">${row.prazoLimite}</span></td>
+        <td><button class="btn-table-action" data-id="${row.contratoId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button) button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoId));
+
+      const favoriteButton = tr.querySelector('[data-action="favorite"]');
+      if (favoriteButton) {
+        favoriteButton.addEventListener('click', () => {
+          this.toggleFavorito(this.favoritosFase62, row.contratoId, 'silic-favoritos-fase62');
+          this.atualizarTabelaFase62Operacional(this.fase62RowsFiltradas);
+        });
+      }
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private atualizarTabelaFase7Operacional(rows: Fase7OperacionalRow[]): void {
+    const tbody = document.getElementById('fase7TabelaBody') as HTMLTableSectionElement | null;
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.contratoSapSiclg}</td>
+        <td>${row.fornecedor}</td>
+        <td>${row.objeto}</td>
+        <td>${row.dataNotificacao}</td>
+        <td>${row.canal}</td>
+        <td><span class="badge ${this.getStatusBadgeClass(row.statusResposta)}">${row.statusResposta}</span></td>
+        <td><button class="btn-table-action" data-id="${row.contratoId}" title="Detalhar">🔍</button></td>
+      `;
+
+      const button = tr.querySelector('.btn-table-action');
+      if (button) button.addEventListener('click', () => this.abrirModalDetalhes(row.contratoId));
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  private toggleFavorito(store: Set<string>, contratoId: string, localStorageKey: string): void {
+    if (store.has(contratoId)) {
+      store.delete(contratoId);
+    } else {
+      store.add(contratoId);
+    }
+
+    try {
+      localStorage.setItem(localStorageKey, JSON.stringify(Array.from(store)));
+    } catch {
+      // Sem persistencia quando localStorage estiver indisponivel.
+    }
+  }
+
+  private carregarFavoritosFases(): void {
+    this.favoritosFase61 = this.carregarSetFavoritos('silic-favoritos-fase61');
+    this.favoritosFase62 = this.carregarSetFavoritos('silic-favoritos-fase62');
+  }
+
+  private carregarSetFavoritos(localStorageKey: string): Set<string> {
+    try {
+      const raw = localStorage.getItem(localStorageKey);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(parsed.filter((item) => typeof item === 'string'));
+    } catch {
+      return new Set();
+    }
+  }
+
+  private carregarSelecaoPrazoChips(): void {
+    this.fase61PrazoSelecionado = this.carregarSelecaoPrazoChip('silic-prazo-chip-fase61');
+    this.fase62PrazoSelecionado = this.carregarSelecaoPrazoChip('silic-prazo-chip-fase62');
+  }
+
+  private salvarSelecaoPrazoChip(fase: '61' | '62', valor?: string | null): void {
+    const key = fase === '61' ? 'silic-prazo-chip-fase61' : 'silic-prazo-chip-fase62';
+    const selected = typeof valor !== 'undefined'
+      ? valor
+      : (fase === '61' ? this.fase61PrazoSelecionado : this.fase62PrazoSelecionado);
+
+    try {
+      if (!selected) {
+        sessionStorage.removeItem(key);
+        return;
+      }
+      sessionStorage.setItem(key, selected);
+    } catch {
+      // Ignora indisponibilidade de sessionStorage.
+    }
+  }
+
+  private carregarSelecaoPrazoChip(key: string): string | null {
+    try {
+      const value = sessionStorage.getItem(key);
+      const allowed = new Set(['Crítico', 'Atenção', 'No prazo']);
+      return value && allowed.has(value) ? value : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private carregarFiltrosFasesSessao(): void {
+    this.restaurarFiltrosFaseSessao('2');
+    this.restaurarFiltrosFaseSessao('3');
+    this.restaurarFiltrosFaseSessao('4');
+    this.restaurarFiltrosFaseSessao('5');
+    this.restaurarFiltrosFaseSessao('7');
+    this.restaurarFiltrosFaseSessao('61');
+    this.restaurarFiltrosFaseSessao('62');
+  }
+
+  private salvarFiltrosFaseSessao(fase: '2' | '3' | '4' | '5' | '7' | '61' | '62'): void {
+    const ids = this.getIdsFiltroFase(fase);
+    const payload: Record<string, string> = {};
+
+    ids.forEach((id) => {
+      const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+      if (!el) return;
+      payload[id] = el.value || '';
+    });
+
+    const key = `silic-filtros-fase${fase}`;
+    try {
+      sessionStorage.setItem(key, JSON.stringify(payload));
+    } catch {
+      // Ignora indisponibilidade de sessionStorage.
+    }
+  }
+
+  private restaurarFiltrosFaseSessao(fase: '2' | '3' | '4' | '5' | '7' | '61' | '62'): void {
+    const key = `silic-filtros-fase${fase}`;
+    let parsed: Record<string, string> | null = null;
+
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return;
+      const maybe = JSON.parse(raw);
+      if (typeof maybe === 'object' && maybe !== null) {
+        parsed = maybe as Record<string, string>;
+      }
+    } catch {
+      return;
+    }
+
+    if (!parsed) return;
+    this.getIdsFiltroFase(fase).forEach((id) => {
+      const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+      if (!el) return;
+      if (Object.prototype.hasOwnProperty.call(parsed, id)) {
+        el.value = parsed[id] || '';
+      }
+    });
+  }
+
+  private getIdsFiltroFase(fase: '2' | '3' | '4' | '5' | '7' | '61' | '62'): string[] {
+    if (fase === '2') {
+      return [
+        'fase2FimVigenciaFiltro',
+        'fase2UfFiltro'
+      ];
+    }
+
+    if (fase === '3') {
+      return [
+        'fase3FimVigenciaFiltro',
+        'fase3UfFiltro'
+      ];
+    }
+
+    if (fase === '4') {
+      return [
+        'fase4FimVigenciaFiltro',
+        'fase4UfFiltro'
+      ];
+    }
+
+    if (fase === '5') {
+      return [
+        'fase5FimVigenciaFiltro',
+        'fase5UfFiltro',
+        'fase5DecisaoFiltro'
+      ];
+    }
+
+    if (fase === '7') {
+      return [
+        'fase7FimVigenciaFiltro',
+        'fase7UfFiltro'
+      ];
+    }
+
+    if (fase === '61') {
+      return [
+        'fase61FimVigenciaFiltro',
+        'fase61UfFiltro',
+        'fase61DemandanteFiltro',
+        'fase61EquipeFiltro',
+        'fase61ResponsavelFiltro',
+        'fase61SituacaoFiltro',
+        'fase61ModalidadeFiltro',
+        'fase61ProtocoloFiltro',
+        'fase61ObjetoFiltro',
+        'fase61IncluidoDeFiltro',
+        'fase61IncluidoAteFiltro',
+        'fase61ConcluidoDeFiltro',
+        'fase61ConcluidoAteFiltro'
+      ];
+    }
+
+    return [
+      'fase62FimVigenciaFiltro',
+      'fase62UfFiltro',
+      'fase62GestorFiltro',
+      'fase62FornecedorFiltro',
+      'fase62ProtocoloFiltro',
+      'fase62SituacaoFiltro',
+      'fase62TipoDemandaFiltro',
+      'fase62ObjetoFiltro',
+      'fase62IncluidoDeFiltro',
+      'fase62IncluidoAteFiltro',
+      'fase62ConcluidoDeFiltro',
+      'fase62ConcluidoAteFiltro'
+    ];
+  }
+
+  private getStatusBadgeClass(status: string): string {
+    const normalized = status.toLowerCase();
+    if (normalized.includes('conclu') || normalized.includes('respondido') || normalized.includes('aprov')) return 'badge-ok';
+    if (normalized.includes('refor') || normalized.includes('crítico')) return 'badge-danger';
+    if (normalized.includes('aguard') || normalized.includes('pend') || normalized.includes('encerrar') || normalized.includes('avaliar')) return 'badge-warning';
+    if (normalized.includes('andamento') || normalized.includes('renovável')) return 'badge-info';
+    if (normalized.includes('iniciar')) return 'badge-warning';
+    return 'badge-neutral';
+  }
+
+  private getPrazoBadgeClass(situacaoPrazo: string): string {
+    const normalized = situacaoPrazo.toLowerCase();
+    if (normalized.includes('crítico')) return 'badge-danger';
+    if (normalized.includes('atenção')) return 'badge-warning';
+    if (normalized.includes('prazo')) return 'badge-ok';
+    return 'badge-neutral';
+  }
+
+  private getBooleanBadgeClass(value: string): string {
+    const normalized = value.toLowerCase();
+    if (normalized === 'sim') return 'badge-ok';
+    if (normalized === 'não' || normalized === 'nao') return 'badge-neutral';
+    return 'badge-neutral';
+  }
+
+  private lerDataFiltro(inputId: string): Date | null {
+    const value = (document.getElementById(inputId) as HTMLInputElement | null)?.value || '';
+    return value ? new Date(value) : null;
+  }
+
+  private dateWithinRange(value: Date | null, start: Date | null, end: Date | null): boolean {
+    if (!start && !end) return true;
+    if (!value) return false;
+    if (start && value < start) return false;
+    if (end && value > end) return false;
+    return true;
+  }
+
+  private ordenarPorCriticidadePrazo<T extends { situacaoPrazo: string }>(rows: T[]): T[] {
+    const peso = (situacao: string): number => {
+      const normalized = situacao.toLowerCase();
+      if (normalized.includes('crítico')) return 0;
+      if (normalized.includes('atenção')) return 1;
+      if (normalized.includes('prazo')) return 2;
+      return 3;
+    };
+
+    return [...rows].sort((a, b) => peso(a.situacaoPrazo) - peso(b.situacaoPrazo));
+  }
+
+  private configurarChipsPrazoFases(): void {
+    const chips = Array.from(document.querySelectorAll('.kpi-chip')) as HTMLButtonElement[];
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const fase = chip.dataset.fase;
+        const prazo = chip.dataset.prazoFilter || '';
+        if (!fase || !prazo) return;
+
+        if (fase === '61') {
+          this.fase61PrazoSelecionado = this.fase61PrazoSelecionado === prazo ? null : prazo;
+          this.salvarSelecaoPrazoChip('61', this.fase61PrazoSelecionado);
+          this.atualizarEstadoChipsPrazo('61');
+          this.aplicarFiltrosFase61Operacional();
+          return;
+        }
+
+        if (fase === '62') {
+          this.fase62PrazoSelecionado = this.fase62PrazoSelecionado === prazo ? null : prazo;
+          this.salvarSelecaoPrazoChip('62', this.fase62PrazoSelecionado);
+          this.atualizarEstadoChipsPrazo('62');
+          this.aplicarFiltrosFase62Operacional();
+        }
+      });
+    });
+
+    this.atualizarEstadoChipsPrazo('61');
+    this.atualizarEstadoChipsPrazo('62');
+  }
+
+  private atualizarEstadoChipsPrazo(fase: '61' | '62'): void {
+    const selected = fase === '61' ? this.fase61PrazoSelecionado : this.fase62PrazoSelecionado;
+    const chips = Array.from(document.querySelectorAll(`.kpi-chip[data-fase="${fase}"]`)) as HTMLButtonElement[];
+    chips.forEach((chip) => {
+      const prazo = chip.dataset.prazoFilter || '';
+      chip.classList.toggle('active', Boolean(selected && prazo === selected));
+    });
+  }
+
+  private atualizarKpisPrazoFase61(rows: Fase61OperacionalRow[]): void {
+    const resumo = this.calcularResumoPrazo(rows.map((row) => row.situacaoPrazo));
+    this.setElementText('fase61CriticoCount', String(resumo.critico));
+    this.setElementText('fase61AtencaoCount', String(resumo.atencao));
+    this.setElementText('fase61NoPrazoCount', String(resumo.noPrazo));
+  }
+
+  private atualizarKpisPrazoFase62(rows: Fase62OperacionalRow[]): void {
+    const resumo = this.calcularResumoPrazo(rows.map((row) => row.situacaoPrazo));
+    this.setElementText('fase62CriticoCount', String(resumo.critico));
+    this.setElementText('fase62AtencaoCount', String(resumo.atencao));
+    this.setElementText('fase62NoPrazoCount', String(resumo.noPrazo));
+  }
+
+  private calcularResumoPrazo(situacoes: string[]): { critico: number; atencao: number; noPrazo: number } {
+    let critico = 0;
+    let atencao = 0;
+    let noPrazo = 0;
+
+    situacoes.forEach((situacao) => {
+      const normalized = situacao.toLowerCase();
+      if (normalized.includes('crítico')) {
+        critico += 1;
+        return;
+      }
+      if (normalized.includes('atenção')) {
+        atencao += 1;
+        return;
+      }
+      if (normalized.includes('prazo')) {
+        noPrazo += 1;
+      }
+    });
+
+    return { critico, atencao, noPrazo };
+  }
+
+  private navegarPara(path: string): void {
+    // Perfis navegam somente por interação na home (sem deep-link por URL).
+    if (path === '/') {
+      const homePath = `${this.obterBasePath() || ''}/`;
+      if (window.location.pathname !== homePath) {
+        window.history.replaceState({}, '', homePath);
+      }
+    }
+    this.aplicarRota(path);
+  }
+
+  private obterRotaAtual(): string {
+    const path = window.location.pathname;
+    if (path.endsWith('/perfil/operacional')) return '/perfil/operacional';
+    if (path.endsWith('/perfil/contratacao')) return '/perfil/contratacao';
+    if (path.endsWith('/perfil/formal')) return '/perfil/formal';
+    return '/';
+  }
+
+  private obterBasePath(): string {
+    const path = window.location.pathname;
+    const routeSuffixes = ['/perfil/operacional', '/perfil/contratacao', '/perfil/formal'];
+
+    for (const suffix of routeSuffixes) {
+      if (path.endsWith(suffix)) {
+        const base = path.slice(0, -suffix.length);
+        return base.endsWith('/') ? base.slice(0, -1) : base;
+      }
+    }
+
+    if (path === '/') return '';
+    return path.endsWith('/') ? path.slice(0, -1) : path;
+  }
+
+  private aplicarRota(path: string): void {
+    const dashboard = document.querySelector('.dashboard-section') as HTMLElement | null;
+    const portfolio = document.getElementById('portfolioSection');
+    const perfis = document.getElementById('perfisGestaoSection');
+    const listaGeral = document.getElementById('listaGeralSection');
+    const operacional = document.getElementById('perfilOperacionalPage');
+    const contratacao = document.getElementById('perfilContratacaoPage');
+    const formal = document.getElementById('perfilFormalPage');
+
+    const show = (el: Element | null, visible: boolean): void => {
+      if (!el) return;
+      (el as HTMLElement).style.display = visible ? 'block' : 'none';
+    };
+
+    const isHome = path === '/';
+    show(dashboard, isHome);
+    show(portfolio, isHome);
+    show(perfis, isHome);
+
+    // Lista Geral sai da navegação principal.
+    show(listaGeral, false);
+
+    show(operacional, path === '/perfil/operacional');
+    show(contratacao, path === '/perfil/contratacao');
+    show(formal, path === '/perfil/formal');
   }
 
   private aplicarFiltrosImoveis(): void {

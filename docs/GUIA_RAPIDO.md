@@ -42,11 +42,13 @@ npm install
 ### 3️⃣ Importar Dados
 
 **Opção A - Script Automático** (Recomendado):
+
 ```bash
 ./import-sap.sh
 ```
 
 **Opção B - Manual**:
+
 ```bash
 # Ativar ambiente virtual (se necessário)
 python3 -m venv .venv
@@ -72,24 +74,28 @@ Acesse: http://localhost:3000/show-input-doc/
 ## ✅ Verificações
 
 ### Arquivo Excel Importado?
+
 ```bash
 ls -lh public/rel-SAP.xlsx
 # Deve mostrar o arquivo
 ```
 
 ### JSON Gerado?
+
 ```bash
 ls -lh public/dados-sap.json
 # Deve mostrar o arquivo JSON
 ```
 
 ### Ver Conteúdo do JSON
+
 ```bash
 cat public/dados-sap.json | jq .metadados
 # Mostra metadados da importação
 ```
 
 ### Ver Estatísticas
+
 ```bash
 python3 -c "
 import json
@@ -105,20 +111,26 @@ with open('public/dados-sap.json') as f:
 ## 🔍 Troubleshooting
 
 ### ❌ Erro: "Arquivo rel-SAP.xlsx não encontrado"
+
 **Solução**: Copie o arquivo Excel para a pasta `public/`
 
 ### ❌ Erro: "ModuleNotFoundError: No module named 'pandas'"
+
 **Solução**: Execute `./import-sap.sh` que instala automaticamente
 
 ### ❌ Dados não aparecem no protótipo
-**Solução**: 
+
+**Solução**:
+
 1. Verifique se `public/dados-sap.json` existe
 2. Abra o console do navegador (F12)
 3. Procure por mensagens de erro
 4. Verifique se o caminho no código está correto
 
 ### ❌ Indicador mostra "Dados Demo" ao invés de "Dados SAP"
+
 **Solução**:
+
 1. Confirme que `public/dados-sap.json` existe
 2. Limpe o cache do navegador (Ctrl+Shift+R)
 3. Verifique console do navegador para erros
@@ -128,6 +140,7 @@ with open('public/dados-sap.json') as f:
 ## 📊 O Que Esperar
 
 ### Console Python (Importação)
+
 ```
 ================================================================================
 🏢 IMPORTADOR DE DADOS SAP → SILIC 2.0
@@ -151,6 +164,7 @@ with open('public/dados-sap.json') as f:
 ```
 
 ### Console Navegador
+
 ```
 🔄 Carregando dados do SAP...
 ✅ Dados do SAP carregados com sucesso!
@@ -160,6 +174,7 @@ with open('public/dados-sap.json') as f:
 ```
 
 ### Interface
+
 - **Header**: Badge verde "🗂️ Dados do SAP"
 - **Notificação**: "✅ Dados do SAP carregados com sucesso!"
 - **Dashboard**: Estatísticas atualizadas com dados reais
@@ -193,8 +208,8 @@ rm public/dados-sap.json && ./import-sap.sh
 ## 📚 Documentação Completa
 
 - **Integração Técnica**: [docs/INTEGRACAO_SAP.md](INTEGRACAO_SAP.md)
-- **Resumo Executivo**: [docs/RESUMO_INTEGRACAO.md](RESUMO_INTEGRACAO.md)
-- **README Principal**: [README.md](../README.md)
+- **Resumo Executivo (histórico)**: [docs/historico/RESUMO_INTEGRACAO.md](historico/RESUMO_INTEGRACAO.md)
+- **README Principal**: [README.md](README.md)
 
 ---
 

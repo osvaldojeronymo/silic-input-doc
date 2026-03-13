@@ -7,16 +7,19 @@ Este protótipo foi integrado com dados reais do **SAP** da Caixa Econômica Fed
 ## 🔄 Fluxo de Dados
 
 ### 1. Dados de Origem (SAP)
+
 - **Arquivo**: `public/rel-SAP.xlsx`
 - **Formato**: Excel com 22 colunas
 - **Conteúdo**: Contratos de locação de imóveis da CAIXA
 
 ### 2. Script de Importação
+
 - **Localização**: `scripts/import-sap-data.py`
 - **Linguagem**: Python 3
 - **Dependências**: pandas, openpyxl
 
 ### 3. Dados Convertidos
+
 - **Arquivo**: `public/dados-sap.json`
 - **Formato**: JSON compatível com TypeScript
 - **Estrutura**: Imóveis + Locadores + Metadados
@@ -25,31 +28,32 @@ Este protótipo foi integrado com dados reais do **SAP** da Caixa Econômica Fed
 
 ### Campos do Excel (rel-SAP.xlsx)
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| Contrato | Número | Número do contrato |
-| Denominação do contrato | Texto | Nome/descrição do contrato |
-| Denom.tipo contrato | Texto | Tipo do contrato |
-| Início do contrato | Data | Data de início |
-| Fim da validade | Data | Data de término |
-| Rescisão em | Data | Data de rescisão (se houver) |
-| Parceiro de negócios | Número | ID do parceiro |
-| Tipo ID Fiscal | Texto | CPF ou CNPJ |
-| NºID fiscal | Número | Número do documento |
-| Nome/ender. | Texto | Nome e endereço do locador |
-| Denom.função PN | Texto | Função do parceiro |
-| Rua | Texto | Logradouro |
-| Nº | Número | Número do imóvel |
-| Bairro | Texto | Bairro |
-| Local | Texto | Cidade |
-| Região | Texto | Estado (UF) |
-| Código postal | Texto | CEP |
-| Nº telefone | Número | Telefone fixo |
-| Telefone celular | Número | Celular |
+| Campo                   | Tipo   | Descrição                    |
+| ----------------------- | ------ | ---------------------------- |
+| Contrato                | Número | Número do contrato           |
+| Denominação do contrato | Texto  | Nome/descrição do contrato   |
+| Denom.tipo contrato     | Texto  | Tipo do contrato             |
+| Início do contrato      | Data   | Data de início               |
+| Fim da validade         | Data   | Data de término              |
+| Rescisão em             | Data   | Data de rescisão (se houver) |
+| Parceiro de negócios    | Número | ID do parceiro               |
+| Tipo ID Fiscal          | Texto  | CPF ou CNPJ                  |
+| NºID fiscal             | Número | Número do documento          |
+| Nome/ender.             | Texto  | Nome e endereço do locador   |
+| Denom.função PN         | Texto  | Função do parceiro           |
+| Rua                     | Texto  | Logradouro                   |
+| Nº                      | Número | Número do imóvel             |
+| Bairro                  | Texto  | Bairro                       |
+| Local                   | Texto  | Cidade                       |
+| Região                  | Texto  | Estado (UF)                  |
+| Código postal           | Texto  | CEP                          |
+| Nº telefone             | Número | Telefone fixo                |
+| Telefone celular        | Número | Celular                      |
 
 ### Mapeamento SAP → Protótipo
 
 #### Imóveis
+
 ```
 SAP → Protótipo
 ├── Contrato → codigo
@@ -64,6 +68,7 @@ SAP → Protótipo
 ```
 
 #### Locadores
+
 ```
 SAP → Protótipo
 ├── Nome/ender. → nome (extraído)
@@ -159,7 +164,7 @@ O protótipo implementa um **sistema inteligente de carregamento**:
 // Carrega dados automaticamente
 private async carregarDados(): Promise<void> {
   const dadosSAP = await SAPDataLoader.carregarDados();
-  
+
   if (dadosSAP && dadosSAP.imoveis.length > 0) {
     // Usa dados reais do SAP
     this.imoveis = dadosSAP.imoveis;
@@ -176,6 +181,7 @@ private async carregarDados(): Promise<void> {
 ## 📈 Regras de Negócio
 
 ### Determinação do Tipo de Imóvel
+
 ```python
 def determinar_tipo_imovel(denominacao):
     if 'ag ' in denominacao or 'agência' in denominacao:
@@ -191,6 +197,7 @@ def determinar_tipo_imovel(denominacao):
 ```
 
 ### Determinação do Status
+
 ```python
 def determinar_status_contrato(row):
     if tem_data_rescisao:
@@ -206,10 +213,12 @@ def determinar_status_contrato(row):
 ## 🎨 Interface do Usuário
 
 ### Indicador de Fonte de Dados
+
 - **Verde** (🗂️ Dados do SAP): Usando dados reais
 - **Laranja** (📋 Dados Demo): Usando dados de demonstração
 
 ### Notificações
+
 - Aparece no canto superior direito
 - Desaparece automaticamente após 5 segundos
 - Animação suave de entrada/saída
@@ -217,11 +226,13 @@ def determinar_status_contrato(row):
 ## 🔧 Configuração do Ambiente
 
 ### Dependências Python
+
 ```bash
 pip install pandas openpyxl
 ```
 
 ### Arquivos Necessários
+
 ```
 public/
 ├── rel-SAP.xlsx        # Arquivo Excel do SAP (entrada)
@@ -234,23 +245,28 @@ scripts/
 ## 📝 Exemplo Completo
 
 ### 1. Preparar Dados
+
 ```bash
 # Copiar arquivo do SAP
 cp /caminho/para/arquivo-sap.xlsx public/rel-SAP.xlsx
 ```
 
 ### 2. Executar Importação
+
 ```bash
 python3 scripts/import-sap-data.py
 ```
 
 ### 3. Executar Protótipo
+
 ```bash
 npm run dev
 ```
 
 ### 4. Resultado
+
 O protótipo automaticamente:
+
 - ✅ Detecta o arquivo `dados-sap.json`
 - ✅ Carrega os dados reais
 - ✅ Mostra indicador "🗂️ Dados do SAP"
@@ -267,24 +283,27 @@ O protótipo automaticamente:
 ## 🔍 Troubleshooting
 
 ### Dados não carregam
+
 - Verificar se `public/dados-sap.json` existe
 - Verificar console do navegador para erros
 - Verificar se o caminho está correto no `SAPDataLoader`
 
 ### Script de importação falha
+
 - Verificar se pandas e openpyxl estão instalados
 - Verificar se o arquivo Excel existe em `public/rel-SAP.xlsx`
 - Verificar permissões de escrita na pasta `public/`
 
 ### Tipos de dados incompatíveis
+
 - Verificar se a estrutura do Excel mudou
 - Atualizar mapeamento no script Python se necessário
 - Verificar interfaces TypeScript em `src/types/index.ts`
 
 ## 📚 Documentação Adicional
 
-- [README Principal](../README.md)
-- [Documentação TypeScript](../README-TS.md)
+- [README Principal](README.md)
+- [Documentação TypeScript (histórico)](historico/README-TS.md)
 - [Tipos TypeScript](../src/types/index.ts)
 - [Loader de Dados](../src/utils/sapDataLoader.ts)
 

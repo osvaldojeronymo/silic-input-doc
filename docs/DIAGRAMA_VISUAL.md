@@ -239,7 +239,7 @@ SAP (Excel)                          →    TypeScript (JSON)
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  CAMADA DE APRESENTAÇÃO                                                     │
 └─────────────────────────────────────────────────────────────────────────────┘
-    index.html + style.css
+    index.html + src/styles/style.css
         │
         ├── Header (Logo + Indicador)
         ├── Dashboard (Estatísticas)
@@ -253,7 +253,7 @@ SAP (Excel)                          →    TypeScript (JSON)
 
     [1] Copiar Excel      →  [2] Importar      →  [3] Iniciar App
          30 seg                   5 seg                10 seg
-         
+
     │                      │                    │
     │ rel-SAP.xlsx        │ dados-sap.json     │ Interface Carregada
     │ copiado para        │ gerado com         │ com dados do SAP
@@ -298,6 +298,7 @@ SAP (Excel)                          →    TypeScript (JSON)
 ```
 
 **Legenda:**
+
 - 📊 Dados/Sistema
 - 🔧 Ferramentas
 - 🐍 Python
