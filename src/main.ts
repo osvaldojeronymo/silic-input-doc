@@ -1,7 +1,9 @@
-import { Imovel, Locador, DashboardStats, VisualizationMode, ParticipacaoLocadorImovel, Pagamento, FormaPagamento, TermoAditivo, PainelVencimentosContrato } from './types/index.js';
+import { Imovel, Locador, DashboardStats, VisualizationMode, ParticipacaoLocadorImovel, Pagamento, FormaPagamento, TermoAditivo, PainelVencimentosContrato, PainelAcoesRenovatoriasRow, PainelAvisoVencimentoRow } from './types/index.js';
 import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
+import { DIJURDataLoader, type DijurRegistro } from './utils/dijurDataLoader.js';
 import { labelCategoria, labelAcao, labelModalidade } from './labels.js';
+import * as XLSX from 'xlsx';
 import './styles/style.css';
 
 interface Fase1OperacionalRow {
@@ -124,11 +126,16 @@ interface Fase7OperacionalRow {
  * Classe principal do Sistema SILIC 2.0
  */
 export class SistemaSILIC {
+  private static readonly FORMAL_STORAGE_KEY = 'silic.formal.edicoes.v1';
   private imoveis: Imovel[] = [];
   private imoveisOriginais: Imovel[] = []; // Lista completa sem filtros
   private locadores: Locador[] = [];
   private painelVencimentos: PainelVencimentosContrato[] = [];
   private painelVencimentosFiltrado: PainelVencimentosContrato[] = [];
+  private painelAcoesRenovatorias: PainelAcoesRenovatoriasRow[] = [];
+  private painelAcoesRenovatoriasFiltrado: PainelAcoesRenovatoriasRow[] = [];
+  private painelAvisoVencimento: PainelAvisoVencimentoRow[] = [];
+  private painelAvisoVencimentoFiltrado: PainelAvisoVencimentoRow[] = [];
   private usandoDadosSAP = false;
   
   // Paginação
@@ -138,6 +145,10 @@ export class SistemaSILIC {
   private itemsPerPageImoveis = 10;
   private currentPagePainel = 1;
   private itemsPerPagePainel = 10;
+  private currentPagePainelFormal = 1;
+  private itemsPerPagePainelFormal = 10;
+  private currentPagePainelAviso = 1;
+  private itemsPerPagePainelAviso = 10;
   private fase1Rows: Fase1OperacionalRow[] = [];
   private fase1RowsFiltradas: Fase1OperacionalRow[] = [];
   private fase2Rows: Fase2OperacionalRow[] = [];
@@ -166,11 +177,18 @@ export class SistemaSILIC {
     this.usandoDadosSAP = false;
     this.carregarDadosDemo();
     this.inicializarPainelVencimentos();
+    this.inicializarPainelAcoesRenovatorias();
+    this.inicializarPainelAvisoVencimento();
     this.configurarFiltrosImoveisImediato();
     this.configurarExportacaoPortfolio();
     this.configurarPainelVencimentos();
+    this.configurarPainelAcoesRenovatorias();
+    this.configurarPainelAvisoVencimento();
     this.configurarItemsPorPagina();
     this.configurarPaginacaoPainelPortfolio();
+    this.configurarPaginacaoPainelFormal();
+    this.configurarPaginacaoPainelAviso();
+    this.configurarSwitchPainelFormal();
     this.configurarNavegacaoRotas();
     this.configurarAbasPerfilOperacional();
     this.inicializarDadosFasesOperacionais();
@@ -190,6 +208,8 @@ export class SistemaSILIC {
     this.atualizarTabelaImoveis();
     this.atualizarDashboard();
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+    this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+    this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
     this.atualizarTabelaFase1Operacional(this.fase1RowsFiltradas);
     this.atualizarTabelaFase2Operacional(this.fase2RowsFiltradas);
     this.atualizarTabelaFase3Operacional(this.fase3RowsFiltradas);
@@ -206,6 +226,7 @@ export class SistemaSILIC {
     this.aplicarFiltrosFase62Operacional();
     this.aplicarFiltrosFase7Operacional();
     this.aplicarRota('/');
+    void this.hidratarPainelAcoesRenovatoriasComDadosSAP();
   }
   
 
@@ -2133,6 +2154,16 @@ export class SistemaSILIC {
     this.painelVencimentosFiltrado = [...this.painelVencimentos];
   }
 
+  private inicializarPainelAcoesRenovatorias(): void {
+    this.painelAcoesRenovatorias = this.montarPainelAcoesRenovatorias(this.imoveisOriginais, this.locadores, false);
+    this.painelAcoesRenovatoriasFiltrado = [...this.painelAcoesRenovatorias];
+  }
+
+  private inicializarPainelAvisoVencimento(): void {
+    this.painelAvisoVencimento = this.montarPainelAvisoVencimento(this.painelVencimentos);
+    this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
+  }
+
   private montarReadModelPainelVencimentos(imovel: Imovel): PainelVencimentosContrato {
     const locador = this.locadores.find((l) => l.id === imovel.locadorId) || this.locadores.find((l) => l.status === 'ativo');
     const historico = (imovel.historicoPagamentos || []).filter((p) => !!p.pagoEm);
@@ -2232,9 +2263,356 @@ export class SistemaSILIC {
     return 'Acompanhamento regular';
   }
 
+  private async hidratarPainelAcoesRenovatoriasComDadosSAP(): Promise<void> {
+    const dadosSap = await SAPDataLoader.carregarDados();
+    const dadosDijur = await DIJURDataLoader.carregarDados();
+    if (!dadosSap?.imoveis?.length) {
+      if (dadosDijur) {
+        this.painelAcoesRenovatorias = this.aplicarDadosDijurNaMassaExistente(this.painelAcoesRenovatorias, dadosDijur);
+        this.painelAcoesRenovatoriasFiltrado = [...this.painelAcoesRenovatorias];
+        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+      }
+      return;
+    }
+
+    const painelVencimentosSap = dadosSap.imoveis.map((imovel) => this.montarReadModelPainelVencimentos(imovel));
+    this.painelAcoesRenovatorias = this.montarPainelAcoesRenovatorias(dadosSap.imoveis, dadosSap.locadores, true, dadosDijur || undefined);
+    this.painelAcoesRenovatoriasFiltrado = [...this.painelAcoesRenovatorias];
+    this.painelAvisoVencimento = this.montarPainelAvisoVencimento(painelVencimentosSap);
+    this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
+    this.currentPagePainelFormal = 1;
+    this.currentPagePainelAviso = 1;
+    this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+    this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+  }
+
+  private montarPainelAvisoVencimento(rows: PainelVencimentosContrato[]): PainelAvisoVencimentoRow[] {
+    return rows.map((row, index) => {
+      const fimVigencia = row.vigenciaSiclg !== '-' ? row.vigenciaSiclg : row.vigenciaSap;
+      const fimVigenciaDate = this.parseDate(fimVigencia);
+      const ultimoPagamentoDate = this.parseDate(row.ultimoPgtoSap);
+
+      return {
+        contratoId: row.contratoId,
+        contratoSap: row.numeroContratoSap,
+        contratoSiclg: row.numeroContratoSiclg,
+        situacaoSiclg: row.situacaoSiclg,
+        descricao: row.descricaoSiclg !== '-' ? row.descricaoSiclg : row.descricaoSap,
+        ultimoValorPagoSap: row.ultimoValorPagoSap,
+        ultimoPagamentoSap: row.ultimoPgtoSap,
+        decisaoProrrogar: this.derivarDecisaoProrrogarAviso(row),
+        fase: row.fase,
+        demandaSiclg: row.demandaSiclg,
+        colegiado: this.derivarColegiadoAviso(row, index),
+        limiteLegalAr: row.limiteAr,
+        fimVigencia,
+        fimVigenciaDate,
+        ultimoPagamentoDate
+      };
+    });
+  }
+
+  private derivarDecisaoProrrogarAviso(row: PainelVencimentosContrato): 'Sim' | 'Não' {
+    if (row.fase === 'Encerramento') return 'Não';
+    if (row.conciliacaoStatus === 'pendente_conciliacao') return 'Não';
+    if (row.fase === 'Negociação' || row.fase === 'Aditivo' || row.fase === 'Monitoramento') return 'Sim';
+    return row.diasParaVencimento !== null && row.diasParaVencimento > 0 ? 'Sim' : 'Não';
+  }
+
+  private derivarColegiadoAviso(row: PainelVencimentosContrato, index: number): string {
+    const mapaPorUf: Record<string, string> = {
+      SP: 'Colegiado Regional Sudeste',
+      RJ: 'Colegiado Regional Sudeste',
+      MG: 'Colegiado Regional Sudeste',
+      DF: 'Colegiado Nacional',
+      BA: 'Colegiado Regional Nordeste',
+      CE: 'Colegiado Regional Nordeste',
+      PE: 'Colegiado Regional Nordeste',
+      PR: 'Colegiado Regional Sul',
+      GO: 'Colegiado Regional Centro-Oeste',
+      AM: 'Colegiado Regional Norte'
+    };
+
+    return mapaPorUf[row.uf] || (index % 2 === 0 ? 'Colegiado Regional' : 'Colegiado Nacional');
+  }
+
+  private montarPainelAcoesRenovatorias(imoveis: Imovel[], locadores: Locador[], dadosReais: boolean, dadosDijur?: DijurRegistro[]): PainelAcoesRenovatoriasRow[] {
+    const locadorMap = new Map(locadores.map((locador) => [locador.id, locador]));
+    const dijurMap = new Map((dadosDijur || []).map((registro) => [String(registro.contrato_sap), registro]));
+
+    return imoveis.slice(0, 60).map((imovel, index) => {
+      const contratoSap = imovel.codigo || `SEM-SAP-${String(index + 1).padStart(4, '0')}`;
+      const registroDijur = dijurMap.get(contratoSap);
+      const contratoSiclg = imovel.numeroInstrumento || this.gerarContratoSiclgFormal(contratoSap, index);
+      const protocoloFormalSiclg = this.gerarProtocoloFormalSiclg(contratoSap, index);
+      const numeroProcessoSiclg = imovel.numeroProcesso || this.gerarNumeroProcessoSiclg(contratoSap, index);
+      const numeroProcessoDijur = registroDijur?.numero_processo_dijur || this.gerarNumeroProcessoDijur(contratoSap, index);
+      const vigenciaBase = imovel.vigenciaFinal || imovel.contratoFimValidade || imovel.fimValidade || '-';
+      const vigenciaDate = this.parseDate(vigenciaBase);
+      const diasParaVigencia = vigenciaDate
+        ? Math.ceil((vigenciaDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+      const locador = locadorMap.get(imovel.locadorId || '');
+      const unidade = this.gerarDescricaoUnidadeFormal(imovel);
+      const situacaoSiclg = this.derivarSituacaoSiclgFormal(diasParaVigencia);
+      const situacaoSijur = registroDijur?.situacao_sijur || this.derivarSituacaoSijurFormal(diasParaVigencia);
+      const situacaoCefor = registroDijur?.situacao_cefor || this.derivarSituacaoCeforFormal(diasParaVigencia);
+      const radarSucot = this.derivarRadarSucotFormal(diasParaVigencia);
+      const lastSyncAt = registroDijur?.last_sync_at ? this.formatDateTime(registroDijur.last_sync_at) : new Date(Date.now() - index * 6 * 60 * 60 * 1000).toLocaleString('pt-BR');
+      const partesDijur = registroDijur?.partes_dijur || `CAIXA ECONÔMICA FEDERAL x ${locador?.nome || imovel.parceiroNegocios || 'Locador não identificado'}`;
+      const edicoes = this.carregarEdicoesPainelFormal();
+      const edicao = edicoes[imovel.id];
+
+      return {
+        contratoId: imovel.id,
+        codigoSijur: registroDijur?.codigo_sijur || `SIJUR-${contratoSap.replace(/\D/g, '').slice(-6).padStart(6, '0')}`,
+        contratoSap,
+        contratoSiclg,
+        protocoloFormalSiclg,
+        unidade,
+        vigenciaSiclg: this.formatDate(vigenciaBase),
+        situacaoSiclg,
+        numeroProcessoSiclg,
+        situacaoSijur,
+        situacaoCefor,
+        numeroProcessoDijur,
+        dataEntradaDijur: registroDijur?.data_entrada_dijur ? this.formatDate(registroDijur.data_entrada_dijur) : this.calcularDataEntradaDijur(vigenciaDate, index),
+        partesDijur,
+        lastSyncAt,
+        radarSucot: edicao?.radarSucot || radarSucot,
+        notas: edicao?.notas || this.derivarNotasGestorFormal(imovel, diasParaVigencia, dadosReais),
+        statusOperacional: this.derivarStatusOperacionalFormal(diasParaVigencia),
+        origemDados: registroDijur
+          ? (dadosReais ? 'SAP + DIJUR_API + INPUT_GESTOR_FORMAL' : 'BASE_LOCAL + DIJUR_API + INPUT_GESTOR_FORMAL')
+          : (dadosReais ? 'SAP + DIJUR_API (indisponível) + INPUT_GESTOR_FORMAL' : 'BASE_LOCAL + DIJUR_API (indisponível) + INPUT_GESTOR_FORMAL'),
+        vigenciaDate
+      };
+    });
+  }
+
+  private aplicarDadosDijurNaMassaExistente(rows: PainelAcoesRenovatoriasRow[], dadosDijur: DijurRegistro[]): PainelAcoesRenovatoriasRow[] {
+    const mapa = new Map(dadosDijur.map((registro) => [String(registro.contrato_sap), registro]));
+
+    return rows.map((row) => {
+      const dijur = mapa.get(row.contratoSap);
+      if (!dijur) return row;
+
+      return {
+        ...row,
+        codigoSijur: dijur.codigo_sijur || row.codigoSijur,
+        numeroProcessoDijur: dijur.numero_processo_dijur || row.numeroProcessoDijur,
+        situacaoSijur: dijur.situacao_sijur || row.situacaoSijur,
+        situacaoCefor: dijur.situacao_cefor || row.situacaoCefor,
+        dataEntradaDijur: dijur.data_entrada_dijur ? this.formatDate(dijur.data_entrada_dijur) : row.dataEntradaDijur,
+        partesDijur: dijur.partes_dijur || row.partesDijur,
+        lastSyncAt: dijur.last_sync_at ? this.formatDateTime(dijur.last_sync_at) : row.lastSyncAt,
+        origemDados: row.origemDados.replace('DIJUR_API (indisponível)', 'DIJUR_API')
+      };
+    });
+  }
+
+  private carregarEdicoesPainelFormal(): Record<string, { radarSucot: string; notas: string }> {
+    try {
+      const raw = localStorage.getItem(SistemaSILIC.FORMAL_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private salvarEdicoesPainelFormal(edicoes: Record<string, { radarSucot: string; notas: string }>): void {
+    try {
+      localStorage.setItem(SistemaSILIC.FORMAL_STORAGE_KEY, JSON.stringify(edicoes));
+    } catch {
+      // Sem persistência quando localStorage estiver indisponível.
+    }
+  }
+
+  private formatDateTime(value?: string): string {
+    if (!value) return '-';
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? value : d.toLocaleString('pt-BR');
+  }
+
+  private gerarContratoSiclgFormal(contratoSap: string, index: number): string {
+    return `SICLG-${new Date().getFullYear()}-${(contratoSap.replace(/\D/g, '').slice(-5) || String(index + 1).padStart(5, '0'))}`;
+  }
+
+  private gerarProtocoloFormalSiclg(contratoSap: string, index: number): string {
+    const base = contratoSap.replace(/\D/g, '').slice(-6) || String(index + 1).padStart(6, '0');
+    return `PF-${new Date().getFullYear()}-${base}`;
+  }
+
+  private gerarNumeroProcessoSiclg(contratoSap: string, index: number): string {
+    const base = contratoSap.replace(/\D/g, '').slice(-4) || String(index + 1).padStart(4, '0');
+    return `000.${base}/${new Date().getFullYear()}-${String((index % 89) + 10).padStart(2, '0')}`;
+  }
+
+  private gerarNumeroProcessoDijur(contratoSap: string, index: number): string {
+    const base = contratoSap.replace(/\D/g, '').slice(-7).padStart(7, '0');
+    return `${base}-${String((index % 90) + 10).padStart(2, '0')}.${new Date().getFullYear()}.4.01.${String((index % 27) + 1).padStart(4, '0')}`;
+  }
+
+  private gerarDescricaoUnidadeFormal(imovel: Imovel): string {
+    const base = imovel.denominacao || imovel.cidade || 'Unidade não identificada';
+    return imovel.estado ? `${base}/${imovel.estado}` : base;
+  }
+
+  private derivarSituacaoSiclgFormal(diasParaVigencia: number | null): string {
+    if (diasParaVigencia === null) return 'Sem vigência consolidada';
+    if (diasParaVigencia < 0) return 'Vigência expirada';
+    if (diasParaVigencia <= 45) return 'Renovação com vencimento iminente';
+    if (diasParaVigencia <= 120) return 'Renovação em instrução';
+    return 'Instrumento vigente';
+  }
+
+  private derivarSituacaoSijurFormal(diasParaVigencia: number | null): string {
+    if (diasParaVigencia === null || diasParaVigencia > 120) return 'Aguardando distribuição';
+    if (diasParaVigencia > 60) return 'Em análise DIJUR';
+    if (diasParaVigencia > 15) return 'Minuta/peça em elaboração';
+    return 'Ajuizamento protocolado';
+  }
+
+  private derivarSituacaoCeforFormal(diasParaVigencia: number | null): string {
+    if (diasParaVigencia === null || diasParaVigencia > 120) return 'Aguardando instrução CEFOR';
+    if (diasParaVigencia > 60) return 'Em conferência documental';
+    if (diasParaVigencia > 15) return 'Minuta validada';
+    return 'Instrumento encaminhado para assinatura';
+  }
+
+  private derivarRadarSucotFormal(diasParaVigencia: number | null): string {
+    if (diasParaVigencia === null || diasParaVigencia > 120) return 'Não acionado';
+    if (diasParaVigencia > 45) return 'Monitorado';
+    return 'Acionado';
+  }
+
+  private derivarStatusOperacionalFormal(diasParaVigencia: number | null): string {
+    if (diasParaVigencia === null) return 'Sem ação imediata';
+    if (diasParaVigencia < 0) return 'Atuação prioritária';
+    if (diasParaVigencia <= 45) return 'Escalonamento formal em curso';
+    if (diasParaVigencia <= 120) return 'Preparação de instrução';
+    return 'Monitoramento preventivo';
+  }
+
+  private derivarNotasGestorFormal(imovel: Imovel, diasParaVigencia: number | null, dadosReais: boolean): string {
+    const unidade = this.gerarDescricaoUnidadeFormal(imovel);
+    const origem = dadosReais ? 'base SAP' : 'base local';
+
+    if (diasParaVigencia === null) {
+      return `Contrato em acompanhamento no A-III com vigência pendente de consolidação a partir da ${origem}.`;
+    }
+
+    if (diasParaVigencia < 0) {
+      return `Contrato da unidade ${unidade} requer tratamento prioritário no fluxo formal por vigência expirada.`;
+    }
+
+    if (diasParaVigencia <= 45) {
+      return `Contrato da unidade ${unidade} em janela crítica de renovação. Validar documentação e tramitação no A-III.`;
+    }
+
+    if (diasParaVigencia <= 120) {
+      return `Contrato da unidade ${unidade} em preparação de instrução formal, com acompanhamento do Gestor Formal.`;
+    }
+
+    return `Contrato da unidade ${unidade} mantido em monitoramento preventivo no painel A-III.`;
+  }
+
+  private calcularDataEntradaDijur(vigenciaDate: Date | null, index: number): string {
+    if (!vigenciaDate) {
+      return this.formatDate(new Date(Date.now() - index * 24 * 60 * 60 * 1000).toISOString());
+    }
+
+    const referencia = new Date(vigenciaDate.getTime() - 75 * 24 * 60 * 60 * 1000);
+    return this.formatDate(referencia.toISOString());
+  }
+
+  private obterBadgePainelFormal(status: string, tipo: 'siclg' | 'sijur' | 'cefor'): string {
+    const maps: Record<'siclg' | 'sijur' | 'cefor', Record<string, string>> = {
+      siclg: {
+        'Instrumento vigente': 'badge badge-ativo',
+        'Renovação em instrução': 'badge badge-info',
+        'Renovação com vencimento iminente': 'badge badge-warning',
+        'Vigência expirada': 'badge badge-danger',
+        'Sem vigência consolidada': 'badge badge-neutral'
+      },
+      sijur: {
+        'Aguardando distribuição': 'badge badge-neutral',
+        'Em análise DIJUR': 'badge badge-info',
+        'Minuta/peça em elaboração': 'badge badge-warning',
+        'Ajuizamento protocolado': 'badge badge-ativo'
+      },
+      cefor: {
+        'Aguardando instrução CEFOR': 'badge badge-neutral',
+        'Em conferência documental': 'badge badge-info',
+        'Aguardando instrução': 'badge badge-warning',
+        'Minuta validada': 'badge badge-warning',
+        'Instrumento encaminhado para assinatura': 'badge badge-ativo'
+      }
+    };
+
+    return maps[tipo][status] || 'badge badge-neutral';
+  }
+
   private configurarPainelVencimentos(): void {
     this.addEventListenerSafe('painelBuscarBtn', 'click', () => this.aplicarFiltrosPainelVencimentos());
     this.addEventListenerSafe('painelLimparBtn', 'click', () => this.limparFiltrosPainelVencimentos());
+  }
+
+  private configurarPainelAcoesRenovatorias(): void {
+    this.addEventListenerSafe('formalBuscarBtn', 'click', () => this.aplicarFiltrosPainelAcoesRenovatorias());
+    this.addEventListenerSafe('formalLimparBtn', 'click', () => this.limparFiltrosPainelAcoesRenovatorias());
+    this.addEventListenerSafe('formalExportarCsvBtn', 'click', () => this.exportarPainelFormalCSV());
+    this.addEventListenerSafe('formalExportarExcelBtn', 'click', () => this.exportarPainelFormalExcel());
+    this.addEventListenerSafe('formalSalvarEdicaoBtn', 'click', () => this.salvarEdicaoModalFormal());
+
+    const modal = document.getElementById('modalDetalhesFormal');
+    const btnClose = modal?.querySelector('[data-formal-close="true"]');
+
+    if (btnClose) {
+      btnClose.addEventListener('click', () => this.fecharModalDetalhesFormal());
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+          this.fecharModalDetalhesFormal();
+        }
+      });
+    }
+  }
+
+  private configurarPainelAvisoVencimento(): void {
+    this.addEventListenerSafe('avisoBuscarBtn', 'click', () => this.aplicarFiltrosPainelAvisoVencimento());
+    this.addEventListenerSafe('avisoLimparBtn', 'click', () => this.limparFiltrosPainelAvisoVencimento());
+    this.addEventListenerSafe('avisoExportarCsvBtn', 'click', () => this.exportarPainelAvisoCSV());
+    this.addEventListenerSafe('avisoExportarExcelBtn', 'click', () => this.exportarPainelAvisoExcel());
+  }
+
+  private configurarSwitchPainelFormal(): void {
+    const tabs = Array.from(document.querySelectorAll('[data-formal-panel-target]')) as HTMLButtonElement[];
+    const views = Array.from(document.querySelectorAll('[data-formal-panel]')) as HTMLElement[];
+    if (!tabs.length || !views.length) return;
+
+    const ativarPainel = (target: string): void => {
+      tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.formalPanelTarget === target));
+      views.forEach((view) => {
+        const active = view.dataset.formalPanel === target;
+        view.classList.toggle('is-active', active);
+        view.hidden = !active;
+      });
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.formalPanelTarget;
+        if (!target) return;
+        ativarPainel(target);
+      });
+    });
+
+    ativarPainel('acoes-renovatorias');
   }
 
   private configurarPaginacaoPainelPortfolio(): void {
@@ -2248,6 +2626,200 @@ export class SistemaSILIC {
         this.itemsPerPagePainel = val;
         this.currentPagePainel = 1;
         this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+      }
+    });
+  }
+
+  private exportarPainelFormalCSV(): void {
+    const headers = [
+      'Codigo SIJUR',
+      'Contrato SAP',
+      'Contrato SICLG',
+      'Protocolo Formal (SICLG)',
+      'Unidade',
+      'Vigencia (SICLG)',
+      'Situacao SICLG',
+      'Numero do Processo (SICLG)',
+      'Situacao SIJUR',
+      'Situacao CEFOR',
+      'Numero do Processo DIJUR',
+      'Data de Entrada DIJUR',
+      'Last Sync At',
+      'Radar SUCOT',
+      'Status Operacional',
+      'Notas',
+      'Origem dos Dados'
+    ];
+
+    const csv = [
+      headers.join(','),
+      ...this.painelAcoesRenovatoriasFiltrado.map((item) => this.serializarLinhaPainelFormal(item).join(','))
+    ].join('\n');
+
+    this.baixarArquivo(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }), `painel-acoes-renovatorias-${this.obterDataArquivo()}.csv`);
+  }
+
+  private exportarPainelFormalExcel(): void {
+    const rows = this.painelAcoesRenovatoriasFiltrado.map((item) => ({
+      'Código SIJUR': item.codigoSijur,
+      'Contrato SAP': item.contratoSap,
+      'Contrato SICLG': item.contratoSiclg,
+      'Protocolo Formal (SICLG)': item.protocoloFormalSiclg,
+      'Unidade': item.unidade,
+      'Vigência (SICLG)': item.vigenciaSiclg,
+      'Situação SICLG': item.situacaoSiclg,
+      'Número do Processo (SICLG)': item.numeroProcessoSiclg,
+      'Situação SIJUR': item.situacaoSijur,
+      'Situação CEFOR': item.situacaoCefor,
+      'Número do Processo DIJUR': item.numeroProcessoDijur,
+      'Data de Entrada DIJUR': item.dataEntradaDijur,
+      'Última sincronização DIJUR': item.lastSyncAt,
+      'Radar SUCOT': item.radarSucot,
+      'Status operacional': item.statusOperacional,
+      'Notas do Gestor Formal': item.notas,
+      'Origem dos dados': item.origemDados
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'AcoesRenovatorias');
+    XLSX.writeFile(workbook, `painel-acoes-renovatorias-${this.obterDataArquivo()}.xlsx`);
+  }
+
+  private exportarPainelAvisoCSV(): void {
+    const headers = [
+      'Contrato SAP',
+      'Contrato SICLG',
+      'Situacao SICLG',
+      'Descricao',
+      'Ultimo valor pago no SAP',
+      'Decisao de prorrogar',
+      'Fase',
+      'Demanda SICLG',
+      'Colegiado',
+      'Limite legal AR',
+      'Fim da vigencia',
+      'Ultimo pagamento SAP'
+    ];
+
+    const csv = [
+      headers.join(','),
+      ...this.painelAvisoVencimentoFiltrado.map((item) => this.serializarLinhaPainelAviso(item).join(','))
+    ].join('\n');
+
+    this.baixarArquivo(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }), `painel-aviso-vencimento-${this.obterDataArquivo()}.csv`);
+  }
+
+  private exportarPainelAvisoExcel(): void {
+    const rows = this.painelAvisoVencimentoFiltrado.map((item) => ({
+      'Contrato SAP': item.contratoSap,
+      'Contrato SICLG': item.contratoSiclg,
+      'Situação SICLG': item.situacaoSiclg,
+      'Descrição': item.descricao,
+      'Último valor pago no SAP': item.ultimoValorPagoSap,
+      'Decisão de prorrogar': item.decisaoProrrogar,
+      'Fase': item.fase,
+      'Demanda (SICLG)': item.demandaSiclg,
+      'Colegiado': item.colegiado,
+      'Limite legal para ingresso da AR': item.limiteLegalAr,
+      'Fim da vigência': item.fimVigencia,
+      'Último pagamento SAP': item.ultimoPagamentoSap
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'AvisoVencimento');
+    XLSX.writeFile(workbook, `painel-aviso-vencimento-${this.obterDataArquivo()}.xlsx`);
+  }
+
+  private serializarLinhaPainelFormal(item: PainelAcoesRenovatoriasRow): string[] {
+    const escapeCSV = (value: string): string => `"${value.replace(/"/g, '""').replace(/\r?\n|\r/g, ' ')}"`;
+
+    return [
+      item.codigoSijur,
+      item.contratoSap,
+      item.contratoSiclg,
+      item.protocoloFormalSiclg,
+      item.unidade,
+      item.vigenciaSiclg,
+      item.situacaoSiclg,
+      item.numeroProcessoSiclg,
+      item.situacaoSijur,
+      item.situacaoCefor,
+      item.numeroProcessoDijur,
+      item.dataEntradaDijur,
+      item.lastSyncAt,
+      item.radarSucot,
+      item.statusOperacional,
+      item.notas,
+      item.origemDados
+    ].map(escapeCSV);
+  }
+
+  private serializarLinhaPainelAviso(item: PainelAvisoVencimentoRow): string[] {
+    const escapeCSV = (value: string | number): string => `"${String(value).replace(/"/g, '""').replace(/\r?\n|\r/g, ' ')}"`;
+
+    return [
+      item.contratoSap,
+      item.contratoSiclg,
+      item.situacaoSiclg,
+      item.descricao,
+      item.ultimoValorPagoSap.toFixed(2),
+      item.decisaoProrrogar,
+      item.fase,
+      item.demandaSiclg,
+      item.colegiado,
+      item.limiteLegalAr,
+      item.fimVigencia,
+      item.ultimoPagamentoSap
+    ].map(escapeCSV);
+  }
+
+  private baixarArquivo(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  private obterDataArquivo(): string {
+    const data = new Date();
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, '0');
+    const d = String(data.getDate()).padStart(2, '0');
+    return `${y}${m}${d}`;
+  }
+
+  private configurarPaginacaoPainelFormal(): void {
+    const select = document.getElementById('formalItensPorPaginaSelect') as HTMLSelectElement | null;
+    if (!select) return;
+
+    select.value = String(this.itemsPerPagePainelFormal);
+    select.addEventListener('change', () => {
+      const val = parseInt(select.value, 10);
+      if (!isNaN(val) && val > 0) {
+        this.itemsPerPagePainelFormal = val;
+        this.currentPagePainelFormal = 1;
+        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+      }
+    });
+  }
+
+  private configurarPaginacaoPainelAviso(): void {
+    const select = document.getElementById('avisoItensPorPaginaSelect') as HTMLSelectElement | null;
+    if (!select) return;
+
+    select.value = String(this.itemsPerPagePainelAviso);
+    select.addEventListener('change', () => {
+      const val = parseInt(select.value, 10);
+      if (!isNaN(val) && val > 0) {
+        this.itemsPerPagePainelAviso = val;
+        this.currentPagePainelAviso = 1;
+        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
       }
     });
   }
@@ -2287,6 +2859,132 @@ export class SistemaSILIC {
     this.painelVencimentosFiltrado = [...this.painelVencimentos];
     this.currentPagePainel = 1;
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+  }
+
+  private aplicarFiltrosPainelAcoesRenovatorias(): void {
+    const codigoSijur = ((document.getElementById('formalCodigoSijurFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const contratoSap = ((document.getElementById('formalContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const contratoSiclg = ((document.getElementById('formalContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const protocoloFormal = ((document.getElementById('formalProtocoloFormalFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const unidade = ((document.getElementById('formalUnidadeFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const numeroProcesso = ((document.getElementById('formalProcessoFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const vigenciaAte = (document.getElementById('formalVigenciaAteFiltro') as HTMLInputElement | null)?.value || '';
+    const situacaoSiclg = (document.getElementById('formalSituacaoSiclgFiltro') as HTMLSelectElement | null)?.value || '';
+    const situacaoSijur = (document.getElementById('formalSituacaoSijurFiltro') as HTMLSelectElement | null)?.value || '';
+    const situacaoCefor = (document.getElementById('formalSituacaoCeforFiltro') as HTMLSelectElement | null)?.value || '';
+
+    const vigenciaAteDate = vigenciaAte ? new Date(vigenciaAte) : null;
+
+    this.painelAcoesRenovatoriasFiltrado = this.painelAcoesRenovatorias.filter((item) => {
+      if (codigoSijur && !item.codigoSijur.toLowerCase().includes(codigoSijur)) return false;
+      if (contratoSap && !item.contratoSap.toLowerCase().includes(contratoSap)) return false;
+      if (contratoSiclg && !item.contratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
+      if (protocoloFormal && !item.protocoloFormalSiclg.toLowerCase().includes(protocoloFormal)) return false;
+      if (unidade && !item.unidade.toLowerCase().includes(unidade)) return false;
+      if (numeroProcesso && !item.numeroProcessoSiclg.toLowerCase().includes(numeroProcesso)) return false;
+      if (situacaoSiclg && item.situacaoSiclg !== situacaoSiclg) return false;
+      if (situacaoSijur && item.situacaoSijur !== situacaoSijur) return false;
+      if (situacaoCefor && item.situacaoCefor !== situacaoCefor) return false;
+
+      if (vigenciaAteDate) {
+        if (!item.vigenciaDate || item.vigenciaDate > vigenciaAteDate) return false;
+      }
+
+      return true;
+    });
+
+    this.currentPagePainelFormal = 1;
+    this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+  }
+
+  private limparFiltrosPainelAcoesRenovatorias(): void {
+    this.setInputValue('formalCodigoSijurFiltro', '');
+    this.setInputValue('formalContratoSapFiltro', '');
+    this.setInputValue('formalContratoSiclgFiltro', '');
+    this.setInputValue('formalProtocoloFormalFiltro', '');
+    this.setInputValue('formalUnidadeFiltro', '');
+    this.setInputValue('formalProcessoFiltro', '');
+    this.setInputValue('formalVigenciaAteFiltro', '');
+
+    const situacaoSiclg = document.getElementById('formalSituacaoSiclgFiltro') as HTMLSelectElement | null;
+    const situacaoSijur = document.getElementById('formalSituacaoSijurFiltro') as HTMLSelectElement | null;
+    const situacaoCefor = document.getElementById('formalSituacaoCeforFiltro') as HTMLSelectElement | null;
+
+    if (situacaoSiclg) situacaoSiclg.value = '';
+    if (situacaoSijur) situacaoSijur.value = '';
+    if (situacaoCefor) situacaoCefor.value = '';
+
+    this.painelAcoesRenovatoriasFiltrado = [...this.painelAcoesRenovatorias];
+    this.currentPagePainelFormal = 1;
+    this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+  }
+
+  private aplicarFiltrosPainelAvisoVencimento(): void {
+    const contratoSap = ((document.getElementById('avisoContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const contratoSiclg = ((document.getElementById('avisoContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const situacaoSiclg = (document.getElementById('avisoSituacaoSiclgFiltro') as HTMLSelectElement | null)?.value || '';
+    const fimVigenciaAte = (document.getElementById('avisoFimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
+    const ultimoPagamentoAte = (document.getElementById('avisoUltimoPagamentoFiltro') as HTMLInputElement | null)?.value || '';
+    const decisao = (document.getElementById('avisoDecisaoFiltro') as HTMLSelectElement | null)?.value || '';
+    const fase = (document.getElementById('avisoFaseFiltro') as HTMLSelectElement | null)?.value || '';
+    const demanda = (document.getElementById('avisoDemandaFiltro') as HTMLSelectElement | null)?.value || '';
+    const colegiado = (document.getElementById('avisoColegiadoFiltro') as HTMLSelectElement | null)?.value || '';
+    const limiteArAte = (document.getElementById('avisoLimiteArFiltro') as HTMLInputElement | null)?.value || '';
+
+    const fimVigenciaDate = fimVigenciaAte ? new Date(fimVigenciaAte) : null;
+    const ultimoPagamentoDate = ultimoPagamentoAte ? new Date(ultimoPagamentoAte) : null;
+    const limiteArDate = limiteArAte ? new Date(limiteArAte) : null;
+
+    this.painelAvisoVencimentoFiltrado = this.painelAvisoVencimento.filter((item) => {
+      if (contratoSap && !item.contratoSap.toLowerCase().includes(contratoSap)) return false;
+      if (contratoSiclg && !item.contratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
+      if (situacaoSiclg && item.situacaoSiclg !== situacaoSiclg) return false;
+      if (decisao && item.decisaoProrrogar !== decisao) return false;
+      if (fase && item.fase !== fase) return false;
+      if (demanda && item.demandaSiclg !== demanda) return false;
+      if (colegiado && item.colegiado !== colegiado) return false;
+
+      if (fimVigenciaDate) {
+        if (!item.fimVigenciaDate || item.fimVigenciaDate > fimVigenciaDate) return false;
+      }
+
+      if (ultimoPagamentoDate) {
+        if (!item.ultimoPagamentoDate || item.ultimoPagamentoDate > ultimoPagamentoDate) return false;
+      }
+
+      if (limiteArDate) {
+        const limite = this.parseDate(item.limiteLegalAr);
+        if (!limite || limite > limiteArDate) return false;
+      }
+
+      return true;
+    });
+
+    this.currentPagePainelAviso = 1;
+    this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+  }
+
+  private limparFiltrosPainelAvisoVencimento(): void {
+    this.setInputValue('avisoContratoSapFiltro', '');
+    this.setInputValue('avisoContratoSiclgFiltro', '');
+    this.setInputValue('avisoFimVigenciaFiltro', '');
+    this.setInputValue('avisoUltimoPagamentoFiltro', '');
+    const demanda = document.getElementById('avisoDemandaFiltro') as HTMLSelectElement | null;
+    const colegiado = document.getElementById('avisoColegiadoFiltro') as HTMLSelectElement | null;
+    this.setInputValue('avisoLimiteArFiltro', '');
+
+    const situacao = document.getElementById('avisoSituacaoSiclgFiltro') as HTMLSelectElement | null;
+    const decisao = document.getElementById('avisoDecisaoFiltro') as HTMLSelectElement | null;
+    const fase = document.getElementById('avisoFaseFiltro') as HTMLSelectElement | null;
+    if (situacao) situacao.value = '';
+    if (decisao) decisao.value = '';
+    if (fase) fase.value = '';
+    if (demanda) demanda.value = '';
+    if (colegiado) colegiado.value = '';
+
+    this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
+    this.currentPagePainelAviso = 1;
+    this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
   }
 
   private atualizarPainelVencimentos(dados: PainelVencimentosContrato[]): void {
@@ -2347,6 +3045,280 @@ export class SistemaSILIC {
     this.setElementText('painelPaginationEnd', String(fim));
     this.setElementText('painelPaginationTotal', String(total));
     this.gerarBotoesPaginacaoPainel(total);
+  }
+
+  private atualizarPainelAcoesRenovatorias(dados: PainelAcoesRenovatoriasRow[]): void {
+    const tbody = document.getElementById('formalAcoesRenovatoriasBody') as HTMLTableSectionElement | null;
+    const resumo = document.getElementById('formalResumo');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    const inicio = (this.currentPagePainelFormal - 1) * this.itemsPerPagePainelFormal;
+    const fim = inicio + this.itemsPerPagePainelFormal;
+    const dadosPaginados = dados.slice(inicio, fim);
+
+    dadosPaginados.forEach((item) => {
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td>${item.codigoSijur}</td>
+        <td>${item.contratoSap}</td>
+        <td>${item.contratoSiclg}</td>
+        <td>${item.protocoloFormalSiclg}</td>
+        <td>${item.unidade}</td>
+        <td>${item.vigenciaSiclg}</td>
+        <td><span class="${this.obterBadgePainelFormal(item.situacaoSiclg, 'siclg')}">${item.situacaoSiclg}</span></td>
+        <td>${item.numeroProcessoSiclg}</td>
+        <td><span class="${this.obterBadgePainelFormal(item.situacaoSijur, 'sijur')}">${item.situacaoSijur}</span></td>
+        <td><span class="${this.obterBadgePainelFormal(item.situacaoCefor, 'cefor')}">${item.situacaoCefor}</span></td>
+        <td><button class="btn-table-action" data-formal-id="${item.contratoId}">Detalhar</button></td>
+      `;
+
+      const button = tr.querySelector('[data-formal-id]');
+      if (button) {
+        button.addEventListener('click', () => this.abrirModalDetalhesFormal(item.contratoId));
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    if (resumo) {
+      const total = dados.length;
+      const janelaCritica = dados.filter((item) => item.situacaoSiclg === 'Renovação com vencimento iminente' || item.situacaoSiclg === 'Vigência expirada').length;
+      const analiseDijur = dados.filter((item) => item.situacaoSijur === 'Em análise DIJUR' || item.situacaoSijur === 'Minuta/peça em elaboração').length;
+      const radarAcionado = dados.filter((item) => item.radarSucot === 'Acionado').length;
+      resumo.textContent = `${total} registro(s) no A-III • ${janelaCritica} em janela crítica • ${analiseDijur} com tratamento DIJUR • ${radarAcionado} com radar SUCOT acionado`;
+    }
+
+    this.atualizarPaginacaoPainelFormal(dados.length);
+  }
+
+  private atualizarPaginacaoPainelFormal(total: number): void {
+    const inicio = total === 0 ? 0 : (this.currentPagePainelFormal - 1) * this.itemsPerPagePainelFormal + 1;
+    const fim = Math.min(this.currentPagePainelFormal * this.itemsPerPagePainelFormal, total);
+    this.setElementText('formalPaginationStart', String(inicio));
+    this.setElementText('formalPaginationEnd', String(fim));
+    this.setElementText('formalPaginationTotal', String(total));
+    this.gerarBotoesPaginacaoPainelFormal(total);
+  }
+
+  private atualizarPainelAvisoVencimento(dados: PainelAvisoVencimentoRow[]): void {
+    const tbody = document.getElementById('avisoVencimentoBody') as HTMLTableSectionElement | null;
+    const resumo = document.getElementById('avisoResumo');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    const inicio = (this.currentPagePainelAviso - 1) * this.itemsPerPagePainelAviso;
+    const fim = inicio + this.itemsPerPagePainelAviso;
+    const dadosPaginados = dados.slice(inicio, fim);
+
+    dadosPaginados.forEach((item) => {
+      const tr = document.createElement('tr');
+      const situacaoClass = item.situacaoSiclg === 'Ativo' ? 'badge badge-ativo' : 'badge badge-warning';
+      const decisaoClass = item.decisaoProrrogar === 'Sim' ? 'badge badge-ativo' : 'badge badge-danger';
+
+      tr.innerHTML = `
+        <td>${item.contratoSap}</td>
+        <td>${item.contratoSiclg}</td>
+        <td><span class="${situacaoClass}">${item.situacaoSiclg}</span></td>
+        <td>${item.descricao}</td>
+        <td>${this.formatCurrency(item.ultimoValorPagoSap)}</td>
+        <td><span class="${decisaoClass}">${item.decisaoProrrogar}</span></td>
+        <td>${item.fase}</td>
+        <td>${item.demandaSiclg}</td>
+        <td>${item.colegiado}</td>
+        <td>${item.limiteLegalAr}</td>
+        <td><button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar</button></td>
+      `;
+
+      const button = tr.querySelector('[data-formal-aviso-id]');
+      if (button) {
+        button.addEventListener('click', () => this.abrirModalDetalhesFormal(item.contratoId));
+      }
+
+      tbody.appendChild(tr);
+    });
+
+    if (resumo) {
+      const total = dados.length;
+      const prorrogar = dados.filter((item) => item.decisaoProrrogar === 'Sim').length;
+      const criticos = dados.filter((item) => {
+        const limite = this.parseDate(item.limiteLegalAr);
+        if (!limite) return false;
+        const dias = Math.ceil((limite.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        return dias <= 30;
+      }).length;
+      resumo.textContent = `${total} registro(s) no aviso de vencimento • ${prorrogar} com decisão de prorrogar • ${criticos} em janela crítica para AR`;
+    }
+
+    this.atualizarPaginacaoPainelAviso(dados.length);
+  }
+
+  private atualizarPaginacaoPainelAviso(total: number): void {
+    const inicio = total === 0 ? 0 : (this.currentPagePainelAviso - 1) * this.itemsPerPagePainelAviso + 1;
+    const fim = Math.min(this.currentPagePainelAviso * this.itemsPerPagePainelAviso, total);
+    this.setElementText('avisoPaginationStart', String(inicio));
+    this.setElementText('avisoPaginationEnd', String(fim));
+    this.setElementText('avisoPaginationTotal', String(total));
+    this.gerarBotoesPaginacaoPainelAviso(total);
+  }
+
+  private abrirModalDetalhesFormal(contratoId: string): void {
+    const registro = this.painelAcoesRenovatorias.find((item) => item.contratoId === contratoId);
+    const modal = document.getElementById('modalDetalhesFormal');
+    if (!registro || !modal) return;
+
+    this.setElementText('formalDetCodigoSijur', registro.codigoSijur);
+    this.setElementText('formalDetContratoSap', registro.contratoSap);
+    this.setElementText('formalDetContratoSiclg', registro.contratoSiclg);
+    this.setElementText('formalDetProtocolo', registro.protocoloFormalSiclg);
+    this.setElementText('formalDetProcesso', registro.numeroProcessoSiclg);
+    this.setElementText('formalDetUnidade', registro.unidade);
+    this.setElementText('formalDetVigencia', registro.vigenciaSiclg);
+    this.setElementText('formalDetOrigemDados', registro.origemDados);
+    this.setBadgeText('formalDetSituacaoSiclg', registro.situacaoSiclg, this.obterBadgePainelFormal(registro.situacaoSiclg, 'siclg'));
+    this.setBadgeText('formalDetSituacaoSijur', registro.situacaoSijur, this.obterBadgePainelFormal(registro.situacaoSijur, 'sijur'));
+    this.setBadgeText('formalDetSituacaoCefor', registro.situacaoCefor, this.obterBadgePainelFormal(registro.situacaoCefor, 'cefor'));
+    this.setElementText('formalDetNumeroProcessoDijur', registro.numeroProcessoDijur);
+    this.setElementText('formalDetDataEntradaDijur', registro.dataEntradaDijur);
+    this.setElementText('formalDetLastSyncAt', registro.lastSyncAt);
+    this.setElementText('formalDetPartesDijur', registro.partesDijur);
+    this.setElementText('formalDetStatusOperacional', registro.statusOperacional);
+    this.setInputValue('formalEditRadarSucot', registro.radarSucot);
+    this.setTextAreaValue('formalEditNotas', registro.notas);
+    modal.setAttribute('data-contrato-id', registro.contratoId);
+
+    modal.classList.add('active');
+  }
+
+  private fecharModalDetalhesFormal(): void {
+    const modal = document.getElementById('modalDetalhesFormal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  private setBadgeText(id: string, value: string, className: string): void {
+    const element = document.getElementById(id);
+    if (!element) return;
+    element.textContent = value;
+    element.className = className;
+  }
+
+  private setTextAreaValue(id: string, value: string): void {
+    const element = document.getElementById(id) as HTMLTextAreaElement | null;
+    if (element) element.value = value || '';
+  }
+
+  private salvarEdicaoModalFormal(): void {
+    const modal = document.getElementById('modalDetalhesFormal');
+    const contratoId = modal?.getAttribute('data-contrato-id');
+    const radarSucot = (document.getElementById('formalEditRadarSucot') as HTMLSelectElement | null)?.value || 'Não acionado';
+    const notas = (document.getElementById('formalEditNotas') as HTMLTextAreaElement | null)?.value.trim() || '';
+    if (!contratoId) return;
+
+    const row = this.painelAcoesRenovatorias.find((item) => item.contratoId === contratoId);
+    if (!row) return;
+
+    row.radarSucot = radarSucot;
+    row.notas = notas;
+
+    const edicoes = this.carregarEdicoesPainelFormal();
+    edicoes[contratoId] = { radarSucot, notas };
+    this.salvarEdicoesPainelFormal(edicoes);
+
+    this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+    this.showToast('Radar SUCOT e notas do Gestor Formal salvos.');
+  }
+
+  private gerarBotoesPaginacaoPainelFormal(total: number): void {
+    const controls = document.getElementById('formalPaginationControls');
+    if (!controls) return;
+
+    controls.innerHTML = '';
+
+    const totalPaginas = Math.max(1, Math.ceil(total / this.itemsPerPagePainelFormal));
+    if (this.currentPagePainelFormal > totalPaginas) this.currentPagePainelFormal = totalPaginas;
+    if (totalPaginas <= 1) return;
+
+    const criarBotao = (texto: string, onClick: () => void, disabled = false, active = false): void => {
+      const button = document.createElement('button');
+      button.textContent = texto;
+      button.disabled = disabled;
+      if (active) button.classList.add('active');
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        onClick();
+      });
+      controls.appendChild(button);
+    };
+
+    criarBotao('← Anterior', () => {
+      if (this.currentPagePainelFormal > 1) {
+        this.currentPagePainelFormal--;
+        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+      }
+    }, this.currentPagePainelFormal === 1);
+
+    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+      criarBotao(String(pagina), () => {
+        this.currentPagePainelFormal = pagina;
+        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+      }, false, pagina === this.currentPagePainelFormal);
+    }
+
+    criarBotao('Próximo →', () => {
+      if (this.currentPagePainelFormal < totalPaginas) {
+        this.currentPagePainelFormal++;
+        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+      }
+    }, this.currentPagePainelFormal === totalPaginas);
+  }
+
+  private gerarBotoesPaginacaoPainelAviso(total: number): void {
+    const controls = document.getElementById('avisoPaginationControls');
+    if (!controls) return;
+
+    controls.innerHTML = '';
+
+    const totalPaginas = Math.max(1, Math.ceil(total / this.itemsPerPagePainelAviso));
+    if (this.currentPagePainelAviso > totalPaginas) this.currentPagePainelAviso = totalPaginas;
+    if (totalPaginas <= 1) return;
+
+    const criarBotao = (texto: string, onClick: () => void, disabled = false, active = false): void => {
+      const button = document.createElement('button');
+      button.textContent = texto;
+      button.disabled = disabled;
+      if (active) button.classList.add('active');
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        onClick();
+      });
+      controls.appendChild(button);
+    };
+
+    criarBotao('← Anterior', () => {
+      if (this.currentPagePainelAviso > 1) {
+        this.currentPagePainelAviso--;
+        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+      }
+    }, this.currentPagePainelAviso === 1);
+
+    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+      criarBotao(String(pagina), () => {
+        this.currentPagePainelAviso = pagina;
+        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+      }, false, pagina === this.currentPagePainelAviso);
+    }
+
+    criarBotao('Próximo →', () => {
+      if (this.currentPagePainelAviso < totalPaginas) {
+        this.currentPagePainelAviso++;
+        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+      }
+    }, this.currentPagePainelAviso === totalPaginas);
   }
 
   private gerarBotoesPaginacaoPainel(total: number): void {

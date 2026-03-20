@@ -280,6 +280,47 @@ export interface PainelVencimentosContrato {
   conciliacaoStatus: 'conciliado' | 'pendente_conciliacao';
 }
 
+export interface PainelAcoesRenovatoriasRow {
+  contratoId: string;
+  codigoSijur: string;
+  contratoSap: string;
+  contratoSiclg: string;
+  protocoloFormalSiclg: string;
+  unidade: string;
+  vigenciaSiclg: string;
+  situacaoSiclg: string;
+  numeroProcessoSiclg: string;
+  situacaoSijur: string;
+  situacaoCefor: string;
+  numeroProcessoDijur: string;
+  dataEntradaDijur: string;
+  partesDijur: string;
+  lastSyncAt: string;
+  radarSucot: string;
+  notas: string;
+  statusOperacional: string;
+  origemDados: string;
+  vigenciaDate: Date | null;
+}
+
+export interface PainelAvisoVencimentoRow {
+  contratoId: string;
+  contratoSap: string;
+  contratoSiclg: string;
+  situacaoSiclg: string;
+  descricao: string;
+  ultimoValorPagoSap: number;
+  ultimoPagamentoSap: string;
+  decisaoProrrogar: 'Sim' | 'Não';
+  fase: string;
+  demandaSiclg: string;
+  colegiado: string;
+  limiteLegalAr: string;
+  fimVigencia: string;
+  fimVigenciaDate: Date | null;
+  ultimoPagamentoDate: Date | null;
+}
+
 export interface PaginationConfig {
   currentPage: number;
   itemsPerPage: number;

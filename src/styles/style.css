@@ -362,6 +362,15 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
+/* Separa de forma evidente Perfis de Gestao e Portfolio na home */
+#perfisGestaoSection {
+    margin-bottom: 2.75rem !important;
+}
+
+#perfisGestaoSection + #portfolioSection {
+    margin-top: 0 !important;
+}
+
 .route-hidden {
     display: none;
 }
@@ -677,6 +686,14 @@ body {
     
     .table-section {
         padding: 1rem;
+    }
+
+    #perfisGestaoSection {
+        margin-bottom: 1.75rem !important;
+    }
+
+    #perfisGestaoSection + #portfolioSection {
+        margin-top: 0 !important;
     }
     
     .stat-card-main {
@@ -1124,6 +1141,93 @@ body {
 .modal-body {
     padding: 0;
     overflow-y: visible;
+}
+
+.formal-modal-content {
+    max-width: 980px;
+    min-height: auto;
+    border-radius: 16px;
+    margin-top: 4vh;
+}
+
+.formal-modal-body {
+    padding: 2rem;
+}
+
+.formal-panel-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.formal-panel-tab {
+    border: 1px solid var(--color-gray-300);
+    background: white;
+    color: var(--color-gray-700);
+    padding: 0.8rem 1.2rem;
+    border-radius: 999px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.formal-panel-tab:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.formal-panel-tab.is-active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+    box-shadow: 0 8px 18px rgba(0, 102, 204, 0.18);
+}
+
+.formal-panel-view {
+    display: none;
+}
+
+.formal-panel-view.is-active {
+    display: block;
+}
+
+.formal-detail-grid {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.formal-notes-textarea {
+    width: 100%;
+    min-height: 132px;
+    resize: vertical;
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--color-gray-200);
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-gray-800);
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.formal-notes-textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.12);
+}
+
+.formal-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+#formalDetObservacoes {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-gray-700);
 }
 
 /* ==================== TABS ==================== */
