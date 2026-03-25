@@ -127,6 +127,7 @@ interface Fase7OperacionalRow {
  */
 export class SistemaSILIC {
   private static readonly FORMAL_STORAGE_KEY = 'silic.formal.edicoes.v1';
+  private static readonly AVISO_STORAGE_KEY = 'silic.aviso.operacional.v1';
   private imoveis: Imovel[] = [];
   private imoveisOriginais: Imovel[] = []; // Lista completa sem filtros
   private locadores: Locador[] = [];
@@ -184,13 +185,16 @@ export class SistemaSILIC {
     this.configurarPainelVencimentos();
     this.configurarPainelAcoesRenovatorias();
     this.configurarPainelAvisoVencimento();
+    this.configurarDrawerContextoAviso();
     this.configurarItemsPorPagina();
     this.configurarPaginacaoPainelPortfolio();
     this.configurarPaginacaoPainelFormal();
     this.configurarPaginacaoPainelAviso();
     this.configurarSwitchPainelFormal();
+    this.reposicionarPainelAvisoParaOperacional();
     this.configurarNavegacaoRotas();
     this.configurarAbasPerfilOperacional();
+    this.configurarNavegacaoTopoOperacional();
     this.inicializarDadosFasesOperacionais();
     this.carregarFavoritosFases();
     this.carregarSelecaoPrazoChips();
@@ -2161,6 +2165,7 @@ export class SistemaSILIC {
 
   private inicializarPainelAvisoVencimento(): void {
     this.painelAvisoVencimento = this.montarPainelAvisoVencimento(this.painelVencimentos);
+    this.aplicarEstadoPersistidoPainelAviso();
     this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
   }
 
@@ -2279,6 +2284,7 @@ export class SistemaSILIC {
     this.painelAcoesRenovatorias = this.montarPainelAcoesRenovatorias(dadosSap.imoveis, dadosSap.locadores, true, dadosDijur || undefined);
     this.painelAcoesRenovatoriasFiltrado = [...this.painelAcoesRenovatorias];
     this.painelAvisoVencimento = this.montarPainelAvisoVencimento(painelVencimentosSap);
+    this.aplicarEstadoPersistidoPainelAviso();
     this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
     this.currentPagePainelFormal = 1;
     this.currentPagePainelAviso = 1;
@@ -2287,10 +2293,19 @@ export class SistemaSILIC {
   }
 
   private montarPainelAvisoVencimento(rows: PainelVencimentosContrato[]): PainelAvisoVencimentoRow[] {
+    const janelasEmuladasDias = [365, 180, 90, 60, 30, 20, 10, -5, -40, 270, 140, 75, 45, 15];
+
     return rows.map((row, index) => {
-      const fimVigencia = row.vigenciaSiclg !== '-' ? row.vigenciaSiclg : row.vigenciaSap;
-      const fimVigenciaDate = this.parseDate(fimVigencia);
+      const fimVigenciaOriginal = row.vigenciaSiclg !== '-' ? row.vigenciaSiclg : row.vigenciaSap;
+      const diasEmulados = janelasEmuladasDias[index % janelasEmuladasDias.length];
+      const dataEmulada = new Date();
+      dataEmulada.setDate(dataEmulada.getDate() + diasEmulados);
+
+      const fimVigencia = this.formatDate(dataEmulada.toISOString()) || fimVigenciaOriginal;
+      const fimVigenciaDate = this.parseDate(fimVigencia) || this.parseDate(fimVigenciaOriginal);
       const ultimoPagamentoDate = this.parseDate(row.ultimoPgtoSap);
+      const limiteArEmuladoDate = new Date(dataEmulada);
+      limiteArEmuladoDate.setDate(limiteArEmuladoDate.getDate() - 15);
 
       return {
         contratoId: row.contratoId,
@@ -2304,7 +2319,7 @@ export class SistemaSILIC {
         fase: row.fase,
         demandaSiclg: row.demandaSiclg,
         colegiado: this.derivarColegiadoAviso(row, index),
-        limiteLegalAr: row.limiteAr,
+        limiteLegalAr: this.formatDate(limiteArEmuladoDate.toISOString()) || row.limiteAr,
         fimVigencia,
         fimVigenciaDate,
         ultimoPagamentoDate
@@ -2312,11 +2327,103 @@ export class SistemaSILIC {
     });
   }
 
-  private derivarDecisaoProrrogarAviso(row: PainelVencimentosContrato): 'Sim' | 'Não' {
-    if (row.fase === 'Encerramento') return 'Não';
-    if (row.conciliacaoStatus === 'pendente_conciliacao') return 'Não';
-    if (row.fase === 'Negociação' || row.fase === 'Aditivo' || row.fase === 'Monitoramento') return 'Sim';
-    return row.diasParaVencimento !== null && row.diasParaVencimento > 0 ? 'Sim' : 'Não';
+  private derivarDecisaoProrrogarAviso(row: PainelVencimentosContrato): 'a_decidir' | 'prorrogar' | 'nao_prorrogar' {
+    if (row.fase === 'Encerramento') return 'nao_prorrogar';
+    if (row.conciliacaoStatus === 'pendente_conciliacao') return 'a_decidir';
+    if (row.fase === 'Negociação' || row.fase === 'Aditivo') return 'prorrogar';
+    return 'a_decidir';
+  }
+
+  private carregarEstadoPainelAviso(): Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; protocoloFormal?: string; demandaSiclg?: string }> {
+    try {
+      const raw = localStorage.getItem(SistemaSILIC.AVISO_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private salvarEstadoPainelAviso(estado: Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; protocoloFormal?: string; demandaSiclg?: string }>): void {
+    try {
+      localStorage.setItem(SistemaSILIC.AVISO_STORAGE_KEY, JSON.stringify(estado));
+    } catch {
+      // Ignora indisponibilidade de localStorage.
+    }
+  }
+
+  private aplicarEstadoPersistidoPainelAviso(): void {
+    const estado = this.carregarEstadoPainelAviso();
+    this.painelAvisoVencimento.forEach((item) => {
+      const atual = estado[item.contratoId];
+      if (!atual) return;
+      item.decisaoProrrogar = atual.decisaoProrrogar;
+      if (atual.protocoloFormal) item.protocoloFormal = atual.protocoloFormal;
+      if (atual.demandaSiclg) item.demandaSiclg = atual.demandaSiclg;
+    });
+  }
+
+  private formatarDecisaoAviso(decisao: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'): string {
+    if (decisao === 'prorrogar') return 'Prorrogar';
+    if (decisao === 'nao_prorrogar') return 'Não prorrogar';
+    return 'A decidir';
+  }
+
+  private gerarProtocoloSolicitacaoProrrogacao(contratoSap: string): string {
+    const data = new Date();
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, '0');
+    const d = String(data.getDate()).padStart(2, '0');
+    const base = (contratoSap || '').replace(/\D/g, '').slice(-4).padStart(4, '0');
+    const seq = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    return `AF-PROR-${y}${m}${d}-${base}-${seq}`;
+  }
+
+  private atualizarDecisaoPainelAviso(contratoId: string, decisao: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row) return;
+
+    row.decisaoProrrogar = decisao;
+    const estado = this.carregarEstadoPainelAviso();
+    estado[contratoId] = {
+      decisaoProrrogar: decisao,
+      protocoloFormal: row.protocoloFormal,
+      demandaSiclg: row.demandaSiclg
+    };
+    this.salvarEstadoPainelAviso(estado);
+
+    this.aplicarFiltrosPainelAvisoVencimento();
+  }
+
+  private solicitarProrrogacaoFormal(contratoId: string): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row) return;
+
+    if (row.decisaoProrrogar !== 'prorrogar') {
+      this.showToast('Defina a decisão como "Prorrogar" antes de enviar a solicitação ao Gestor Formal.');
+      return;
+    }
+
+    if (row.protocoloFormal) {
+      this.showToast(`Solicitação já registrada. Protocolo: ${row.protocoloFormal}.`);
+      return;
+    }
+
+    const protocolo = this.gerarProtocoloSolicitacaoProrrogacao(row.contratoSap);
+    row.protocoloFormal = protocolo;
+    row.demandaSiclg = 'Ato Formal - Prorrogação';
+
+    const estado = this.carregarEstadoPainelAviso();
+    estado[contratoId] = {
+      decisaoProrrogar: row.decisaoProrrogar,
+      protocoloFormal: protocolo,
+      demandaSiclg: row.demandaSiclg
+    };
+    this.salvarEstadoPainelAviso(estado);
+
+    this.showToast(`Solicitação enviada ao Gestor Formal na categoria Ato Formal / Prorrogação. Protocolo gerado: ${protocolo}.`);
+    this.aplicarFiltrosPainelAvisoVencimento();
   }
 
   private derivarColegiadoAviso(row: PainelVencimentosContrato, index: number): string {
@@ -2588,11 +2695,83 @@ export class SistemaSILIC {
     this.addEventListenerSafe('avisoLimparBtn', 'click', () => this.limparFiltrosPainelAvisoVencimento());
     this.addEventListenerSafe('avisoExportarCsvBtn', 'click', () => this.exportarPainelAvisoCSV());
     this.addEventListenerSafe('avisoExportarExcelBtn', 'click', () => this.exportarPainelAvisoExcel());
+    this.addEventListenerSafe('avisoToggleFiltrosBtn', 'click', () => {
+      const body = document.getElementById('avisoFiltrosBody');
+      const btn = document.getElementById('avisoToggleFiltrosBtn');
+      if (!body || !btn) return;
+
+      const oculto = body.hasAttribute('hidden');
+      if (oculto) {
+        body.removeAttribute('hidden');
+        btn.textContent = 'Ocultar filtros';
+      } else {
+        body.setAttribute('hidden', 'true');
+        btn.textContent = 'Mostrar filtros';
+      }
+    });
+  }
+
+  private configurarDrawerContextoAviso(): void {
+    const drawer = document.getElementById('avisoContextDrawer');
+    const backdrop = document.getElementById('avisoContextDrawerBackdrop');
+    const closeBtn = document.getElementById('avisoContextDrawerClose');
+    if (!drawer || !backdrop || !closeBtn) return;
+
+    closeBtn.addEventListener('click', () => this.fecharDrawerContextoAviso());
+    backdrop.addEventListener('click', () => this.fecharDrawerContextoAviso());
+
+    document.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && drawer.classList.contains('active')) {
+        this.fecharDrawerContextoAviso();
+      }
+    });
+  }
+
+  private abrirDrawerContextoAviso(item: PainelAvisoVencimentoRow): void {
+    const drawer = document.getElementById('avisoContextDrawer');
+    const backdrop = document.getElementById('avisoContextDrawerBackdrop');
+    const title = document.getElementById('avisoContextDrawerTitle');
+    const content = document.getElementById('avisoContextDrawerContent');
+    if (!drawer || !backdrop || !title || !content) return;
+
+    title.textContent = `Contexto do aviso - Contrato SAP ${item.contratoSap}`;
+    content.innerHTML = `
+      <div class="info-section">
+        <div class="info-grid">
+          <div class="info-item"><label>Contrato (SICLG)</label><span>${item.contratoSiclg || '-'}</span></div>
+          <div class="info-item"><label>Fase</label><span>${item.fase}</span></div>
+          <div class="info-item"><label>Demanda (SICLG)</label><span>${item.demandaSiclg}</span></div>
+          <div class="info-item"><label>Colegiado</label><span>${item.colegiado}</span></div>
+          <div class="info-item"><label>Limite legal para ingresso da AR</label><span>${item.limiteLegalAr}</span></div>
+          <div class="info-item"><label>Último valor pago no SAP</label><span>${this.formatCurrency(item.ultimoValorPagoSap)}</span></div>
+          <div class="info-item" style="grid-column: 1 / -1;"><label>Descrição</label><span>${item.descricao}</span></div>
+        </div>
+      </div>
+    `;
+
+    drawer.classList.add('active');
+    drawer.setAttribute('aria-hidden', 'false');
+    backdrop.classList.add('active');
+    backdrop.setAttribute('aria-hidden', 'false');
+  }
+
+  private fecharDrawerContextoAviso(): void {
+    const drawer = document.getElementById('avisoContextDrawer');
+    const backdrop = document.getElementById('avisoContextDrawerBackdrop');
+    if (!drawer || !backdrop) return;
+
+    drawer.classList.remove('active');
+    drawer.setAttribute('aria-hidden', 'true');
+    backdrop.classList.remove('active');
+    backdrop.setAttribute('aria-hidden', 'true');
   }
 
   private configurarSwitchPainelFormal(): void {
-    const tabs = Array.from(document.querySelectorAll('[data-formal-panel-target]')) as HTMLButtonElement[];
-    const views = Array.from(document.querySelectorAll('[data-formal-panel]')) as HTMLElement[];
+    const container = document.getElementById('perfilFormalPage');
+    if (!container) return;
+
+    const tabs = Array.from(container.querySelectorAll('[data-formal-panel-target]')) as HTMLButtonElement[];
+    const views = Array.from(container.querySelectorAll('[data-formal-panel]')) as HTMLElement[];
     if (!tabs.length || !views.length) return;
 
     const ativarPainel = (target: string): void => {
@@ -2613,6 +2792,61 @@ export class SistemaSILIC {
     });
 
     ativarPainel('acoes-renovatorias');
+  }
+
+  private reposicionarPainelAvisoParaOperacional(): void {
+    const alvo = document.getElementById('operacionalAvisoContainer');
+    const painelAviso = document.querySelector('[data-formal-panel="aviso-vencimento"]') as HTMLElement | null;
+    if (!alvo || !painelAviso) return;
+
+    if (painelAviso.parentElement !== alvo) {
+      alvo.appendChild(painelAviso);
+    }
+
+    // O painel veio do switch formal e precisa ficar ativo no novo container.
+    painelAviso.classList.add('is-active');
+    painelAviso.hidden = false;
+
+    const botaoAvisoFormal = document.querySelector('[data-formal-panel-target="aviso-vencimento"]') as HTMLElement | null;
+    if (botaoAvisoFormal) {
+      botaoAvisoFormal.remove();
+    }
+
+    const switcherFormal = document.querySelector('#perfilFormalPage .formal-panel-switcher') as HTMLElement | null;
+    if (switcherFormal) {
+      const totalBotoes = switcherFormal.querySelectorAll('[data-formal-panel-target]').length;
+      if (totalBotoes <= 1) {
+        switcherFormal.style.display = 'none';
+      }
+    }
+  }
+
+  private configurarNavegacaoTopoOperacional(): void {
+    const container = document.getElementById('perfilOperacionalPage');
+    if (!container) return;
+
+    const tabs = Array.from(container.querySelectorAll('[data-operacional-panel-target]')) as HTMLButtonElement[];
+    const views = Array.from(container.querySelectorAll('[data-operacional-panel]')) as HTMLElement[];
+    if (!tabs.length || !views.length) return;
+
+    const ativar = (target: string): void => {
+      tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.operacionalPanelTarget === target));
+      views.forEach((view) => {
+        const active = view.dataset.operacionalPanel === target;
+        view.classList.toggle('is-active', active);
+        view.hidden = !active;
+      });
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.operacionalPanelTarget;
+        if (!target) return;
+        ativar(target);
+      });
+    });
+
+    ativar('passos-jornada');
   }
 
   private configurarPaginacaoPainelPortfolio(): void {
@@ -2694,9 +2928,12 @@ export class SistemaSILIC {
       'Descricao',
       'Ultimo valor pago no SAP',
       'Decisao de prorrogar',
+      'Protocolo formal',
       'Fase',
       'Demanda SICLG',
       'Colegiado',
+      'Janela de vencimento',
+      'Contagem D',
       'Limite legal AR',
       'Fim da vigencia',
       'Ultimo pagamento SAP'
@@ -2717,10 +2954,13 @@ export class SistemaSILIC {
       'Situação SICLG': item.situacaoSiclg,
       'Descrição': item.descricao,
       'Último valor pago no SAP': item.ultimoValorPagoSap,
-      'Decisão de prorrogar': item.decisaoProrrogar,
+      'Decisão de prorrogar': this.formatarDecisaoAviso(item.decisaoProrrogar),
+      'Protocolo formal': item.protocoloFormal || '-',
       'Fase': item.fase,
       'Demanda (SICLG)': item.demandaSiclg,
       'Colegiado': item.colegiado,
+      'Janela de vencimento': this.obterRotuloJanelaAviso(item),
+      'Contagem D': this.formatarContagemJanelaAviso(item),
       'Limite legal para ingresso da AR': item.limiteLegalAr,
       'Fim da vigência': item.fimVigencia,
       'Último pagamento SAP': item.ultimoPagamentoSap
@@ -2765,10 +3005,13 @@ export class SistemaSILIC {
       item.situacaoSiclg,
       item.descricao,
       item.ultimoValorPagoSap.toFixed(2),
-      item.decisaoProrrogar,
+      this.formatarDecisaoAviso(item.decisaoProrrogar),
+      item.protocoloFormal || '-',
       item.fase,
       item.demandaSiclg,
       item.colegiado,
+      this.obterRotuloJanelaAviso(item),
+      this.formatarContagemJanelaAviso(item),
       item.limiteLegalAr,
       item.fimVigencia,
       item.ultimoPagamentoSap
@@ -2929,6 +3172,7 @@ export class SistemaSILIC {
     const fase = (document.getElementById('avisoFaseFiltro') as HTMLSelectElement | null)?.value || '';
     const demanda = (document.getElementById('avisoDemandaFiltro') as HTMLSelectElement | null)?.value || '';
     const colegiado = (document.getElementById('avisoColegiadoFiltro') as HTMLSelectElement | null)?.value || '';
+    const janela = (document.getElementById('avisoJanelaFiltro') as HTMLSelectElement | null)?.value || '';
     const limiteArAte = (document.getElementById('avisoLimiteArFiltro') as HTMLInputElement | null)?.value || '';
 
     const fimVigenciaDate = fimVigenciaAte ? new Date(fimVigenciaAte) : null;
@@ -2943,6 +3187,7 @@ export class SistemaSILIC {
       if (fase && item.fase !== fase) return false;
       if (demanda && item.demandaSiclg !== demanda) return false;
       if (colegiado && item.colegiado !== colegiado) return false;
+      if (janela && this.classificarJanelaAviso(item) !== janela) return false;
 
       if (fimVigenciaDate) {
         if (!item.fimVigenciaDate || item.fimVigenciaDate > fimVigenciaDate) return false;
@@ -2976,9 +3221,11 @@ export class SistemaSILIC {
     const situacao = document.getElementById('avisoSituacaoSiclgFiltro') as HTMLSelectElement | null;
     const decisao = document.getElementById('avisoDecisaoFiltro') as HTMLSelectElement | null;
     const fase = document.getElementById('avisoFaseFiltro') as HTMLSelectElement | null;
+    const janela = document.getElementById('avisoJanelaFiltro') as HTMLSelectElement | null;
     if (situacao) situacao.value = '';
     if (decisao) decisao.value = '';
     if (fase) fase.value = '';
+    if (janela) janela.value = '';
     if (demanda) demanda.value = '';
     if (colegiado) colegiado.value = '';
 
@@ -3103,6 +3350,61 @@ export class SistemaSILIC {
     this.gerarBotoesPaginacaoPainelFormal(total);
   }
 
+  private calcularDiasParaVencimentoAviso(item: PainelAvisoVencimentoRow): number | null {
+    if (!item.fimVigenciaDate) return null;
+    const hoje = new Date();
+    const hojeBase = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const fimBase = new Date(item.fimVigenciaDate.getFullYear(), item.fimVigenciaDate.getMonth(), item.fimVigenciaDate.getDate());
+    return Math.ceil((fimBase.getTime() - hojeBase.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  private classificarJanelaAviso(item: PainelAvisoVencimentoRow): string {
+    const dias = this.calcularDiasParaVencimentoAviso(item);
+    if (dias === null) return '1_ano';
+    if (dias <= 0) return 'vencido';
+    if (dias <= 29) return 'menor_1_mes';
+    if (dias <= 30) return '1_mes';
+    if (dias <= 60) return '2_meses';
+    if (dias <= 90) return '3_meses';
+    if (dias <= 180) return '6_meses';
+    return '1_ano';
+  }
+
+  private obterRotuloJanelaAviso(item: PainelAvisoVencimentoRow): string {
+    const janela = this.classificarJanelaAviso(item);
+    const mapa: Record<string, string> = {
+      '1_ano': '1 ano',
+      '6_meses': '6 meses',
+      '3_meses': '3 meses',
+      '2_meses': '2 meses',
+      '1_mes': '1 mês',
+      'menor_1_mes': 'Menor que 1 mês',
+      'vencido': 'Vencido'
+    };
+    return mapa[janela] || '1 ano';
+  }
+
+  private obterClasseJanelaAviso(item: PainelAvisoVencimentoRow): string {
+    const janela = this.classificarJanelaAviso(item);
+    const mapa: Record<string, string> = {
+      '1_ano': 'badge badge-info',
+      '6_meses': 'badge badge-info',
+      '3_meses': 'badge badge-warning',
+      '2_meses': 'badge badge-warning',
+      '1_mes': 'badge badge-danger',
+      'menor_1_mes': 'badge badge-danger',
+      'vencido': 'badge badge-neutral'
+    };
+    return mapa[janela] || 'badge badge-info';
+  }
+
+  private formatarContagemJanelaAviso(item: PainelAvisoVencimentoRow): string {
+    const dias = this.calcularDiasParaVencimentoAviso(item);
+    if (dias === null) return '-';
+    if (dias <= 0) return `D+${Math.abs(dias)}`;
+    return `D-${dias}`;
+  }
+
   private atualizarPainelAvisoVencimento(dados: PainelAvisoVencimentoRow[]): void {
     const tbody = document.getElementById('avisoVencimentoBody') as HTMLTableSectionElement | null;
     const resumo = document.getElementById('avisoResumo');
@@ -3117,25 +3419,55 @@ export class SistemaSILIC {
     dadosPaginados.forEach((item) => {
       const tr = document.createElement('tr');
       const situacaoClass = item.situacaoSiclg === 'Ativo' ? 'badge badge-ativo' : 'badge badge-warning';
-      const decisaoClass = item.decisaoProrrogar === 'Sim' ? 'badge badge-ativo' : 'badge badge-danger';
+      const janelaClass = this.obterClasseJanelaAviso(item);
+      const janelaLabel = this.obterRotuloJanelaAviso(item);
+      const contagem = this.formatarContagemJanelaAviso(item);
+      const opcaoADecidir = item.decisaoProrrogar === 'a_decidir' ? 'selected' : '';
+      const opcaoProrrogar = item.decisaoProrrogar === 'prorrogar' ? 'selected' : '';
+      const opcaoNaoProrrogar = item.decisaoProrrogar === 'nao_prorrogar' ? 'selected' : '';
+      const mostrarSolicitacao = item.decisaoProrrogar === 'prorrogar' && !item.protocoloFormal;
 
       tr.innerHTML = `
         <td>${item.contratoSap}</td>
-        <td>${item.contratoSiclg}</td>
         <td><span class="${situacaoClass}">${item.situacaoSiclg}</span></td>
-        <td>${item.descricao}</td>
-        <td>${this.formatCurrency(item.ultimoValorPagoSap)}</td>
-        <td><span class="${decisaoClass}">${item.decisaoProrrogar}</span></td>
-        <td>${item.fase}</td>
-        <td>${item.demandaSiclg}</td>
-        <td>${item.colegiado}</td>
-        <td>${item.limiteLegalAr}</td>
+        <td>
+          <select class="filter-select aviso-decisao-select" data-aviso-decisao-id="${item.contratoId}">
+            <option value="a_decidir" ${opcaoADecidir}>A decidir</option>
+            <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
+            <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
+          </select>
+        </td>
+        <td><span class="${janelaClass}">${janelaLabel}</span></td>
+        <td>${contagem}</td>
+        <td>
+          ${item.protocoloFormal ? `<span class="badge badge-info">${item.protocoloFormal}</span>` : '-'}
+          ${mostrarSolicitacao ? `<button class="btn-clear" type="button" data-aviso-solicitar-id="${item.contratoId}" style="margin-top: 6px;">Solicitar Ato Formal</button>` : ''}
+        </td>
+        <td><button class="btn-clear" type="button" data-aviso-contexto-drawer="${item.contratoId}">Ver contexto</button></td>
         <td><button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar</button></td>
       `;
 
+      const selectDecisao = tr.querySelector('[data-aviso-decisao-id]') as HTMLSelectElement | null;
+      if (selectDecisao) {
+        selectDecisao.addEventListener('change', () => {
+          const novoValor = selectDecisao.value as 'a_decidir' | 'prorrogar' | 'nao_prorrogar';
+          this.atualizarDecisaoPainelAviso(item.contratoId, novoValor);
+        });
+      }
+
+      const btnSolicitar = tr.querySelector('[data-aviso-solicitar-id]') as HTMLButtonElement | null;
+      if (btnSolicitar) {
+        btnSolicitar.addEventListener('click', () => this.solicitarProrrogacaoFormal(item.contratoId));
+      }
+
+      const btnContexto = tr.querySelector('[data-aviso-contexto-drawer]') as HTMLButtonElement | null;
+      if (btnContexto) {
+        btnContexto.addEventListener('click', () => this.abrirDrawerContextoAviso(item));
+      }
+
       const button = tr.querySelector('[data-formal-aviso-id]');
       if (button) {
-        button.addEventListener('click', () => this.abrirModalDetalhesFormal(item.contratoId));
+        button.addEventListener('click', () => this.abrirModalDetalhes(item.contratoId));
       }
 
       tbody.appendChild(tr);
@@ -3143,14 +3475,18 @@ export class SistemaSILIC {
 
     if (resumo) {
       const total = dados.length;
-      const prorrogar = dados.filter((item) => item.decisaoProrrogar === 'Sim').length;
+      const prorrogar = dados.filter((item) => item.decisaoProrrogar === 'prorrogar').length;
       const criticos = dados.filter((item) => {
-        const limite = this.parseDate(item.limiteLegalAr);
-        if (!limite) return false;
-        const dias = Math.ceil((limite.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-        return dias <= 30;
+        const janela = this.classificarJanelaAviso(item);
+        return janela === '1_mes' || janela === 'menor_1_mes';
       }).length;
-      resumo.textContent = `${total} registro(s) no aviso de vencimento • ${prorrogar} com decisão de prorrogar • ${criticos} em janela crítica para AR`;
+      const vencidos = dados.filter((item) => this.classificarJanelaAviso(item) === 'vencido').length;
+      resumo.textContent = `${total} registro(s) no aviso de vencimento • ${prorrogar} com decisão de prorrogar • ${criticos} em janela crítica • ${vencidos} vencido(s) em prazo indeterminado`;
+
+      this.setElementText('avisoKpiTotal', String(total));
+      this.setElementText('avisoKpiProrrogar', String(prorrogar));
+      this.setElementText('avisoKpiCriticos', String(criticos));
+      this.setElementText('avisoKpiVencidos', String(vencidos));
     }
 
     this.atualizarPaginacaoPainelAviso(dados.length);

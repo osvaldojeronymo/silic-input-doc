@@ -311,7 +311,8 @@ export interface PainelAvisoVencimentoRow {
   descricao: string;
   ultimoValorPagoSap: number;
   ultimoPagamentoSap: string;
-  decisaoProrrogar: 'Sim' | 'Não';
+  decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar';
+  protocoloFormal?: string;
   fase: string;
   demandaSiclg: string;
   colegiado: string;

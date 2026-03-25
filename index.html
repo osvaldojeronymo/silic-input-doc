@@ -325,6 +325,13 @@
                 </div>
             </div>
 
+            <div class="operacional-panel-switcher" role="tablist" aria-label="Navegação da Jornada Operacional">
+                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Passos da sua Jornada</button>
+                <button class="operacional-panel-tab" data-operacional-panel-target="aviso-vencimento" type="button">Aviso de Vencimento</button>
+            </div>
+
+            <section class="operacional-panel-view is-active" data-operacional-panel="passos-jornada">
+
             <div class="tabs profile-tabs">
                 <button class="tab-btn active" data-fase-target="fase1">Fase 1</button>
                 <button class="tab-btn" data-fase-target="fase2">Fase 2</button>
@@ -337,7 +344,7 @@
             </div>
 
             <div id="fase1" class="tab-content active fase-pane">
-                <div class="mini-label">Fase 1 - Aviso de Vencimento (Gestão Formal)</div>
+                <div class="mini-label">Fase 1 - Aviso de Vencimento</div>
 
                 <div class="filters-container">
                     <div class="filter-group">
@@ -732,6 +739,11 @@
                     </table>
                 </div>
             </div>
+            </section>
+
+            <section class="operacional-panel-view" data-operacional-panel="aviso-vencimento" hidden>
+                <div id="operacionalAvisoContainer"></div>
+            </section>
         </section>
 
         <section id="perfilContratacaoPage" class="table-section route-hidden">
@@ -847,10 +859,34 @@
             </section>
 
             <section class="formal-panel-view" data-formal-panel="aviso-vencimento" hidden>
-            <div class="mini-label" style="margin-bottom: 10px;">Painel de Aviso de Vencimento para priorização formal por vigência, pagamento, demanda SICLG e limite legal para ingresso da AR.</div>
+            <div class="mini-label" style="margin-bottom: 10px;">Painel de Aviso de Vencimento para priorização operacional por janelas de vencimento, com sinalização de contratos em prazo indeterminado.</div>
+
+            <div class="aviso-kpi-grid">
+                <article class="aviso-kpi-card aviso-kpi-total">
+                    <span class="aviso-kpi-label">Registros no aviso</span>
+                    <strong id="avisoKpiTotal">0</strong>
+                </article>
+                <article class="aviso-kpi-card aviso-kpi-prorrogar">
+                    <span class="aviso-kpi-label">Com decisão de prorrogar</span>
+                    <strong id="avisoKpiProrrogar">0</strong>
+                </article>
+                <article class="aviso-kpi-card aviso-kpi-criticos">
+                    <span class="aviso-kpi-label">Em janela crítica</span>
+                    <strong id="avisoKpiCriticos">0</strong>
+                </article>
+                <article class="aviso-kpi-card aviso-kpi-vencidos">
+                    <span class="aviso-kpi-label">Vencidos em prazo indeterminado</span>
+                    <strong id="avisoKpiVencidos">0</strong>
+                </article>
+            </div>
 
             <div class="filters-container">
-                <div class="mini-label" style="margin-bottom: 10px;">Filtros do painel</div>
+                <div class="aviso-filtros-header">
+                    <div class="mini-label" style="margin-bottom: 0;">Filtros do painel</div>
+                    <button id="avisoToggleFiltrosBtn" class="btn-clear" type="button">Mostrar filtros</button>
+                </div>
+
+                <div id="avisoFiltrosBody" hidden>
                 <div class="filter-group">
                     <input type="text" id="avisoContratoSapFiltro" class="filter-search" placeholder="Contrato (SAP)">
 
@@ -869,9 +905,10 @@
                     <input type="date" id="avisoUltimoPagamentoFiltro" class="filter-date" placeholder="Último pagamento no SAP (até)">
 
                     <select id="avisoDecisaoFiltro" class="filter-select">
-                        <option value="">Decisão de prorrogar (gestão formal): todas</option>
-                        <option value="Sim">Prorrogar</option>
-                        <option value="Não">Não prorrogar</option>
+                        <option value="">Decisão de prorrogar: todas</option>
+                        <option value="a_decidir">A decidir</option>
+                        <option value="prorrogar">Prorrogar</option>
+                        <option value="nao_prorrogar">Não prorrogar</option>
                     </select>
 
                     <select id="avisoFaseFiltro" class="filter-select">
@@ -885,6 +922,7 @@
 
                     <select id="avisoDemandaFiltro" class="filter-select">
                         <option value="">Tipo de demanda (SICLG): todas</option>
+                        <option value="Ato Formal - Prorrogação">Ato Formal - Prorrogação</option>
                         <option value="Aditivo">Aditivo</option>
                         <option value="-">Sem demanda registrada</option>
                     </select>
@@ -900,6 +938,17 @@
                         <option value="Colegiado Regional Norte">Colegiado Regional Norte</option>
                     </select>
 
+                    <select id="avisoJanelaFiltro" class="filter-select">
+                        <option value="">Janela de vencimento: todas</option>
+                        <option value="1_ano">1 ano</option>
+                        <option value="6_meses">6 meses</option>
+                        <option value="3_meses">3 meses</option>
+                        <option value="2_meses">2 meses</option>
+                        <option value="1_mes">1 mês</option>
+                        <option value="menor_1_mes">Menor que 1 mês</option>
+                        <option value="vencido">Vencido (prazo indeterminado)</option>
+                    </select>
+
                     <input type="date" id="avisoLimiteArFiltro" class="filter-date" placeholder="Limite legal para ingresso da AR (até)">
                 </div>
 
@@ -908,6 +957,7 @@
                     <button id="avisoBuscarBtn" class="btn-primary" type="button">Aplicar filtros</button>
                     <button id="avisoExportarCsvBtn" class="btn-clear" type="button">Exportar CSV</button>
                     <button id="avisoExportarExcelBtn" class="btn-clear" type="button">Exportar Excel</button>
+                </div>
                 </div>
             </div>
 
@@ -918,15 +968,12 @@
                     <thead>
                         <tr>
                             <th>Contrato (SAP)</th>
-                            <th>Contrato (SICLG)</th>
                             <th>Situação (SICLG)</th>
-                            <th>Descrição</th>
-                            <th>Último valor pago no SAP</th>
                             <th>Decisão de prorrogar</th>
-                            <th>Fase</th>
-                            <th>Demanda (SICLG)</th>
-                            <th>Colegiado</th>
-                            <th>Limite legal para ingresso da AR</th>
+                            <th>Janela</th>
+                            <th>Contagem</th>
+                            <th>Protocolo formal</th>
+                            <th>Contexto</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -950,6 +997,15 @@
             </section>
         </section>
     </main>
+
+    <div id="avisoContextDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+    <aside id="avisoContextDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-label="Contexto do aviso de vencimento">
+        <div class="details-drawer-header">
+            <h3 id="avisoContextDrawerTitle">Contexto do aviso</h3>
+            <button id="avisoContextDrawerClose" class="details-drawer-close" type="button" aria-label="Fechar contexto">×</button>
+        </div>
+        <div id="avisoContextDrawerContent" class="details-drawer-content"></div>
+    </aside>
 
     <!-- Modal de Detalhes -->
     <div id="modalDetalhes" class="modal">
