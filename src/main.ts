@@ -2361,6 +2361,11 @@ export class SistemaSILIC {
       item.decisaoProrrogar = atual.decisaoProrrogar;
       if (atual.protocoloFormal) item.protocoloFormal = atual.protocoloFormal;
       if (atual.demandaSiclg) item.demandaSiclg = atual.demandaSiclg;
+
+      // Regra de negócio: protocolo formal gerado implica decisão travada em prorrogar.
+      if (item.protocoloFormal) {
+        item.decisaoProrrogar = 'prorrogar';
+      }
     });
   }
 
@@ -2383,6 +2388,13 @@ export class SistemaSILIC {
   private atualizarDecisaoPainelAviso(contratoId: string, decisao: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'): void {
     const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
     if (!row) return;
+
+    if (row.protocoloFormal) {
+      row.decisaoProrrogar = 'prorrogar';
+      this.showToast('Decisão travada em "Prorrogar" após geração de protocolo formal.');
+      this.aplicarFiltrosPainelAvisoVencimento();
+      return;
+    }
 
     row.decisaoProrrogar = decisao;
     const estado = this.carregarEstadoPainelAviso();
@@ -3426,12 +3438,15 @@ export class SistemaSILIC {
       const opcaoProrrogar = item.decisaoProrrogar === 'prorrogar' ? 'selected' : '';
       const opcaoNaoProrrogar = item.decisaoProrrogar === 'nao_prorrogar' ? 'selected' : '';
       const mostrarSolicitacao = item.decisaoProrrogar === 'prorrogar' && !item.protocoloFormal;
+      const decisaoTravada = !!item.protocoloFormal;
+      const seletorDesabilitado = decisaoTravada ? 'disabled' : '';
+      const seletorTitulo = decisaoTravada ? 'title="Decisão bloqueada após solicitação de Ato Formal"' : '';
 
       tr.innerHTML = `
         <td>${item.contratoSap}</td>
         <td><span class="${situacaoClass}">${item.situacaoSiclg}</span></td>
         <td>
-          <select class="filter-select aviso-decisao-select" data-aviso-decisao-id="${item.contratoId}">
+          <select class="filter-select aviso-decisao-select" data-aviso-decisao-id="${item.contratoId}" ${seletorDesabilitado} ${seletorTitulo}>
             <option value="a_decidir" ${opcaoADecidir}>A decidir</option>
             <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
             <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
