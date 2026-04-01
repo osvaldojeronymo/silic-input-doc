@@ -150,6 +150,8 @@ export class SistemaSILIC {
   private itemsPerPagePainelFormal = 10;
   private currentPagePainelAviso = 1;
   private itemsPerPagePainelAviso = 10;
+  private avisoKpiComposicaoExpandida = false;
+  private avisoFaixaFiltroAtiva: '' | 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6' = '';
   private fase1Rows: Fase1OperacionalRow[] = [];
   private fase1RowsFiltradas: Fase1OperacionalRow[] = [];
   private fase2Rows: Fase2OperacionalRow[] = [];
@@ -365,7 +367,7 @@ export class SistemaSILIC {
       }
     ];
 
-    this.imoveisOriginais = this.gerarImoveisDemo(100);
+    this.imoveisOriginais = this.gerarImoveisDemo(200);
     this.imoveis = [...this.imoveisOriginais];
   }
 
@@ -780,7 +782,8 @@ export class SistemaSILIC {
    * Abre o modal de detalhes do imóvel
    */
   private abrirModalDetalhes(imovelId: string): void {
-    const imovel = this.imoveis.find(i => i.id === imovelId);
+    const imovel = this.imoveis.find((i) => i.id === imovelId)
+      || this.imoveisOriginais.find((i) => i.id === imovelId);
     if (!imovel) {
       console.error('Imóvel não encontrado:', imovelId);
       return;
@@ -816,6 +819,20 @@ export class SistemaSILIC {
 
     // Inicializar aba de serviços com o imóvel atual
     this.inicializarAbaServicos(imovel);
+  }
+
+  private abrirModalDetalhesPorAviso(item: PainelAvisoVencimentoRow): void {
+    const imovel = this.imoveis.find((i) => i.id === item.contratoId)
+      || this.imoveisOriginais.find((i) => i.id === item.contratoId)
+      || this.imoveis.find((i) => i.codigo === item.contratoSap)
+      || this.imoveisOriginais.find((i) => i.codigo === item.contratoSap);
+
+    if (!imovel) {
+      this.showToast(`Não foi possível localizar os dados de detalhe para o contrato SAP ${item.contratoSap}.`);
+      return;
+    }
+
+    this.abrirModalDetalhes(imovel.id);
   }
 
   /**
@@ -2293,9 +2310,9 @@ export class SistemaSILIC {
   }
 
   private montarPainelAvisoVencimento(rows: PainelVencimentosContrato[]): PainelAvisoVencimentoRow[] {
-    const janelasEmuladasDias = [365, 180, 90, 60, 30, 20, 10, -5, -40, 270, 140, 75, 45, 15];
+    const janelasEmuladasDias = [430, 390, 365, 320, 270, 220, 180, 140, 90, 60, 30, 20, 10, -5, -40, 510];
 
-    return rows.map((row, index) => {
+    const candidatos = rows.map((row, index) => {
       const fimVigenciaOriginal = row.vigenciaSiclg !== '-' ? row.vigenciaSiclg : row.vigenciaSap;
       const diasEmulados = janelasEmuladasDias[index % janelasEmuladasDias.length];
       const dataEmulada = new Date();
@@ -2304,8 +2321,7 @@ export class SistemaSILIC {
       const fimVigencia = this.formatDate(dataEmulada.toISOString()) || fimVigenciaOriginal;
       const fimVigenciaDate = this.parseDate(fimVigencia) || this.parseDate(fimVigenciaOriginal);
       const ultimoPagamentoDate = this.parseDate(row.ultimoPgtoSap);
-      const limiteArEmuladoDate = new Date(dataEmulada);
-      limiteArEmuladoDate.setDate(limiteArEmuladoDate.getDate() - 15);
+      const limiteLegalArDate = fimVigenciaDate ? this.calcularDataLimiteAjuizamentoAr(fimVigenciaDate) : null;
 
       return {
         contratoId: row.contratoId,
@@ -2316,15 +2332,21 @@ export class SistemaSILIC {
         ultimoValorPagoSap: row.ultimoValorPagoSap,
         ultimoPagamentoSap: row.ultimoPgtoSap,
         decisaoProrrogar: this.derivarDecisaoProrrogarAviso(row),
+        decisaoAcaoRenovatoria: this.derivarDecisaoAcaoRenovatoriaAviso(fimVigenciaDate),
         fase: row.fase,
         demandaSiclg: row.demandaSiclg,
         colegiado: this.derivarColegiadoAviso(row, index),
-        limiteLegalAr: this.formatDate(limiteArEmuladoDate.toISOString()) || row.limiteAr,
+        limiteLegalAr: limiteLegalArDate ? this.formatDate(limiteLegalArDate.toISOString()) : row.limiteAr,
         fimVigencia,
         fimVigenciaDate,
         ultimoPagamentoDate
       };
     });
+
+    return candidatos
+      .filter((item) => this.estaNoEscopoAvisoVencimento(item))
+      .sort((a, b) => (this.calcularDiasParaVencimentoAviso(a) ?? Number.MAX_SAFE_INTEGER) - (this.calcularDiasParaVencimentoAviso(b) ?? Number.MAX_SAFE_INTEGER))
+      .slice(0, 100);
   }
 
   private derivarDecisaoProrrogarAviso(row: PainelVencimentosContrato): 'a_decidir' | 'prorrogar' | 'nao_prorrogar' {
@@ -2334,7 +2356,15 @@ export class SistemaSILIC {
     return 'a_decidir';
   }
 
-  private carregarEstadoPainelAviso(): Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; protocoloFormal?: string; demandaSiclg?: string }> {
+  private derivarDecisaoAcaoRenovatoriaAviso(fimVigenciaDate: Date | null): 'a_decidir' | 'ingressar' | 'nao_ingressar' {
+    if (!fimVigenciaDate) return 'a_decidir';
+    const hojeBase = this.obterDataBase(new Date());
+    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(fimVigenciaDate);
+    if (hojeBase > prazoFinal) return 'nao_ingressar';
+    return 'a_decidir';
+  }
+
+  private carregarEstadoPainelAviso(): Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; decisaoAcaoRenovatoria: 'a_decidir' | 'ingressar' | 'nao_ingressar'; protocoloFormal?: string; demandaSiclg?: string }> {
     try {
       const raw = localStorage.getItem(SistemaSILIC.AVISO_STORAGE_KEY);
       if (!raw) return {};
@@ -2345,7 +2375,7 @@ export class SistemaSILIC {
     }
   }
 
-  private salvarEstadoPainelAviso(estado: Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; protocoloFormal?: string; demandaSiclg?: string }>): void {
+  private salvarEstadoPainelAviso(estado: Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; decisaoAcaoRenovatoria: 'a_decidir' | 'ingressar' | 'nao_ingressar'; protocoloFormal?: string; demandaSiclg?: string }>): void {
     try {
       localStorage.setItem(SistemaSILIC.AVISO_STORAGE_KEY, JSON.stringify(estado));
     } catch {
@@ -2359,6 +2389,7 @@ export class SistemaSILIC {
       const atual = estado[item.contratoId];
       if (!atual) return;
       item.decisaoProrrogar = atual.decisaoProrrogar;
+      item.decisaoAcaoRenovatoria = atual.decisaoAcaoRenovatoria || item.decisaoAcaoRenovatoria;
       if (atual.protocoloFormal) item.protocoloFormal = atual.protocoloFormal;
       if (atual.demandaSiclg) item.demandaSiclg = atual.demandaSiclg;
 
@@ -2366,6 +2397,11 @@ export class SistemaSILIC {
       if (item.protocoloFormal) {
         item.decisaoProrrogar = 'prorrogar';
       }
+
+      if (item.decisaoAcaoRenovatoria === 'ingressar' && !this.estaNaJanelaLegalAcaoRenovatoria(item)) {
+        item.decisaoAcaoRenovatoria = this.estaAposPrazoDecadencialAr(item) ? 'nao_ingressar' : 'a_decidir';
+      }
+
     });
   }
 
@@ -2373,6 +2409,94 @@ export class SistemaSILIC {
     if (decisao === 'prorrogar') return 'Prorrogar';
     if (decisao === 'nao_prorrogar') return 'Não prorrogar';
     return 'A decidir';
+  }
+
+  private formatarDecisaoAcaoRenovatoria(decisao: 'a_decidir' | 'ingressar' | 'nao_ingressar'): string {
+    if (decisao === 'ingressar') return 'Ingressar';
+    if (decisao === 'nao_ingressar') return 'Não ingressar';
+    return 'A decidir';
+  }
+
+  private estaNaJanelaLegalAcaoRenovatoria(item: PainelAvisoVencimentoRow): boolean {
+    if (!item.fimVigenciaDate) return false;
+    const hojeBase = this.obterDataBase(new Date());
+    const inicioJanela = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
+    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(item.fimVigenciaDate);
+    return hojeBase >= inicioJanela && hojeBase <= prazoFinal;
+  }
+
+  private classificarFaixaSinalizacaoAviso(item: PainelAvisoVencimentoRow): 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6' | 'fora_escopo' {
+    if (!item.fimVigenciaDate) return 'fora_escopo';
+    const hojeBase = this.obterDataBase(new Date());
+    const inicioEscopo = this.subtrairMesesCivis(item.fimVigenciaDate, 14);
+    const inicioJanelaLegal = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
+    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(item.fimVigenciaDate);
+
+    if (hojeBase < inicioEscopo) return 'fora_escopo';
+    if (hojeBase < inicioJanelaLegal) return 'faixa_14_12';
+    if (hojeBase <= prazoFinal) return 'faixa_12_6';
+    return 'faixa_menor_6';
+  }
+
+  private estaAposPrazoDecadencialAr(item: PainelAvisoVencimentoRow): boolean {
+    if (!item.fimVigenciaDate) return false;
+    const hojeBase = this.obterDataBase(new Date());
+    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(item.fimVigenciaDate);
+    return hojeBase > prazoFinal;
+  }
+
+  private estaNoEscopoAvisoVencimento(item: PainelAvisoVencimentoRow): boolean {
+    return this.classificarFaixaSinalizacaoAviso(item) !== 'fora_escopo';
+  }
+
+  private obterDataBase(data: Date): Date {
+    return new Date(data.getFullYear(), data.getMonth(), data.getDate());
+  }
+
+  private subtrairMesesCivis(data: Date, meses: number): Date {
+    const base = this.obterDataBase(data);
+    const diaOriginal = base.getDate();
+    const anoAlvo = base.getFullYear();
+    const mesAlvo = base.getMonth() - meses;
+    const ultimoDiaMesAlvo = new Date(anoAlvo, mesAlvo + 1, 0).getDate();
+    const diaAjustado = Math.min(diaOriginal, ultimoDiaMesAlvo);
+    return new Date(anoAlvo, mesAlvo, diaAjustado);
+  }
+
+  private calcularDataLimiteAjuizamentoAr(fimVigenciaDate: Date): Date {
+    const referenciaSeisMeses = this.subtrairMesesCivis(fimVigenciaDate, 6);
+    const houveAjustePorFimDeMes = referenciaSeisMeses.getDate() !== fimVigenciaDate.getDate();
+    if (houveAjustePorFimDeMes) return referenciaSeisMeses;
+    const limite = new Date(referenciaSeisMeses);
+    limite.setDate(limite.getDate() - 1);
+    return this.obterDataBase(limite);
+  }
+
+  private atualizarDecisaoAcaoRenovatoriaPainelAviso(contratoId: string, decisao: 'a_decidir' | 'ingressar' | 'nao_ingressar'): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row) return;
+
+    if (decisao === 'ingressar' && !this.estaNaJanelaLegalAcaoRenovatoria(row)) {
+      if (this.estaAposPrazoDecadencialAr(row)) {
+        this.showToast('Prazo decadencial encerrado: após o marco legal de 6 meses antes do fim da vigência não é possível ingressar com ação renovatória.');
+      } else {
+        this.showToast('Ingresso na ação renovatória permitido apenas na janela legal entre 12 e 6 meses (contagem por mês civil).');
+      }
+      this.aplicarFiltrosPainelAvisoVencimento();
+      return;
+    }
+
+    row.decisaoAcaoRenovatoria = decisao;
+    const estado = this.carregarEstadoPainelAviso();
+    estado[contratoId] = {
+      decisaoProrrogar: row.decisaoProrrogar,
+      decisaoAcaoRenovatoria: decisao,
+      protocoloFormal: row.protocoloFormal,
+      demandaSiclg: row.demandaSiclg
+    };
+    this.salvarEstadoPainelAviso(estado);
+
+    this.aplicarFiltrosPainelAvisoVencimento();
   }
 
   private gerarProtocoloSolicitacaoProrrogacao(contratoSap: string): string {
@@ -2400,6 +2524,7 @@ export class SistemaSILIC {
     const estado = this.carregarEstadoPainelAviso();
     estado[contratoId] = {
       decisaoProrrogar: decisao,
+      decisaoAcaoRenovatoria: row.decisaoAcaoRenovatoria,
       protocoloFormal: row.protocoloFormal,
       demandaSiclg: row.demandaSiclg
     };
@@ -2417,6 +2542,10 @@ export class SistemaSILIC {
       return;
     }
 
+    if (row.decisaoAcaoRenovatoria === 'a_decidir') {
+      this.showToast('Atenção: decisão de ação renovatória ainda pendente. Monitore o prazo legal para não perder a janela.');
+    }
+
     if (row.protocoloFormal) {
       this.showToast(`Solicitação já registrada. Protocolo: ${row.protocoloFormal}.`);
       return;
@@ -2429,6 +2558,7 @@ export class SistemaSILIC {
     const estado = this.carregarEstadoPainelAviso();
     estado[contratoId] = {
       decisaoProrrogar: row.decisaoProrrogar,
+      decisaoAcaoRenovatoria: row.decisaoAcaoRenovatoria,
       protocoloFormal: protocolo,
       demandaSiclg: row.demandaSiclg
     };
@@ -2721,6 +2851,35 @@ export class SistemaSILIC {
         btn.textContent = 'Mostrar filtros';
       }
     });
+
+    document.querySelectorAll<HTMLElement>('[data-aviso-faixa-filter]').forEach((card) => {
+      const faixa = card.dataset.avisoFaixaFilter as '' | 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6';
+      if (!faixa) return;
+
+      card.addEventListener('click', () => {
+        this.avisoFaixaFiltroAtiva = this.avisoFaixaFiltroAtiva === faixa ? '' : faixa;
+        this.aplicarFiltrosPainelAvisoVencimento();
+      });
+
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          this.avisoFaixaFiltroAtiva = this.avisoFaixaFiltroAtiva === faixa ? '' : faixa;
+          this.aplicarFiltrosPainelAvisoVencimento();
+        }
+      });
+    });
+
+    this.atualizarEstadoVisualFiltroFaixaAviso();
+  }
+
+  private atualizarEstadoVisualFiltroFaixaAviso(): void {
+    document.querySelectorAll<HTMLElement>('[data-aviso-faixa-filter]').forEach((card) => {
+      const faixa = card.dataset.avisoFaixaFilter || '';
+      const ativo = faixa === this.avisoFaixaFiltroAtiva;
+      card.classList.toggle('is-active', ativo);
+      card.setAttribute('aria-pressed', String(ativo));
+    });
   }
 
   private configurarDrawerContextoAviso(): void {
@@ -2940,6 +3099,7 @@ export class SistemaSILIC {
       'Descricao',
       'Ultimo valor pago no SAP',
       'Decisao de prorrogar',
+      'Decisao de acao renovatoria',
       'Protocolo formal',
       'Fase',
       'Demanda SICLG',
@@ -2967,6 +3127,7 @@ export class SistemaSILIC {
       'Descrição': item.descricao,
       'Último valor pago no SAP': item.ultimoValorPagoSap,
       'Decisão de prorrogar': this.formatarDecisaoAviso(item.decisaoProrrogar),
+      'Decisão de ação renovatória': this.formatarDecisaoAcaoRenovatoria(item.decisaoAcaoRenovatoria),
       'Protocolo formal': item.protocoloFormal || '-',
       'Fase': item.fase,
       'Demanda (SICLG)': item.demandaSiclg,
@@ -3018,6 +3179,7 @@ export class SistemaSILIC {
       item.descricao,
       item.ultimoValorPagoSap.toFixed(2),
       this.formatarDecisaoAviso(item.decisaoProrrogar),
+      this.formatarDecisaoAcaoRenovatoria(item.decisaoAcaoRenovatoria),
       item.protocoloFormal || '-',
       item.fase,
       item.demandaSiclg,
@@ -3181,6 +3343,7 @@ export class SistemaSILIC {
     const fimVigenciaAte = (document.getElementById('avisoFimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
     const ultimoPagamentoAte = (document.getElementById('avisoUltimoPagamentoFiltro') as HTMLInputElement | null)?.value || '';
     const decisao = (document.getElementById('avisoDecisaoFiltro') as HTMLSelectElement | null)?.value || '';
+    const decisaoAr = (document.getElementById('avisoDecisaoArFiltro') as HTMLSelectElement | null)?.value || '';
     const fase = (document.getElementById('avisoFaseFiltro') as HTMLSelectElement | null)?.value || '';
     const demanda = (document.getElementById('avisoDemandaFiltro') as HTMLSelectElement | null)?.value || '';
     const colegiado = (document.getElementById('avisoColegiadoFiltro') as HTMLSelectElement | null)?.value || '';
@@ -3196,10 +3359,12 @@ export class SistemaSILIC {
       if (contratoSiclg && !item.contratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
       if (situacaoSiclg && item.situacaoSiclg !== situacaoSiclg) return false;
       if (decisao && item.decisaoProrrogar !== decisao) return false;
+      if (decisaoAr && item.decisaoAcaoRenovatoria !== decisaoAr) return false;
       if (fase && item.fase !== fase) return false;
       if (demanda && item.demandaSiclg !== demanda) return false;
       if (colegiado && item.colegiado !== colegiado) return false;
       if (janela && this.classificarJanelaAviso(item) !== janela) return false;
+      if (this.avisoFaixaFiltroAtiva && this.classificarFaixaSinalizacaoAviso(item) !== this.avisoFaixaFiltroAtiva) return false;
 
       if (fimVigenciaDate) {
         if (!item.fimVigenciaDate || item.fimVigenciaDate > fimVigenciaDate) return false;
@@ -3218,6 +3383,7 @@ export class SistemaSILIC {
     });
 
     this.currentPagePainelAviso = 1;
+    this.atualizarEstadoVisualFiltroFaixaAviso();
     this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
   }
 
@@ -3232,17 +3398,21 @@ export class SistemaSILIC {
 
     const situacao = document.getElementById('avisoSituacaoSiclgFiltro') as HTMLSelectElement | null;
     const decisao = document.getElementById('avisoDecisaoFiltro') as HTMLSelectElement | null;
+    const decisaoAr = document.getElementById('avisoDecisaoArFiltro') as HTMLSelectElement | null;
     const fase = document.getElementById('avisoFaseFiltro') as HTMLSelectElement | null;
     const janela = document.getElementById('avisoJanelaFiltro') as HTMLSelectElement | null;
     if (situacao) situacao.value = '';
     if (decisao) decisao.value = '';
+    if (decisaoAr) decisaoAr.value = '';
     if (fase) fase.value = '';
     if (janela) janela.value = '';
     if (demanda) demanda.value = '';
     if (colegiado) colegiado.value = '';
+    this.avisoFaixaFiltroAtiva = '';
 
     this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
     this.currentPagePainelAviso = 1;
+    this.atualizarEstadoVisualFiltroFaixaAviso();
     this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
   }
 
@@ -3417,6 +3587,27 @@ export class SistemaSILIC {
     return `D-${dias}`;
   }
 
+  private ehJanelaDecisaoAviso(janela: string): boolean {
+    return janela === '1_ano' || janela === '6_meses' || janela === '3_meses' || janela === '2_meses' || janela === '1_mes';
+  }
+
+  private aplicarEstadoComposicaoJanelaDecisao(): void {
+    const detalhe = document.getElementById('avisoKpiCriticosDetalhe');
+    const gatilho = document.getElementById('avisoKpiCriticos');
+    if (detalhe) {
+      detalhe.hidden = false;
+      detalhe.classList.toggle('is-open', this.avisoKpiComposicaoExpandida);
+    }
+    if (gatilho) {
+      gatilho.setAttribute('aria-expanded', String(this.avisoKpiComposicaoExpandida));
+    }
+  }
+
+  private alternarComposicaoJanelaDecisao(): void {
+    this.avisoKpiComposicaoExpandida = !this.avisoKpiComposicaoExpandida;
+    this.aplicarEstadoComposicaoJanelaDecisao();
+  }
+
   private atualizarPainelAvisoVencimento(dados: PainelAvisoVencimentoRow[]): void {
     const tbody = document.getElementById('avisoVencimentoBody') as HTMLTableSectionElement | null;
     const resumo = document.getElementById('avisoResumo');
@@ -3437,14 +3628,31 @@ export class SistemaSILIC {
       const opcaoADecidir = item.decisaoProrrogar === 'a_decidir' ? 'selected' : '';
       const opcaoProrrogar = item.decisaoProrrogar === 'prorrogar' ? 'selected' : '';
       const opcaoNaoProrrogar = item.decisaoProrrogar === 'nao_prorrogar' ? 'selected' : '';
+      const opcaoArADecidir = item.decisaoAcaoRenovatoria === 'a_decidir' ? 'selected' : '';
+      const opcaoArIngressar = item.decisaoAcaoRenovatoria === 'ingressar' ? 'selected' : '';
+      const opcaoArNaoIngressar = item.decisaoAcaoRenovatoria === 'nao_ingressar' ? 'selected' : '';
       const mostrarSolicitacao = item.decisaoProrrogar === 'prorrogar' && !item.protocoloFormal;
       const decisaoTravada = !!item.protocoloFormal;
       const seletorDesabilitado = decisaoTravada ? 'disabled' : '';
       const seletorTitulo = decisaoTravada ? 'title="Decisão bloqueada após solicitação de Ato Formal"' : '';
+      const podeDecidirAr = this.estaNaJanelaLegalAcaoRenovatoria(item);
+      const prazoDecadencialEncerrado = this.estaAposPrazoDecadencialAr(item);
+      const decisaoArTitulo = !podeDecidirAr
+        ? (prazoDecadencialEncerrado
+          ? 'title="Prazo legal encerrado para ingresso da ação renovatória"'
+          : 'title="Decisão liberada apenas entre 12 e 6 meses antes do fim da vigência"')
+        : '';
+      const opcaoIngressarMarkup = podeDecidirAr
+        ? `<option value="ingressar" ${opcaoArIngressar}>Ingressar</option>`
+        : '';
+      const legendaAr = podeDecidirAr
+        ? 'Janela AR ativa (12-6 meses)'
+        : 'Ingressar so entre 12 e 6 meses';
+      const legendaArClass = podeDecidirAr ? 'aviso-ar-hint is-open' : 'aviso-ar-hint is-closed';
 
       tr.innerHTML = `
         <td>${item.contratoSap}</td>
-        <td><span class="${situacaoClass}">${item.situacaoSiclg}</span></td>
+        <td>${item.fimVigencia}</td>
         <td>
           <select class="filter-select aviso-decisao-select" data-aviso-decisao-id="${item.contratoId}" ${seletorDesabilitado} ${seletorTitulo}>
             <option value="a_decidir" ${opcaoADecidir}>A decidir</option>
@@ -3452,14 +3660,25 @@ export class SistemaSILIC {
             <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
           </select>
         </td>
+        <td>
+          <select class="filter-select aviso-decisao-select" data-aviso-decisao-ar-id="${item.contratoId}" ${decisaoArTitulo}>
+            <option value="a_decidir" ${opcaoArADecidir}>A decidir</option>
+            ${opcaoIngressarMarkup}
+            <option value="nao_ingressar" ${opcaoArNaoIngressar}>Não ingressar</option>
+          </select>
+          <small class="${legendaArClass}">${legendaAr}</small>
+        </td>
         <td><span class="${janelaClass}">${janelaLabel}</span></td>
         <td>${contagem}</td>
+        <td>${item.protocoloFormal ? `<span class="badge badge-info">${item.protocoloFormal}</span>` : '-'}</td>
         <td>
-          ${item.protocoloFormal ? `<span class="badge badge-info">${item.protocoloFormal}</span>` : '-'}
-          ${mostrarSolicitacao ? `<button class="btn-clear" type="button" data-aviso-solicitar-id="${item.contratoId}" style="margin-top: 6px;">Solicitar Ato Formal</button>` : ''}
+          <div class="aviso-acoes-coluna">
+            <span class="${situacaoClass}">${item.situacaoSiclg}</span>
+            <button class="btn-clear" type="button" data-aviso-contexto-drawer="${item.contratoId}">Ver contexto</button>
+            ${mostrarSolicitacao ? `<button class="btn-clear" type="button" data-aviso-solicitar-id="${item.contratoId}">Solicitar ato</button>` : ''}
+            <button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar</button>
+          </div>
         </td>
-        <td><button class="btn-clear" type="button" data-aviso-contexto-drawer="${item.contratoId}">Ver contexto</button></td>
-        <td><button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar</button></td>
       `;
 
       const selectDecisao = tr.querySelector('[data-aviso-decisao-id]') as HTMLSelectElement | null;
@@ -3467,6 +3686,14 @@ export class SistemaSILIC {
         selectDecisao.addEventListener('change', () => {
           const novoValor = selectDecisao.value as 'a_decidir' | 'prorrogar' | 'nao_prorrogar';
           this.atualizarDecisaoPainelAviso(item.contratoId, novoValor);
+        });
+      }
+
+      const selectDecisaoAr = tr.querySelector('[data-aviso-decisao-ar-id]') as HTMLSelectElement | null;
+      if (selectDecisaoAr) {
+        selectDecisaoAr.addEventListener('change', () => {
+          const novoValor = selectDecisaoAr.value as 'a_decidir' | 'ingressar' | 'nao_ingressar';
+          this.atualizarDecisaoAcaoRenovatoriaPainelAviso(item.contratoId, novoValor);
         });
       }
 
@@ -3482,7 +3709,7 @@ export class SistemaSILIC {
 
       const button = tr.querySelector('[data-formal-aviso-id]');
       if (button) {
-        button.addEventListener('click', () => this.abrirModalDetalhes(item.contratoId));
+        button.addEventListener('click', () => this.abrirModalDetalhesPorAviso(item));
       }
 
       tbody.appendChild(tr);
@@ -3490,18 +3717,80 @@ export class SistemaSILIC {
 
     if (resumo) {
       const total = dados.length;
-      const prorrogar = dados.filter((item) => item.decisaoProrrogar === 'prorrogar').length;
-      const criticos = dados.filter((item) => {
-        const janela = this.classificarJanelaAviso(item);
-        return janela === '1_mes' || janela === 'menor_1_mes';
-      }).length;
       const vencidos = dados.filter((item) => this.classificarJanelaAviso(item) === 'vencido').length;
-      resumo.textContent = `${total} registro(s) no aviso de vencimento • ${prorrogar} com decisão de prorrogar • ${criticos} em janela crítica • ${vencidos} vencido(s) em prazo indeterminado`;
+      const prorrogar = dados.filter((item) => item.decisaoProrrogar === 'prorrogar' && this.classificarJanelaAviso(item) !== 'vencido').length;
+
+      const baseJanelaDecisao = dados.filter((item) => item.decisaoProrrogar !== 'prorrogar' && this.classificarJanelaAviso(item) !== 'vencido');
+      const totaisPorJanela = {
+        '1_ano': 0,
+        '6_meses': 0,
+        '3_meses': 0,
+        '2_meses': 0,
+        '1_mes': 0
+      } as Record<string, number>;
+
+      baseJanelaDecisao.forEach((item) => {
+        const janela = this.classificarJanelaAviso(item);
+        if (janela === '1_ano') totaisPorJanela['1_ano'] += 1;
+        else if (janela === '6_meses') totaisPorJanela['6_meses'] += 1;
+        else if (janela === '3_meses') totaisPorJanela['3_meses'] += 1;
+        else if (janela === '2_meses') totaisPorJanela['2_meses'] += 1;
+        else if (janela === '1_mes' || janela === 'menor_1_mes') totaisPorJanela['1_mes'] += 1;
+      });
+
+      const janelaDecisao = baseJanelaDecisao.length;
+
+      const faixa1412 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_14_12').length;
+      const faixa126 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_12_6').length;
+      const faixaMenor6 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_menor_6').length;
+      resumo.innerHTML = `
+        <div class="aviso-regras-box">
+          <strong>Regras de negocio aplicadas neste prototipo</strong>
+          <ul>
+            <li>Classificacao por janela de vencimento (D+ e D-): Vencido (D+), Menor que 1 mes (D-1 a D-29), 1 mes (D-30), 2 meses (D-31 a D-60), 3 meses (D-61 a D-90), 6 meses (D-91 a D-180) e 1 ano (acima de D-180).</li>
+            <li>KPIs com fechamento: Registros no aviso = Com decisao de prorrogar + Janela de decisao + Vencidos em prazo indeterminado.</li>
+            <li>Fluxo decisorio por prazo: prorrogacao e acao renovatoria podem ser decididas em momentos distintos, com monitoramento continuo das janelas 14-12, 12-6 e abaixo de 6 meses.</li>
+            <li>KPI "Janela de decisao": contratos sem decisao de prorrogar e nao vencidos, distribuidos entre 1 ano, 6 meses, 3 meses, 2 meses e 1 mes (inclui menor que 1 mes).</li>
+            <li>Acao renovatoria: decisao de ingressar permitida somente entre 12 e 6 meses antes do fim da vigencia (janela legal).</li>
+            <li>Prazo decadencial: contagem por ano e mes civil (Art. 132 do Codigo Civil), com limite final no marco de 6 meses retroativos.</li>
+            <li>Decisao de prorrogar fica bloqueada quando existe protocolo formal, preservando o fluxo formal ja iniciado.</li>
+            <li>Solicitacao de Ato Formal so aparece quando a decisao estiver em "Prorrogar" e ainda nao houver protocolo formal.</li>
+          </ul>
+        </div>
+      `;
 
       this.setElementText('avisoKpiTotal', String(total));
       this.setElementText('avisoKpiProrrogar', String(prorrogar));
-      this.setElementText('avisoKpiCriticos', String(criticos));
+      this.setElementText('avisoKpiCriticos', String(janelaDecisao));
       this.setElementText('avisoKpiVencidos', String(vencidos));
+      this.setElementText('avisoFaixa1412', String(faixa1412));
+      this.setElementText('avisoFaixa126', String(faixa126));
+      this.setElementText('avisoFaixaMenor6', String(faixaMenor6));
+
+      const gatilhoComposicao = document.getElementById('avisoKpiCriticos');
+      if (gatilhoComposicao && gatilhoComposicao.dataset.bound !== 'true') {
+        gatilhoComposicao.dataset.bound = 'true';
+        gatilhoComposicao.addEventListener('click', () => this.alternarComposicaoJanelaDecisao());
+        gatilhoComposicao.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            this.alternarComposicaoJanelaDecisao();
+          }
+        });
+      }
+
+      const detalheJanelaDecisao = document.getElementById('avisoKpiCriticosDetalhe');
+      if (detalheJanelaDecisao) {
+        detalheJanelaDecisao.innerHTML = `
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['1_ano']}</span><span class="aviso-kpi-chip-label">1 ano</span></span>
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['6_meses']}</span><span class="aviso-kpi-chip-label">6 meses</span></span>
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['3_meses']}</span><span class="aviso-kpi-chip-label">3 meses</span></span>
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['2_meses']}</span><span class="aviso-kpi-chip-label">2 meses</span></span>
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['1_mes']}</span><span class="aviso-kpi-chip-label">1 mes</span></span>
+        `;
+      }
+
+      this.aplicarEstadoComposicaoJanelaDecisao();
     }
 
     this.atualizarPaginacaoPainelAviso(dados.length);

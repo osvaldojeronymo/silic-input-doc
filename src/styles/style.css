@@ -1252,6 +1252,85 @@ body {
     margin-top: 0.25rem;
 }
 
+.aviso-kpi-total-toggle {
+    display: inline-block;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+.aviso-kpi-total-toggle:hover {
+    background: rgba(15, 23, 42, 0.05);
+}
+
+.aviso-kpi-total-toggle:focus-visible {
+    outline: 2px solid #2f70b8;
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+.aviso-kpi-total-toggle::after {
+    content: ' ver composicao';
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-size: 0.64rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.aviso-kpi-total-toggle[aria-expanded='true']::after {
+    content: ' ocultar composicao';
+}
+
+.aviso-kpi-composicao {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+    gap: 0.35rem;
+    margin-top: 0;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-4px);
+    transition: max-height 0.28s ease, opacity 0.2s ease, transform 0.22s ease, margin-top 0.22s ease;
+}
+
+.aviso-kpi-composicao.is-open {
+    margin-top: 0.6rem;
+    max-height: 180px;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.aviso-kpi-chip {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    border: 1px solid #d6e0ed;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 0.28rem 0.45rem;
+    min-height: 42px;
+}
+
+.aviso-kpi-chip-value {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.05;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.aviso-kpi-chip-label {
+    font-size: 0.66rem;
+    line-height: 1.2;
+    font-weight: 500;
+    color: #4b5563;
+}
+
 .aviso-kpi-label {
     display: block;
     font-size: 0.82rem;
@@ -1275,6 +1354,70 @@ body {
     background: linear-gradient(120deg, #f4f4f8, #ffffff);
 }
 
+.aviso-faixa-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+}
+
+.aviso-faixa-card {
+    border-radius: 10px;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--color-gray-200);
+    background: #ffffff;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.aviso-faixa-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.08);
+}
+
+.aviso-faixa-card:focus-visible {
+    outline: 2px solid #2f70b8;
+    outline-offset: 2px;
+}
+
+.aviso-faixa-card.is-active {
+    border-color: #2f70b8;
+    box-shadow: 0 0 0 2px rgba(47, 112, 184, 0.15);
+}
+
+.aviso-faixa-card strong {
+    display: block;
+    font-size: 1.15rem;
+    line-height: 1.1;
+    margin-top: 0.22rem;
+}
+
+.aviso-faixa-card small {
+    display: block;
+    margin-top: 0.24rem;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    color: var(--color-gray-700);
+}
+
+.aviso-faixa-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--color-gray-800);
+}
+
+.aviso-faixa-preparacao {
+    background: linear-gradient(120deg, #eef3fb, #ffffff);
+}
+
+.aviso-faixa-janela-legal {
+    background: linear-gradient(120deg, #fff8e8, #ffffff);
+}
+
+.aviso-faixa-critica {
+    background: linear-gradient(120deg, #fff1e8, #ffffff);
+}
+
 .aviso-filtros-header {
     display: flex;
     align-items: center;
@@ -1282,10 +1425,101 @@ body {
     margin-bottom: 0.75rem;
 }
 
+.aviso-regras-box {
+    border: 1px solid var(--color-gray-200);
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 0.75rem 0.9rem;
+    color: var(--color-gray-800);
+}
+
+.aviso-regras-box strong {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--color-gray-900);
+}
+
+.aviso-regras-box ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.25rem;
+}
+
+.aviso-regras-box li {
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
 .aviso-decisao-select {
     min-width: 150px;
     padding: 0.45rem 0.55rem;
     font-size: 0.85rem;
+}
+
+.aviso-acoes-coluna {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 150px;
+}
+
+.aviso-ar-hint {
+    display: block;
+    margin-top: 0.2rem;
+    font-size: 0.66rem;
+    line-height: 1.2;
+    color: var(--color-gray-700);
+}
+
+.aviso-ar-hint.is-open {
+    color: #166534;
+}
+
+.aviso-ar-hint.is-closed {
+    color: #92400e;
+}
+
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .imoveis-table th {
+    white-space: normal;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    padding: 0.65rem 0.55rem;
+}
+
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .imoveis-table td {
+    padding: 0.65rem 0.55rem;
+    font-size: 0.84rem;
+    vertical-align: top;
+}
+
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .badge {
+    padding: 0.28rem 0.52rem;
+    font-size: 0.66rem;
+}
+
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .aviso-decisao-select {
+    min-width: 118px;
+    max-width: 126px;
+    padding: 0.32rem 0.4rem;
+    font-size: 0.76rem;
+}
+
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .aviso-acoes-coluna {
+    min-width: 116px;
+    gap: 0.28rem;
+}
+
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .aviso-acoes-coluna .btn-clear,
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .aviso-acoes-coluna .btn-table-action {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+    padding: 0.35rem 0.44rem;
+    font-size: 0.74rem;
+    line-height: 1.2;
 }
 
 .aviso-contexto-row td {

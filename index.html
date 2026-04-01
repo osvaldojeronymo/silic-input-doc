@@ -871,12 +871,31 @@
                     <strong id="avisoKpiProrrogar">0</strong>
                 </article>
                 <article class="aviso-kpi-card aviso-kpi-criticos">
-                    <span class="aviso-kpi-label">Em janela crítica</span>
-                    <strong id="avisoKpiCriticos">0</strong>
+                    <span class="aviso-kpi-label">Janela de decisão</span>
+                    <strong id="avisoKpiCriticos" class="aviso-kpi-total-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="avisoKpiCriticosDetalhe">0</strong>
+                    <div id="avisoKpiCriticosDetalhe" class="aviso-kpi-composicao" hidden></div>
                 </article>
                 <article class="aviso-kpi-card aviso-kpi-vencidos">
                     <span class="aviso-kpi-label">Vencidos em prazo indeterminado</span>
                     <strong id="avisoKpiVencidos">0</strong>
+                </article>
+            </div>
+
+            <div class="aviso-faixa-grid">
+                <article class="aviso-faixa-card aviso-faixa-preparacao" data-aviso-faixa-filter="faixa_14_12" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Preparação (14-12 meses)</span>
+                    <strong id="avisoFaixa1412">0</strong>
+                    <small>Definir prorrogação e estratégia para ação renovatória.</small>
+                </article>
+                <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_6" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Janela legal AR (12-6 meses)</span>
+                    <strong id="avisoFaixa126">0</strong>
+                    <small>Prazo válido para decidir e protocolar ação renovatória.</small>
+                </article>
+                <article class="aviso-faixa-card aviso-faixa-critica" data-aviso-faixa-filter="faixa_menor_6" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Abaixo de 6 meses</span>
+                    <strong id="avisoFaixaMenor6">0</strong>
+                    <small>Prazo decadencial da ação renovatória encerrado.</small>
                 </article>
             </div>
 
@@ -909,6 +928,13 @@
                         <option value="a_decidir">A decidir</option>
                         <option value="prorrogar">Prorrogar</option>
                         <option value="nao_prorrogar">Não prorrogar</option>
+                    </select>
+
+                    <select id="avisoDecisaoArFiltro" class="filter-select">
+                        <option value="">Ação renovatória: todas</option>
+                        <option value="a_decidir">A decidir</option>
+                        <option value="ingressar">Ingressar</option>
+                        <option value="nao_ingressar">Não ingressar</option>
                     </select>
 
                     <select id="avisoFaseFiltro" class="filter-select">
@@ -968,12 +994,12 @@
                     <thead>
                         <tr>
                             <th>Contrato (SAP)</th>
-                            <th>Situação (SICLG)</th>
+                            <th>Final da vigência</th>
                             <th>Decisão de prorrogar</th>
+                            <th>Decisão sobre ação renovatória</th>
                             <th>Janela</th>
                             <th>Contagem</th>
-                            <th>Protocolo formal</th>
-                            <th>Contexto</th>
+                            <th>Protocolo de ato formal</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
