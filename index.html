@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-DiiUtOnl.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-CdM215vF.js"></script>
   <link rel="modulepreload" crossorigin href="/silic-input-doc/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-CNchL_SH.css">
+  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-CZoI0xxT.css">
 </head>
 <body>
     <header class="modern-header">
@@ -113,17 +113,17 @@
             <div class="stats-grid perfis-grid">
                 <button class="stat-card perfil-card" data-route="/perfil/operacional" type="button">
                     <div class="stat-number">Operacional</div>
-                    <div class="stat-label">Abrir jornada por fases</div>
+                    <div class="stat-label">Administração dos imóveis de uso da CAIXA</div>
                 </button>
 
                 <button class="stat-card perfil-card" data-route="/perfil/contratacao" type="button">
                     <div class="stat-number">Contratação</div>
-                    <div class="stat-label">Acompanhar carteira de contratação</div>
+                    <div class="stat-label">Operacionalização da contratação de bens, serviços e obras, regidos pelo regime administrativo</div>
                 </button>
 
                 <button class="stat-card perfil-card" data-route="/perfil/formal" type="button">
                     <div class="stat-number">Formal</div>
-                    <div class="stat-label">Acompanhar renovações e governança</div>
+                    <div class="stat-label">Operacionalização da gestão formal de bens, serviços, obras, soluções inovadoras e patrocínio</div>
                 </button>
             </div>
         </section>
@@ -325,6 +325,13 @@
                 </div>
             </div>
 
+            <div class="operacional-panel-switcher" role="tablist" aria-label="Navegação da Jornada Operacional">
+                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Passos da sua Jornada</button>
+                <button class="operacional-panel-tab" data-operacional-panel-target="aviso-vencimento" type="button">Aviso de Vencimento</button>
+            </div>
+
+            <section class="operacional-panel-view is-active" data-operacional-panel="passos-jornada">
+
             <div class="tabs profile-tabs">
                 <button class="tab-btn active" data-fase-target="fase1">Fase 1</button>
                 <button class="tab-btn" data-fase-target="fase2">Fase 2</button>
@@ -337,7 +344,7 @@
             </div>
 
             <div id="fase1" class="tab-content active fase-pane">
-                <div class="mini-label">Fase 1 - Aviso de Vencimento (Gestão Formal)</div>
+                <div class="mini-label">Fase 1 - Aviso de Vencimento</div>
 
                 <div class="filters-container">
                     <div class="filter-group">
@@ -732,6 +739,11 @@
                     </table>
                 </div>
             </div>
+            </section>
+
+            <section class="operacional-panel-view" data-operacional-panel="aviso-vencimento" hidden>
+                <div id="operacionalAvisoContainer"></div>
+            </section>
         </section>
 
         <section id="perfilContratacaoPage" class="table-section route-hidden">
@@ -747,9 +759,287 @@
                 <h3 class="section-subtitle">Jornada do Gestor Formal</h3>
                 <button class="btn-clear" data-route="/" type="button">Voltar para home</button>
             </div>
-            <div class="mini-label">Estrutura base da página criada. Filtros e tabela entram na Sprint 3.</div>
+
+            <div class="formal-panel-switcher" role="tablist" aria-label="Painéis do Gestor Formal">
+                <button class="formal-panel-tab is-active" data-formal-panel-target="acoes-renovatorias" type="button">Painel de Ações Renovatórias</button>
+                <button class="formal-panel-tab" data-formal-panel-target="aviso-vencimento" type="button">Painel de Aviso de Vencimento</button>
+            </div>
+
+            <section class="formal-panel-view is-active" data-formal-panel="acoes-renovatorias">
+            <div class="mini-label" style="margin-bottom: 10px;">Painel de Ações Renovatórias com visão consolidada SICLG + SIJUR + CEFOR.</div>
+
+            <div class="filters-container">
+                <div class="mini-label" style="margin-bottom: 10px;">Filtros do painel</div>
+                <div class="filter-group">
+                    <input type="text" id="formalCodigoSijurFiltro" class="filter-search" placeholder="Código SIJUR">
+
+                    <input type="text" id="formalContratoSapFiltro" class="filter-search" placeholder="Contrato SAP">
+
+                    <input type="text" id="formalContratoSiclgFiltro" class="filter-search" placeholder="Contrato SICLG">
+
+                    <input type="text" id="formalProtocoloFormalFiltro" class="filter-search" placeholder="Protocolo Formal (SICLG)">
+
+                    <input type="text" id="formalUnidadeFiltro" class="filter-search" placeholder="Unidade">
+
+                    <input type="text" id="formalProcessoFiltro" class="filter-search" placeholder="Número do Processo (SICLG)">
+
+                    <input type="date" id="formalVigenciaAteFiltro" class="filter-date" placeholder="Vigência até">
+
+                    <select id="formalSituacaoSiclgFiltro" class="filter-select">
+                        <option value="">Todas as situações SICLG</option>
+                        <option value="Instrumento vigente">Instrumento vigente</option>
+                        <option value="Renovação em instrução">Renovação em instrução</option>
+                        <option value="Renovação com vencimento iminente">Renovação com vencimento iminente</option>
+                        <option value="Vigência expirada">Vigência expirada</option>
+                        <option value="Sem vigência consolidada">Sem vigência consolidada</option>
+                    </select>
+
+                    <select id="formalSituacaoSijurFiltro" class="filter-select">
+                        <option value="">Todas as situações SIJUR</option>
+                        <option value="Aguardando distribuicao">Aguardando distribuição</option>
+                        <option value="Em analise DIJUR">Em análise DIJUR</option>
+                        <option value="Minuta/peca em elaboracao">Minuta/peça em elaboração</option>
+                        <option value="Ajuizamento protocolado">Ajuizamento protocolado</option>
+                    </select>
+
+                    <select id="formalSituacaoCeforFiltro" class="filter-select">
+                        <option value="">Todas as situações CEFOR</option>
+                        <option value="Aguardando instrucao CEFOR">Aguardando instrução CEFOR</option>
+                        <option value="Em conferencia documental">Em conferência documental</option>
+                        <option value="Minuta validada">Minuta validada</option>
+                        <option value="Instrumento encaminhado para assinatura">Instrumento encaminhado para assinatura</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button id="formalLimparBtn" class="btn-clear">Limpar</button>
+                    <button id="formalBuscarBtn" class="btn-primary">Aplicar filtros</button>
+                    <button id="formalExportarCsvBtn" class="btn-clear" type="button">Exportar CSV</button>
+                    <button id="formalExportarExcelBtn" class="btn-clear" type="button">Exportar Excel</button>
+                </div>
+            </div>
+
+            <div class="mini-label" id="formalResumo" style="margin-bottom: 8px;"></div>
+
+            <div class="table-wrapper">
+                <table class="imoveis-table">
+                    <thead>
+                        <tr>
+                            <th>Código SIJUR</th>
+                            <th>Contrato SAP</th>
+                            <th>Contrato SICLG</th>
+                            <th>Protocolo Formal (SICLG)</th>
+                            <th>Unidade</th>
+                            <th>Vigência (SICLG)</th>
+                            <th>Situação (SICLG)</th>
+                            <th>Número do Processo (SICLG)</th>
+                            <th>Situação SIJUR</th>
+                            <th>Situação CEFOR</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="formalAcoesRenovatoriasBody"></tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Mostrando <span id="formalPaginationStart">0</span> a <span id="formalPaginationEnd">0</span> de <span id="formalPaginationTotal">0</span> registros
+                </div>
+                <div class="pagination-actions">
+                    <select id="formalItensPorPaginaSelect" class="items-per-page">
+                        <option value="10">10 por página</option>
+                        <option value="20">20 por página</option>
+                        <option value="50">50 por página</option>
+                    </select>
+                    <div class="pagination-controls" id="formalPaginationControls"></div>
+                </div>
+            </div>
+
+            </section>
+
+            <section class="formal-panel-view" data-formal-panel="aviso-vencimento" hidden>
+            <div class="mini-label" style="margin-bottom: 10px;">Painel de Aviso de Vencimento para priorização operacional por janelas de vencimento, com sinalização de contratos em prazo indeterminado.</div>
+
+            <div class="aviso-kpi-grid">
+                <article class="aviso-kpi-card aviso-kpi-total">
+                    <span class="aviso-kpi-label">Registros no aviso</span>
+                    <strong id="avisoKpiTotal">0</strong>
+                </article>
+                <article class="aviso-kpi-card aviso-kpi-prorrogar">
+                    <span class="aviso-kpi-label">Com decisão de prorrogar</span>
+                    <strong id="avisoKpiProrrogar">0</strong>
+                </article>
+                <article class="aviso-kpi-card aviso-kpi-criticos">
+                    <span class="aviso-kpi-label">Janela de decisão</span>
+                    <strong id="avisoKpiCriticos" class="aviso-kpi-total-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="avisoKpiCriticosDetalhe">0</strong>
+                    <div id="avisoKpiCriticosDetalhe" class="aviso-kpi-composicao" hidden></div>
+                </article>
+                <article class="aviso-kpi-card aviso-kpi-vencidos">
+                    <span class="aviso-kpi-label">Vencidos em prazo indeterminado</span>
+                    <strong id="avisoKpiVencidos">0</strong>
+                </article>
+                <article id="avisoKpiRiscoAr87Card" class="aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses sem decisão)">
+                    <span class="aviso-kpi-label">Risco AR 8-7 meses sem decisão</span>
+                    <strong id="avisoKpiRiscoAr87">0</strong>
+                </article>
+            </div>
+
+            <div class="aviso-faixa-grid">
+                <article class="aviso-faixa-card aviso-faixa-preparacao" data-aviso-faixa-filter="faixa_14_12" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Preparação (14-12 meses)</span>
+                    <strong id="avisoFaixa1412">0</strong>
+                    <small>Definir prorrogação, estratégia de AR e confirmar laudo (somente locação).</small>
+                </article>
+                <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_6" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Janela legal AR (12-6 meses)</span>
+                    <strong id="avisoFaixa126">0</strong>
+                    <small>Prazo válido para decidir e protocolar ação renovatória.</small>
+                </article>
+                <article class="aviso-faixa-card aviso-faixa-critica" data-aviso-faixa-filter="faixa_menor_6" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Abaixo de 6 meses</span>
+                    <strong id="avisoFaixaMenor6">0</strong>
+                    <small>Prazo decadencial da ação renovatória encerrado.</small>
+                </article>
+            </div>
+
+            <div class="filters-container">
+                <div class="aviso-filtros-header">
+                    <div class="mini-label" style="margin-bottom: 0;">Filtros do painel</div>
+                    <button id="avisoToggleFiltrosBtn" class="btn-clear" type="button">Mostrar filtros</button>
+                </div>
+
+                <div id="avisoFiltrosBody" hidden>
+                <div class="filter-group">
+                    <input type="text" id="avisoContratoSapFiltro" class="filter-search" placeholder="Contrato (SAP)">
+
+                    <input type="text" id="avisoContratoSiclgFiltro" class="filter-search" placeholder="Contrato (SICLG)">
+
+                    <select id="avisoSituacaoSiclgFiltro" class="filter-select">
+                        <option value="">Situação do instrumento (SICLG): todas</option>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Prospecção">Prospecção</option>
+                        <option value="Mobilização">Mobilização</option>
+                        <option value="Desmobilização">Desmobilização</option>
+                    </select>
+
+                    <input type="date" id="avisoFimVigenciaFiltro" class="filter-date" placeholder="Fim da vigência (até)">
+
+                    <input type="date" id="avisoUltimoPagamentoFiltro" class="filter-date" placeholder="Último pagamento no SAP (até)">
+
+                    <select id="avisoDecisaoFiltro" class="filter-select">
+                        <option value="">Decisão de prorrogar: todas</option>
+                        <option value="a_decidir">A decidir</option>
+                        <option value="prorrogar">Prorrogar</option>
+                        <option value="nao_prorrogar">Não prorrogar</option>
+                    </select>
+
+                    <select id="avisoDecisaoArFiltro" class="filter-select">
+                        <option value="">Ação renovatória: todas</option>
+                        <option value="a_decidir">A decidir</option>
+                        <option value="ingressar">Ingressar</option>
+                        <option value="nao_ingressar">Não ingressar</option>
+                    </select>
+
+                    <select id="avisoFaseFiltro" class="filter-select">
+                        <option value="">Fase do tratamento: todas</option>
+                        <option value="Monitoramento">Monitoramento</option>
+                        <option value="Negociação">Negociação</option>
+                        <option value="Notificação">Notificação</option>
+                        <option value="Aditivo">Aditivo</option>
+                        <option value="Encerramento">Encerramento</option>
+                    </select>
+
+                    <select id="avisoDemandaFiltro" class="filter-select">
+                        <option value="">Tipo de demanda (SICLG): todas</option>
+                        <option value="Ato Formal - Prorrogação">Ato Formal - Prorrogação</option>
+                        <option value="Aditivo">Aditivo</option>
+                        <option value="-">Sem demanda registrada</option>
+                    </select>
+
+                    <select id="avisoColegiadoFiltro" class="filter-select">
+                        <option value="">Instância colegiada: todas</option>
+                        <option value="Colegiado Nacional">Colegiado Nacional</option>
+                        <option value="Colegiado Regional">Colegiado Regional</option>
+                        <option value="Colegiado Regional Sudeste">Colegiado Regional Sudeste</option>
+                        <option value="Colegiado Regional Nordeste">Colegiado Regional Nordeste</option>
+                        <option value="Colegiado Regional Centro-Oeste">Colegiado Regional Centro-Oeste</option>
+                        <option value="Colegiado Regional Sul">Colegiado Regional Sul</option>
+                        <option value="Colegiado Regional Norte">Colegiado Regional Norte</option>
+                    </select>
+
+                    <select id="avisoJanelaFiltro" class="filter-select">
+                        <option value="">Janela de vencimento: todas</option>
+                        <option value="1_ano">1 ano</option>
+                        <option value="6_meses">6 meses</option>
+                        <option value="3_meses">3 meses</option>
+                        <option value="2_meses">2 meses</option>
+                        <option value="1_mes">1 mês</option>
+                        <option value="menor_1_mes">Menor que 1 mês</option>
+                        <option value="vencido">Vencido (prazo indeterminado)</option>
+                    </select>
+
+                    <input type="date" id="avisoLimiteArFiltro" class="filter-date" placeholder="Limite legal para ingresso da AR (até)">
+                </div>
+
+                <div class="filter-actions">
+                    <button id="avisoLimparBtn" class="btn-clear" type="button">Limpar</button>
+                    <button id="avisoBuscarBtn" class="btn-primary" type="button">Aplicar filtros</button>
+                    <button id="avisoExportarCsvBtn" class="btn-clear" type="button">Exportar CSV</button>
+                    <button id="avisoExportarExcelBtn" class="btn-clear" type="button">Exportar Excel</button>
+                </div>
+                </div>
+            </div>
+
+            <div class="mini-label" id="avisoResumo" style="margin-bottom: 8px;"></div>
+            <div class="mini-label" id="avisoFiltroAtivoLabel" style="margin-bottom: 8px; display: none;"></div>
+
+            <div class="table-wrapper">
+                <table class="imoveis-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Contrato (SAP)</th>
+                            <th rowspan="2">Final da vigência</th>
+                            <th rowspan="2">Decisão de prorrogar</th>
+                            <th rowspan="2">Decisão sobre ação renovatória</th>
+                            <th rowspan="2">Status</th>
+                            <th colspan="2" class="aviso-protocolo-group">Protocolo</th>
+                            <th rowspan="2">Ações</th>
+                        </tr>
+                        <tr>
+                            <th class="aviso-protocolo-subcol">Contratação</th>
+                            <th class="aviso-protocolo-subcol">Ato formal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="avisoVencimentoBody"></tbody>
+                </table>
+            </div>
+
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Mostrando <span id="avisoPaginationStart">0</span> a <span id="avisoPaginationEnd">0</span> de <span id="avisoPaginationTotal">0</span> registros
+                </div>
+                <div class="pagination-actions">
+                    <select id="avisoItensPorPaginaSelect" class="items-per-page">
+                        <option value="10">10 por página</option>
+                        <option value="20">20 por página</option>
+                        <option value="50">50 por página</option>
+                    </select>
+                    <div class="pagination-controls" id="avisoPaginationControls"></div>
+                </div>
+            </div>
+            </section>
         </section>
     </main>
+
+    <div id="avisoContextDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
+    <aside id="avisoContextDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-label="Contexto do aviso de vencimento">
+        <div class="details-drawer-header">
+            <h3 id="avisoContextDrawerTitle">Contexto do aviso</h3>
+            <button id="avisoContextDrawerClose" class="details-drawer-close" type="button" aria-label="Fechar contexto">×</button>
+        </div>
+        <div id="avisoContextDrawerContent" class="details-drawer-content"></div>
+    </aside>
 
     <!-- Modal de Detalhes -->
     <div id="modalDetalhes" class="modal">
@@ -1567,6 +1857,114 @@
                 </div>
 
                 
+            </div>
+        </div>
+    </div>
+
+    <div id="modalDetalhesFormal" class="modal">
+        <div class="modal-content formal-modal-content">
+            <div class="modal-header">
+                <h2>Painel de Ações Renovatórias</h2>
+                <button class="modal-close" data-formal-close="true">×</button>
+            </div>
+
+            <div class="modal-body formal-modal-body">
+                <div class="info-section">
+                    <div class="info-section-title">Resumo do processo A-III</div>
+                    <div class="summary-row">
+                        <div class="summary-chip">Código SIJUR: <strong id="formalDetCodigoSijur"></strong></div>
+                        <div class="summary-chip">Contrato SAP: <strong id="formalDetContratoSap"></strong></div>
+                        <div class="summary-chip">Contrato SICLG: <strong id="formalDetContratoSiclg"></strong></div>
+                    </div>
+                </div>
+
+                <div class="formal-detail-grid">
+                    <div class="info-section">
+                        <div class="info-section-title">Rastreabilidade</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Protocolo Formal (SICLG)</label>
+                                <span id="formalDetProtocolo"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Número do Processo (SICLG)</label>
+                                <span id="formalDetProcesso"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Unidade</label>
+                                <span id="formalDetUnidade"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Vigência (SICLG)</label>
+                                <span id="formalDetVigencia"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Origem dos dados</label>
+                                <span id="formalDetOrigemDados"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">Integração DIJUR</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Situação SICLG</label>
+                                <span id="formalDetSituacaoSiclg"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Situação SIJUR</label>
+                                <span id="formalDetSituacaoSijur"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Situação CEFOR</label>
+                                <span id="formalDetSituacaoCefor"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Número do Processo DIJUR</label>
+                                <span id="formalDetNumeroProcessoDijur"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Data de Entrada DIJUR</label>
+                                <span id="formalDetDataEntradaDijur"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Última sincronização DIJUR</label>
+                                <span id="formalDetLastSyncAt"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">Workflow do Gestor Formal</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>Radar SUCOT</label>
+                                <select id="formalEditRadarSucot" class="filter-select">
+                                    <option value="Não acionado">Não acionado</option>
+                                    <option value="Monitorado">Monitorado</option>
+                                    <option value="Acionado">Acionado</option>
+                                </select>
+                            </div>
+                            <div class="info-item">
+                                <label>Partes DIJUR</label>
+                                <span id="formalDetPartesDijur"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>Status operacional</label>
+                                <span id="formalDetStatusOperacional"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">Notas do Gestor Formal</div>
+                        <textarea id="formalEditNotas" class="formal-notes-textarea" rows="5" placeholder="Registrar notas, encaminhamentos e observações do Gestor Formal"></textarea>
+                        <div class="formal-modal-actions">
+                            <button id="formalSalvarEdicaoBtn" class="btn-primary" type="button">Salvar notas e radar</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
