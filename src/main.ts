@@ -3472,24 +3472,31 @@ export class SistemaSILIC {
     const views = Array.from(container.querySelectorAll('[data-operacional-panel]')) as HTMLElement[];
     if (!tabs.length || !views.length) return;
 
-    const ativar = (target: string): void => {
-      tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.operacionalPanelTarget === target));
-      views.forEach((view) => {
-        const active = view.dataset.operacionalPanel === target;
-        view.classList.toggle('is-active', active);
-        view.hidden = !active;
-      });
-    };
-
     tabs.forEach((tab) => {
       tab.addEventListener('click', () => {
         const target = tab.dataset.operacionalPanelTarget;
         if (!target) return;
-        ativar(target);
+        this.ativarPainelOperacional(target as 'passos-jornada' | 'aviso-vencimento');
       });
     });
 
-    ativar('passos-jornada');
+    this.ativarPainelOperacional('passos-jornada');
+  }
+
+  private ativarPainelOperacional(target: 'passos-jornada' | 'aviso-vencimento'): void {
+    const container = document.getElementById('perfilOperacionalPage');
+    if (!container) return;
+
+    const tabs = Array.from(container.querySelectorAll('[data-operacional-panel-target]')) as HTMLButtonElement[];
+    const views = Array.from(container.querySelectorAll('[data-operacional-panel]')) as HTMLElement[];
+    if (!tabs.length || !views.length) return;
+
+    tabs.forEach((tab) => tab.classList.toggle('is-active', tab.dataset.operacionalPanelTarget === target));
+    views.forEach((view) => {
+      const active = view.dataset.operacionalPanel === target;
+      view.classList.toggle('is-active', active);
+      view.hidden = !active;
+    });
   }
 
   private configurarPaginacaoPainelPortfolio(): void {
@@ -4938,7 +4945,7 @@ export class SistemaSILIC {
     this.addEventListenerSafe('fecharConfirmacaoResetBtn', 'click', () => this.fecharModalConfirmacaoReset());
     this.addEventListenerSafe('confirmarResetSessaoBtn', 'click', () => {
       this.fecharModalConfirmacaoReset();
-      this.resetarSessaoJornadaOperacional();
+      this.resetarPainelAvisoVencimento();
     });
 
     const modal = document.getElementById('modalConfirmacaoReset');
@@ -4971,34 +4978,20 @@ export class SistemaSILIC {
     modal.setAttribute('aria-hidden', 'true');
   }
 
-  private resetarSessaoJornadaOperacional(): void {
-
-    const keys = [
-      'silic-filtros-fase2',
-      'silic-filtros-fase3',
-      'silic-filtros-fase4',
-      'silic-filtros-fase5',
-      'silic-filtros-fase7',
-      'silic-filtros-fase61',
-      'silic-filtros-fase62',
-      'silic-prazo-chip-fase61',
-      'silic-prazo-chip-fase62'
-    ];
-
+  private resetarPainelAvisoVencimento(): void {
     try {
-      keys.forEach((key) => sessionStorage.removeItem(key));
+      localStorage.removeItem(SistemaSILIC.AVISO_STORAGE_KEY);
     } catch {
-      // Ignora indisponibilidade de sessionStorage.
+      // Ignora indisponibilidade de localStorage.
     }
 
-    this.limparFiltrosFase2Operacional();
-    this.limparFiltrosFase3Operacional();
-    this.limparFiltrosFase4Operacional();
-    this.limparFiltrosFase5Operacional();
-    this.limparFiltrosFase61Operacional();
-    this.limparFiltrosFase62Operacional();
-    this.limparFiltrosFase7Operacional();
-    this.showToast('Sessao da jornada operacional resetada com sucesso.');
+    this.fecharDrawerContextoAviso();
+    this.painelAvisoVencimento = this.montarPainelAvisoVencimento(this.painelVencimentos);
+    this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
+    this.currentPagePainelAviso = 1;
+    this.limparFiltrosPainelAvisoVencimento();
+    this.ativarPainelOperacional('aviso-vencimento');
+    this.showToast('Painel de Aviso de Vencimento resetado. Decisões anteriores foram removidas para os 100 contratos.');
   }
 
   private aplicarFiltrosFase1Operacional(): void {
