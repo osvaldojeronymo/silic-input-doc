@@ -122,6 +122,23 @@ interface Fase7OperacionalRow {
   fimVigenciaDate: Date | null;
 }
 
+interface EstadoPainelAvisoPersistido {
+  decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar';
+  decisaoAcaoRenovatoria: 'a_decidir' | 'ingressar' | 'nao_ingressar';
+  protocoloFormal?: string;
+  demandaSiclg?: string;
+  situacaoLaudoAvaliacao?: 'nao_aplicavel' | 'nao_solicitado' | 'solicitado' | 'entregue';
+  laudoRequisicaoNumero?: string;
+  laudoRequisicaoData?: string;
+  laudoNumero?: string;
+  laudoPrazoEntregaDias?: number;
+  laudoPrazoFormalInformado?: boolean;
+  laudoDataEmissao?: string;
+  laudoValidoAte?: string;
+  historicoDecisaoProrrogacao?: string[];
+  protocoloContratacao?: string;
+}
+
 /**
  * Classe principal do Sistema SILIC 2.0
  */
@@ -152,6 +169,8 @@ export class SistemaSILIC {
   private itemsPerPagePainelAviso = 10;
   private avisoKpiComposicaoExpandida = false;
   private avisoFaixaFiltroAtiva: '' | 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6' = '';
+  private avisoFiltroRiscoAr87Ativo = false;
+  private avisoStatusBadgeFiltroAtivo = '';
   private fase1Rows: Fase1OperacionalRow[] = [];
   private fase1RowsFiltradas: Fase1OperacionalRow[] = [];
   private fase2Rows: Fase2OperacionalRow[] = [];
@@ -2236,6 +2255,7 @@ export class SistemaSILIC {
 
       vigenciaSiclg,
       situacaoSiclg: imovel.situacao || this.formatarStatus(imovel.status),
+      modalidade: this.derivarModalidadeContrato(imovel),
       descricaoSiclg: imovel.descricaoObjeto || '-',
       demandaSiclg: (imovel.termosAditivos || []).length > 0 ? 'Aditivo' : '-',
       situacaoDemanda: imovel.status === 'ativo' ? 'Em curso' : 'Pendente',
@@ -2265,6 +2285,20 @@ export class SistemaSILIC {
     const siclg = this.parseDate(vigenciaSiclg);
     if (sap && siclg) return sap.getTime() <= siclg.getTime() ? vigenciaSap : vigenciaSiclg;
     return vigenciaSap !== '-' ? vigenciaSap : vigenciaSiclg;
+  }
+  
+  private derivarModalidadeContrato(imovel: Imovel): 'locacao' | 'cessao' | 'comodato' | 'nao_informada' {
+    const modalidadeNormalizada = (imovel.modalidade || '').toLowerCase();
+    if (modalidadeNormalizada.includes('loca')) return 'locacao';
+    if (modalidadeNormalizada.includes('cess')) return 'cessao';
+    if (modalidadeNormalizada.includes('comod')) return 'comodato';
+    
+    const tipoContratoNormalizado = (imovel.tipoContrato || '').toLowerCase();
+    if (tipoContratoNormalizado.includes('loca')) return 'locacao';
+    if (tipoContratoNormalizado.includes('cess')) return 'cessao';
+    if (tipoContratoNormalizado.includes('comod')) return 'comodato';
+    
+    return 'nao_informada';
   }
 
   private classificarFaseVencimento(diasParaVencimento: number | null, imovel: Imovel): string {
@@ -2310,11 +2344,29 @@ export class SistemaSILIC {
   }
 
   private montarPainelAvisoVencimento(rows: PainelVencimentosContrato[]): PainelAvisoVencimentoRow[] {
-    const janelasEmuladasDias = [430, 390, 365, 320, 270, 220, 180, 140, 90, 60, 30, 20, 10, -5, -40, 510];
+    const getDiasEmulados = (index: number): number => {
+      const diasPrimeiros10 = [420, 390, 360, 210, 180, 150, 90, 60, 30, -15];
+      if (index < diasPrimeiros10.length) return diasPrimeiros10[index];
 
-    const candidatos = rows.map((row, index) => {
+      // Emulação controlada para 100 contratos no escopo do aviso (<= 14 meses).
+      // 10-19: 10% vencidos em prazo indeterminado.
+      if (index < 20) return -15;
+
+      // 20-99: 80% em janela de decisão, composição ponderada 60/30/15/15/10.
+      // Normalizado para 80 contratos: 37 (1 ano), 18 (6 meses), 9 (3 meses), 9 (2 meses), 7 (1 mês).
+      if (index < 57) return 300; // 1 ano
+      if (index < 75) return 120; // 6 meses
+      if (index < 84) return 75;  // 3 meses
+      if (index < 93) return 45;  // 2 meses
+      if (index < 100) return 20; // 1 mês
+
+      // Restante fora do escopo de 14 meses.
+      return 510;
+    };
+
+    const candidatos: PainelAvisoVencimentoRow[] = rows.map((row, index): PainelAvisoVencimentoRow => {
       const fimVigenciaOriginal = row.vigenciaSiclg !== '-' ? row.vigenciaSiclg : row.vigenciaSap;
-      const diasEmulados = janelasEmuladasDias[index % janelasEmuladasDias.length];
+      const diasEmulados = getDiasEmulados(index);
       const dataEmulada = new Date();
       dataEmulada.setDate(dataEmulada.getDate() + diasEmulados);
 
@@ -2322,30 +2374,57 @@ export class SistemaSILIC {
       const fimVigenciaDate = this.parseDate(fimVigencia) || this.parseDate(fimVigenciaOriginal);
       const ultimoPagamentoDate = this.parseDate(row.ultimoPgtoSap);
       const limiteLegalArDate = fimVigenciaDate ? this.calcularDataLimiteAjuizamentoAr(fimVigenciaDate) : null;
+      const decisaoPrimeiros10: Array<'a_decidir' | 'prorrogar' | 'nao_prorrogar'> = [
+        'a_decidir',
+        'a_decidir',
+        'prorrogar',
+        'prorrogar',
+        'nao_prorrogar',
+        'prorrogar',
+        'nao_prorrogar',
+        'prorrogar',
+        'nao_prorrogar',
+        'nao_prorrogar'
+      ];
+      const decisaoProrrogarEmulada: 'a_decidir' | 'prorrogar' | 'nao_prorrogar' = index < 10
+        ? decisaoPrimeiros10[index]
+        : (index < 20 ? 'nao_prorrogar' : (index < 26 ? 'prorrogar' : 'nao_prorrogar'));
 
       return {
         contratoId: row.contratoId,
         contratoSap: row.numeroContratoSap,
         contratoSiclg: row.numeroContratoSiclg,
         situacaoSiclg: row.situacaoSiclg,
+        modalidade: row.modalidade,
         descricao: row.descricaoSiclg !== '-' ? row.descricaoSiclg : row.descricaoSap,
         ultimoValorPagoSap: row.ultimoValorPagoSap,
         ultimoPagamentoSap: row.ultimoPgtoSap,
-        decisaoProrrogar: this.derivarDecisaoProrrogarAviso(row),
+        decisaoProrrogar: decisaoProrrogarEmulada,
         decisaoAcaoRenovatoria: this.derivarDecisaoAcaoRenovatoriaAviso(fimVigenciaDate),
+        situacaoLaudoAvaliacao: row.modalidade === 'locacao' ? 'nao_solicitado' : 'nao_aplicavel',
+        laudoPrazoEntregaDias: row.modalidade === 'locacao' ? 30 : undefined,
+        laudoPrazoFormalInformado: false,
         fase: row.fase,
         demandaSiclg: row.demandaSiclg,
         colegiado: this.derivarColegiadoAviso(row, index),
         limiteLegalAr: limiteLegalArDate ? this.formatDate(limiteLegalArDate.toISOString()) : row.limiteAr,
         fimVigencia,
         fimVigenciaDate,
-        ultimoPagamentoDate
+        ultimoPagamentoDate,
+        ordemCasoTeste: index < 10 ? index + 1 : undefined
       };
     });
 
     return candidatos
       .filter((item) => this.estaNoEscopoAvisoVencimento(item))
-      .sort((a, b) => (this.calcularDiasParaVencimentoAviso(a) ?? Number.MAX_SAFE_INTEGER) - (this.calcularDiasParaVencimentoAviso(b) ?? Number.MAX_SAFE_INTEGER))
+      .sort((a, b) => {
+        if (typeof a.ordemCasoTeste === 'number' && typeof b.ordemCasoTeste === 'number') {
+          return a.ordemCasoTeste - b.ordemCasoTeste;
+        }
+        if (typeof a.ordemCasoTeste === 'number') return -1;
+        if (typeof b.ordemCasoTeste === 'number') return 1;
+        return (this.calcularDiasParaVencimentoAviso(a) ?? Number.MAX_SAFE_INTEGER) - (this.calcularDiasParaVencimentoAviso(b) ?? Number.MAX_SAFE_INTEGER);
+      })
       .slice(0, 100);
   }
 
@@ -2364,7 +2443,7 @@ export class SistemaSILIC {
     return 'a_decidir';
   }
 
-  private carregarEstadoPainelAviso(): Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; decisaoAcaoRenovatoria: 'a_decidir' | 'ingressar' | 'nao_ingressar'; protocoloFormal?: string; demandaSiclg?: string }> {
+  private carregarEstadoPainelAviso(): Record<string, EstadoPainelAvisoPersistido> {
     try {
       const raw = localStorage.getItem(SistemaSILIC.AVISO_STORAGE_KEY);
       if (!raw) return {};
@@ -2375,7 +2454,7 @@ export class SistemaSILIC {
     }
   }
 
-  private salvarEstadoPainelAviso(estado: Record<string, { decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'; decisaoAcaoRenovatoria: 'a_decidir' | 'ingressar' | 'nao_ingressar'; protocoloFormal?: string; demandaSiclg?: string }>): void {
+  private salvarEstadoPainelAviso(estado: Record<string, EstadoPainelAvisoPersistido>): void {
     try {
       localStorage.setItem(SistemaSILIC.AVISO_STORAGE_KEY, JSON.stringify(estado));
     } catch {
@@ -2392,6 +2471,22 @@ export class SistemaSILIC {
       item.decisaoAcaoRenovatoria = atual.decisaoAcaoRenovatoria || item.decisaoAcaoRenovatoria;
       if (atual.protocoloFormal) item.protocoloFormal = atual.protocoloFormal;
       if (atual.demandaSiclg) item.demandaSiclg = atual.demandaSiclg;
+      if (atual.situacaoLaudoAvaliacao) item.situacaoLaudoAvaliacao = atual.situacaoLaudoAvaliacao;
+      if (atual.laudoRequisicaoNumero) item.laudoRequisicaoNumero = atual.laudoRequisicaoNumero;
+      if (atual.laudoRequisicaoData) item.laudoRequisicaoData = atual.laudoRequisicaoData;
+      if (atual.laudoNumero) item.laudoNumero = atual.laudoNumero;
+      if (typeof atual.laudoPrazoEntregaDias === 'number') item.laudoPrazoEntregaDias = atual.laudoPrazoEntregaDias;
+      if (typeof atual.laudoPrazoFormalInformado === 'boolean') item.laudoPrazoFormalInformado = atual.laudoPrazoFormalInformado;
+      if (atual.laudoDataEmissao) item.laudoDataEmissao = atual.laudoDataEmissao;
+      if (atual.laudoValidoAte) item.laudoValidoAte = atual.laudoValidoAte;
+      if (atual.historicoDecisaoProrrogacao) item.historicoDecisaoProrrogacao = [...atual.historicoDecisaoProrrogacao];
+      if (atual.protocoloContratacao) item.protocoloContratacao = atual.protocoloContratacao;
+
+      if (!this.exigeLaudoAvaliacao(item)) {
+        item.situacaoLaudoAvaliacao = 'nao_aplicavel';
+      }
+
+      this.sincronizarSituacaoLaudoAvaliacao(item);
 
       // Regra de negócio: protocolo formal gerado implica decisão travada em prorrogar.
       if (item.protocoloFormal) {
@@ -2417,6 +2512,234 @@ export class SistemaSILIC {
     return 'A decidir';
   }
 
+  private exigeLaudoAvaliacao(item: PainelAvisoVencimentoRow): boolean {
+    return item.modalidade === 'locacao';
+  }
+
+  private formatarModalidadeAviso(modalidade: PainelAvisoVencimentoRow['modalidade']): string {
+    if (modalidade === 'locacao') return 'Locação';
+    if (modalidade === 'cessao') return 'Cessão';
+    if (modalidade === 'comodato') return 'Comodato';
+    return 'Não informada';
+  }
+
+  private formatarSituacaoLaudoAvaliacao(valor: PainelAvisoVencimentoRow['situacaoLaudoAvaliacao']): string {
+    if (valor === 'nao_aplicavel') return 'Não aplicável';
+    if (valor === 'nao_solicitado') return 'Não solicitado';
+    if (valor === 'solicitado') return 'Solicitado';
+    return 'Entregue (válido)';
+  }
+
+  private validarFormatoNumeroLaudo(numero: string): boolean {
+    // Aceita letras, números e separadores "/", "-" e ".", com tamanho minimo de 5.
+    return /^[A-Za-z0-9][A-Za-z0-9./-]{4,29}$/.test(numero);
+  }
+
+  private sanitizarNumeroLaudoInput(valor: string): string {
+    // Mantém apenas letras, números e separadores aceitos, com no máximo 30 caracteres.
+    const limpo = valor.replace(/[^A-Za-z0-9./-]/g, '');
+    return limpo.slice(0, 30);
+  }
+
+  private formatarDataParaInputDate(valor?: string): string {
+    if (!valor) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+      const [d, m, y] = valor.split('/');
+      return `${y}-${m}-${d}`;
+    }
+    const data = this.parseDate(valor);
+    if (!data) return '';
+    const y = data.getFullYear();
+    const m = String(data.getMonth() + 1).padStart(2, '0');
+    const d = String(data.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  private obterAlertaValidadeLaudo(row: PainelAvisoVencimentoRow): string {
+    if (!row.laudoValidoAte) return '';
+    const validade = this.parseDate(row.laudoValidoAte);
+    if (!validade) return '';
+    if (this.obterDataBase(new Date()) > this.obterDataBase(validade)) {
+      return `Alerta informativo: validade do laudo expirada em ${row.laudoValidoAte}.`;
+    }
+    return '';
+  }
+
+  private gerarNumeroRequisicaoLaudo(contratoSap: string): string {
+    const agora = new Date();
+    const y = agora.getFullYear();
+    const m = String(agora.getMonth() + 1).padStart(2, '0');
+    const d = String(agora.getDate()).padStart(2, '0');
+    const base = (contratoSap || '').replace(/\D/g, '').slice(-4).padStart(4, '0');
+    const seq = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    return `LAU-${y}${m}${d}-${base}-${seq}`;
+  }
+
+  private adicionarMesesCivis(data: Date, meses: number): Date {
+    const base = this.obterDataBase(data);
+    const diaOriginal = base.getDate();
+    const anoAlvo = base.getFullYear();
+    const mesAlvo = base.getMonth() + meses;
+    const ultimoDiaMesAlvo = new Date(anoAlvo, mesAlvo + 1, 0).getDate();
+    const diaAjustado = Math.min(diaOriginal, ultimoDiaMesAlvo);
+    return new Date(anoAlvo, mesAlvo, diaAjustado);
+  }
+
+  private sincronizarSituacaoLaudoAvaliacao(row: PainelAvisoVencimentoRow): void {
+    if (!this.exigeLaudoAvaliacao(row)) {
+      row.situacaoLaudoAvaliacao = 'nao_aplicavel';
+      return;
+    }
+
+    if (!row.situacaoLaudoAvaliacao || row.situacaoLaudoAvaliacao === 'nao_aplicavel') {
+      row.situacaoLaudoAvaliacao = 'nao_solicitado';
+    }
+
+    if (row.situacaoLaudoAvaliacao === 'solicitado') {
+      if (!row.laudoRequisicaoNumero) {
+        row.laudoRequisicaoNumero = this.gerarNumeroRequisicaoLaudo(row.contratoSap);
+      }
+      if (!row.laudoRequisicaoData) {
+        row.laudoRequisicaoData = this.formatDate(new Date().toISOString());
+      }
+      if (!row.laudoPrazoEntregaDias || row.laudoPrazoEntregaDias <= 0) {
+        row.laudoPrazoEntregaDias = 30;
+      }
+    }
+
+    if (row.situacaoLaudoAvaliacao === 'entregue') {
+      if (!row.laudoDataEmissao) {
+        row.laudoDataEmissao = this.formatDate(new Date().toISOString());
+      }
+    }
+
+    if (row.situacaoLaudoAvaliacao === 'nao_solicitado') {
+      row.laudoRequisicaoNumero = undefined;
+      row.laudoRequisicaoData = undefined;
+      row.laudoNumero = undefined;
+      row.laudoPrazoEntregaDias = 30;
+      row.laudoPrazoFormalInformado = false;
+      row.laudoDataEmissao = undefined;
+      row.laudoValidoAte = undefined;
+    }
+  }
+
+  private obterResumoSlaLaudo(row: PainelAvisoVencimentoRow): string {
+    if (row.situacaoLaudoAvaliacao !== 'solicitado' || !row.laudoRequisicaoData) return '';
+    const dataSolicitacao = this.parseDate(row.laudoRequisicaoData);
+    const prazoDias = row.laudoPrazoEntregaDias || 30;
+    if (!dataSolicitacao) return '';
+    const prazoFinal = new Date(dataSolicitacao.getTime());
+    prazoFinal.setDate(prazoFinal.getDate() + prazoDias);
+    const hoje = this.obterDataBase(new Date());
+    const atraso = hoje.getTime() > this.obterDataBase(prazoFinal).getTime();
+    const origemPrazo = row.laudoPrazoFormalInformado ? 'Prazo formal informado' : 'Prazo padrão';
+    const statusPrazo = atraso ? 'Atrasado' : 'Em prazo';
+    return `${origemPrazo}: ${prazoDias} dias (ate ${this.formatDate(prazoFinal.toISOString())}) - ${statusPrazo}`;
+  }
+
+  private persistirEstadoAvisoRow(row: PainelAvisoVencimentoRow): void {
+    const estado = this.carregarEstadoPainelAviso();
+    estado[row.contratoId] = {
+      decisaoProrrogar: row.decisaoProrrogar,
+      decisaoAcaoRenovatoria: row.decisaoAcaoRenovatoria,
+      protocoloFormal: row.protocoloFormal,
+      demandaSiclg: row.demandaSiclg,
+      situacaoLaudoAvaliacao: row.situacaoLaudoAvaliacao,
+      laudoRequisicaoNumero: row.laudoRequisicaoNumero,
+      laudoRequisicaoData: row.laudoRequisicaoData,
+      laudoNumero: row.laudoNumero,
+      laudoPrazoEntregaDias: row.laudoPrazoEntregaDias,
+      laudoPrazoFormalInformado: row.laudoPrazoFormalInformado,
+      laudoDataEmissao: row.laudoDataEmissao,
+      laudoValidoAte: row.laudoValidoAte,
+      historicoDecisaoProrrogacao: row.historicoDecisaoProrrogacao,
+      protocoloContratacao: row.protocoloContratacao
+    };
+    this.salvarEstadoPainelAviso(estado);
+  }
+
+  private atualizarSituacaoLaudoPainelAviso(contratoId: string, situacao: PainelAvisoVencimentoRow['situacaoLaudoAvaliacao'], dados?: { laudoNumero?: string; laudoValidoAte?: string }): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row) return;
+
+    if (this.exigeLaudoAvaliacao(row) && situacao === 'entregue') {
+      const numero = (dados?.laudoNumero || '').trim();
+      const validade = (dados?.laudoValidoAte || '').trim();
+      if (!numero || !validade) {
+        this.showToast('Para marcar "Entregue (válido)", informe obrigatoriamente Número do laudo e Data de validade.');
+        this.aplicarFiltrosPainelAvisoVencimento();
+        return;
+      }
+      if (!this.validarFormatoNumeroLaudo(numero)) {
+        this.showToast('Número do laudo inválido. Use 5 a 30 caracteres com letras/números e separadores permitidos (/, -, .). Ex.: 12345/2026.');
+        this.aplicarFiltrosPainelAvisoVencimento();
+        return;
+      }
+      row.laudoNumero = numero;
+      row.laudoValidoAte = this.formatDate(validade);
+      row.laudoDataEmissao = row.laudoDataEmissao || this.formatDate(new Date().toISOString());
+    }
+
+    row.situacaoLaudoAvaliacao = this.exigeLaudoAvaliacao(row) ? situacao : 'nao_aplicavel';
+    this.sincronizarSituacaoLaudoAvaliacao(row);
+    this.persistirEstadoAvisoRow(row);
+
+    this.aplicarFiltrosPainelAvisoVencimento();
+  }
+
+  private solicitarLaudoAvaliacao(contratoId: string): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row) return;
+    if (!this.exigeLaudoAvaliacao(row)) {
+      this.showToast('Laudo de avaliação não se aplica para cessão/comodato.');
+      return;
+    }
+
+    row.situacaoLaudoAvaliacao = 'solicitado';
+    row.laudoRequisicaoNumero = this.gerarNumeroRequisicaoLaudo(row.contratoSap);
+    row.laudoRequisicaoData = this.formatDate(new Date().toISOString());
+    row.laudoPrazoEntregaDias = 30;
+    row.laudoPrazoFormalInformado = false;
+    this.sincronizarSituacaoLaudoAvaliacao(row);
+    this.persistirEstadoAvisoRow(row);
+
+    this.showToast(`Solicitação de laudo registrada (${row.laudoRequisicaoNumero}) com prazo padrão de 30 dias.`);
+    this.aplicarFiltrosPainelAvisoVencimento();
+  }
+
+  private registrarPrazoFormalLaudo(contratoId: string): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row || row.situacaoLaudoAvaliacao !== 'solicitado') return;
+
+    const valor = window.prompt('Informe o prazo formal em dias para conclusão do laudo:');
+    if (!valor) return;
+    const dias = parseInt(valor, 10);
+    if (Number.isNaN(dias) || dias <= 0) {
+      this.showToast('Prazo formal inválido. Informe um número de dias maior que zero.');
+      return;
+    }
+
+    row.laudoPrazoEntregaDias = dias;
+    row.laudoPrazoFormalInformado = true;
+    this.persistirEstadoAvisoRow(row);
+    this.showToast(`Prazo formal de ${dias} dias registrado para o laudo.`);
+    this.aplicarFiltrosPainelAvisoVencimento();
+  }
+
+  private registrarEntregaLaudo(contratoId: string): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row || !this.exigeLaudoAvaliacao(row)) return;
+
+    row.situacaoLaudoAvaliacao = 'entregue';
+    row.laudoDataEmissao = this.formatDate(new Date().toISOString());
+    this.sincronizarSituacaoLaudoAvaliacao(row);
+    this.persistirEstadoAvisoRow(row);
+    this.showToast(`Laudo entregue com validade ate ${row.laudoValidoAte || '-'}.`);
+    this.aplicarFiltrosPainelAvisoVencimento();
+  }
+
   private estaNaJanelaLegalAcaoRenovatoria(item: PainelAvisoVencimentoRow): boolean {
     if (!item.fimVigenciaDate) return false;
     const hojeBase = this.obterDataBase(new Date());
@@ -2425,7 +2748,52 @@ export class SistemaSILIC {
     return hojeBase >= inicioJanela && hojeBase <= prazoFinal;
   }
 
-  private classificarFaixaSinalizacaoAviso(item: PainelAvisoVencimentoRow): 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6' | 'fora_escopo' {
+  private podeManterADecidirProrrogacao(item: PainelAvisoVencimentoRow): boolean {
+    if (!item.fimVigenciaDate) return false;
+    const hojeBase = this.obterDataBase(new Date());
+    const inicioEscopo = this.subtrairMesesCivis(item.fimVigenciaDate, 14);
+    const limiteDecisaoObrigatoria = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
+    return hojeBase >= inicioEscopo && hojeBase < limiteDecisaoObrigatoria;
+  }
+
+  private possuiDadosVigenciaInsuficientes(item: PainelAvisoVencimentoRow): boolean {
+    return !item.fimVigenciaDate || !item.fimVigencia || item.fimVigencia === '-';
+  }
+
+  private estaNaJanelaPrudenteGestorAr(item: PainelAvisoVencimentoRow): boolean {
+    if (!item.fimVigenciaDate) return false;
+    const hojeBase = this.obterDataBase(new Date());
+    const inicioJanela = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
+    const limitePrudente = this.subtrairMesesCivis(item.fimVigenciaDate, 7);
+    return hojeBase >= inicioJanela && hojeBase <= limitePrudente;
+  }
+
+  private estaNaFaixaAlertaAr87(item: PainelAvisoVencimentoRow): boolean {
+    if (!item.fimVigenciaDate) return false;
+    const hojeBase = this.obterDataBase(new Date());
+    const inicioFaixa = this.subtrairMesesCivis(item.fimVigenciaDate, 8);
+    const fimFaixa = this.subtrairMesesCivis(item.fimVigenciaDate, 7);
+    return hojeBase >= inicioFaixa && hojeBase < fimFaixa;
+  }
+
+  private registrarReaberturaDecisaoProrrogacao(row: PainelAvisoVencimentoRow, decisaoAnterior: 'a_decidir' | 'prorrogar' | 'nao_prorrogar', novaDecisao: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'): boolean {
+    const foiReabertura = (decisaoAnterior === 'prorrogar' && novaDecisao === 'nao_prorrogar') || (decisaoAnterior === 'nao_prorrogar' && novaDecisao === 'prorrogar');
+    if (!foiReabertura) return true;
+
+    const justificativa = window.prompt('Reabertura de decisão detectada. Informe a justificativa para auditoria:');
+    if (!justificativa || justificativa.trim().length < 5) {
+      this.showToast('Justificativa obrigatória (mínimo de 5 caracteres) para reabrir a decisão de prorrogação.');
+      return false;
+    }
+
+    const historico = row.historicoDecisaoProrrogacao || [];
+    historico.push(`${new Date().toLocaleString('pt-BR')} | ${decisaoAnterior} -> ${novaDecisao} | ${justificativa.trim()}`);
+    row.historicoDecisaoProrrogacao = historico;
+    return true;
+  }
+
+  private classificarFaixaSinalizacaoAviso(item: PainelAvisoVencimentoRow): 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6' | 'dados_insuficientes' | 'fora_escopo' {
+    if (this.possuiDadosVigenciaInsuficientes(item)) return 'dados_insuficientes';
     if (!item.fimVigenciaDate) return 'fora_escopo';
     const hojeBase = this.obterDataBase(new Date());
     const inicioEscopo = this.subtrairMesesCivis(item.fimVigenciaDate, 14);
@@ -2476,6 +2844,12 @@ export class SistemaSILIC {
     const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
     if (!row) return;
 
+    if (decisao === 'ingressar' && !this.estaNaJanelaPrudenteGestorAr(row)) {
+      this.showToast('Para o gestor operacional, o prazo prudente para decidir ingresso na ação renovatória é até 7 meses antes do fim da vigência. Escalone Gestão Formal/Jurídico.');
+      this.aplicarFiltrosPainelAvisoVencimento();
+      return;
+    }
+
     if (decisao === 'ingressar' && !this.estaNaJanelaLegalAcaoRenovatoria(row)) {
       if (this.estaAposPrazoDecadencialAr(row)) {
         this.showToast('Prazo decadencial encerrado: após o marco legal de 6 meses antes do fim da vigência não é possível ingressar com ação renovatória.');
@@ -2487,14 +2861,7 @@ export class SistemaSILIC {
     }
 
     row.decisaoAcaoRenovatoria = decisao;
-    const estado = this.carregarEstadoPainelAviso();
-    estado[contratoId] = {
-      decisaoProrrogar: row.decisaoProrrogar,
-      decisaoAcaoRenovatoria: decisao,
-      protocoloFormal: row.protocoloFormal,
-      demandaSiclg: row.demandaSiclg
-    };
-    this.salvarEstadoPainelAviso(estado);
+    this.persistirEstadoAvisoRow(row);
 
     this.aplicarFiltrosPainelAvisoVencimento();
   }
@@ -2502,11 +2869,69 @@ export class SistemaSILIC {
   private gerarProtocoloSolicitacaoProrrogacao(contratoSap: string): string {
     const data = new Date();
     const y = data.getFullYear();
-    const m = String(data.getMonth() + 1).padStart(2, '0');
-    const d = String(data.getDate()).padStart(2, '0');
-    const base = (contratoSap || '').replace(/\D/g, '').slice(-4).padStart(4, '0');
-    const seq = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
-    return `AF-PROR-${y}${m}${d}-${base}-${seq}`;
+    const numero = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+    return `FORMAL - ${numero} - ${y}`;
+  }
+
+  private gerarProtocoloContratacaoCECOT(contratoSap: string): string {
+    const data = new Date();
+    const y = data.getFullYear();
+    const numero = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+    return `CONTRATACAO - ${numero} - ${y}`;
+  }
+
+  private podeSolicitarContratacao(item: PainelAvisoVencimentoRow): boolean {
+    const vencido = this.classificarJanelaAviso(item) === 'vencido';
+    const naoProrrogar = item.decisaoProrrogar === 'nao_prorrogar';
+    return vencido || naoProrrogar;
+  }
+
+  private solicitarContratacaoCecot(contratoId: string): void {
+    const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
+    if (!row) return;
+    if (!this.podeSolicitarContratacao(row)) {
+      this.showToast('Protocolo de contratação disponível apenas para contrato vencido ou decisão de não prorrogar.');
+      return;
+    }
+    if (row.protocoloContratacao) {
+      this.showToast(`Solicitação de contratação já registrada. Protocolo: ${row.protocoloContratacao}.`);
+      return;
+    }
+
+    row.protocoloContratacao = this.gerarProtocoloContratacaoCECOT(row.contratoSap);
+    this.persistirEstadoAvisoRow(row);
+    this.showToast(`Solicitação de nova contratação enviada à área responsável. Protocolo gerado: ${row.protocoloContratacao}.`);
+    this.aplicarFiltrosPainelAvisoVencimento();
+  }
+
+  private obterClasseStatusAviso(situacao: string): string {
+    const s = (situacao || '').toLowerCase();
+    if (s.includes('ativo')) return 'badge badge-ativo';
+    if (s.includes('prospec')) return 'badge badge-info';
+    if (s.includes('mobiliza')) return 'badge badge-warning';
+    if (s.includes('desmobiliza')) return 'badge badge-warning';
+    if (s.includes('desativ')) return 'badge badge-danger';
+    return 'badge badge-neutral';
+  }
+
+  private atualizarRotuloFiltroAtivoAviso(): void {
+    const label = document.getElementById('avisoFiltroAtivoLabel');
+    if (!label) return;
+    const filtrosAtivos: string[] = [];
+    if (this.avisoFiltroRiscoAr87Ativo) {
+      filtrosAtivos.push('Risco AR 8-7 meses sem decisão');
+    }
+    if (this.avisoStatusBadgeFiltroAtivo) {
+      filtrosAtivos.push(`Status: ${this.avisoStatusBadgeFiltroAtivo}`);
+    }
+
+    if (filtrosAtivos.length > 0) {
+      label.textContent = `Filtro ativo: ${filtrosAtivos.join(' | ')}`;
+      label.style.display = 'block';
+      return;
+    }
+    label.textContent = '';
+    label.style.display = 'none';
   }
 
   private atualizarDecisaoPainelAviso(contratoId: string, decisao: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'): void {
@@ -2515,20 +2940,25 @@ export class SistemaSILIC {
 
     if (row.protocoloFormal) {
       row.decisaoProrrogar = 'prorrogar';
-      this.showToast('Decisão travada em "Prorrogar" após geração de protocolo formal.');
+      this.showToast('Decisão travada em "Prorrogar": solicitação já encaminhada à Gestão Formal (protocolo existente).');
+      this.aplicarFiltrosPainelAvisoVencimento();
+      return;
+    }
+
+    if (decisao === 'a_decidir' && !this.podeManterADecidirProrrogacao(row)) {
+      this.showToast('Status "A decidir" só é permitido entre 14 meses e 12 meses antes do fim da vigência.');
+      this.aplicarFiltrosPainelAvisoVencimento();
+      return;
+    }
+
+    const decisaoAnterior = row.decisaoProrrogar;
+    if (!this.registrarReaberturaDecisaoProrrogacao(row, decisaoAnterior, decisao)) {
       this.aplicarFiltrosPainelAvisoVencimento();
       return;
     }
 
     row.decisaoProrrogar = decisao;
-    const estado = this.carregarEstadoPainelAviso();
-    estado[contratoId] = {
-      decisaoProrrogar: decisao,
-      decisaoAcaoRenovatoria: row.decisaoAcaoRenovatoria,
-      protocoloFormal: row.protocoloFormal,
-      demandaSiclg: row.demandaSiclg
-    };
-    this.salvarEstadoPainelAviso(estado);
+    this.persistirEstadoAvisoRow(row);
 
     this.aplicarFiltrosPainelAvisoVencimento();
   }
@@ -2555,14 +2985,7 @@ export class SistemaSILIC {
     row.protocoloFormal = protocolo;
     row.demandaSiclg = 'Ato Formal - Prorrogação';
 
-    const estado = this.carregarEstadoPainelAviso();
-    estado[contratoId] = {
-      decisaoProrrogar: row.decisaoProrrogar,
-      decisaoAcaoRenovatoria: row.decisaoAcaoRenovatoria,
-      protocoloFormal: protocolo,
-      demandaSiclg: row.demandaSiclg
-    };
-    this.salvarEstadoPainelAviso(estado);
+    this.persistirEstadoAvisoRow(row);
 
     this.showToast(`Solicitação enviada ao Gestor Formal na categoria Ato Formal / Prorrogação. Protocolo gerado: ${protocolo}.`);
     this.aplicarFiltrosPainelAvisoVencimento();
@@ -2870,7 +3293,25 @@ export class SistemaSILIC {
       });
     });
 
+    const cardRisco = document.getElementById('avisoKpiRiscoAr87Card');
+    if (cardRisco) {
+      cardRisco.addEventListener('click', () => {
+        this.avisoFiltroRiscoAr87Ativo = !this.avisoFiltroRiscoAr87Ativo;
+        this.aplicarFiltrosPainelAvisoVencimento();
+      });
+
+      cardRisco.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          this.avisoFiltroRiscoAr87Ativo = !this.avisoFiltroRiscoAr87Ativo;
+          this.aplicarFiltrosPainelAvisoVencimento();
+        }
+      });
+    }
+
     this.atualizarEstadoVisualFiltroFaixaAviso();
+    this.atualizarEstadoVisualFiltroRiscoAr87();
+    this.atualizarRotuloFiltroAtivoAviso();
   }
 
   private atualizarEstadoVisualFiltroFaixaAviso(): void {
@@ -2880,6 +3321,13 @@ export class SistemaSILIC {
       card.classList.toggle('is-active', ativo);
       card.setAttribute('aria-pressed', String(ativo));
     });
+  }
+
+  private atualizarEstadoVisualFiltroRiscoAr87(): void {
+    const card = document.getElementById('avisoKpiRiscoAr87Card');
+    if (!card) return;
+    card.classList.toggle('is-active', this.avisoFiltroRiscoAr87Ativo);
+    card.setAttribute('aria-pressed', String(this.avisoFiltroRiscoAr87Ativo));
   }
 
   private configurarDrawerContextoAviso(): void {
@@ -2905,6 +3353,20 @@ export class SistemaSILIC {
     const content = document.getElementById('avisoContextDrawerContent');
     if (!drawer || !backdrop || !title || !content) return;
 
+    this.sincronizarSituacaoLaudoAvaliacao(item);
+    const detalheRequisicaoLaudo = item.laudoRequisicaoNumero && item.laudoRequisicaoData
+      ? `Requisicao do laudo - n. ${item.laudoRequisicaoNumero} em ${item.laudoRequisicaoData}`
+      : '-';
+    const detalheNumeroLaudo = item.laudoNumero || '-';
+    const detalhePrazoLaudo = this.obterResumoSlaLaudo(item) || '-';
+    const detalheValidadeLaudo = item.laudoValidoAte || '-';
+    const alertaValidadeLaudo = this.obterAlertaValidadeLaudo(item);
+    const detalheHistoricoProrrogacao = (item.historicoDecisaoProrrogacao && item.historicoDecisaoProrrogacao.length)
+      ? item.historicoDecisaoProrrogacao.join('<br>')
+      : '-';
+    const detalheProtocoloFormal = item.protocoloFormal || '-';
+    const detalheProtocoloContratacao = item.protocoloContratacao || '-';
+
     title.textContent = `Contexto do aviso - Contrato SAP ${item.contratoSap}`;
     content.innerHTML = `
       <div class="info-section">
@@ -2912,6 +3374,16 @@ export class SistemaSILIC {
           <div class="info-item"><label>Contrato (SICLG)</label><span>${item.contratoSiclg || '-'}</span></div>
           <div class="info-item"><label>Fase</label><span>${item.fase}</span></div>
           <div class="info-item"><label>Demanda (SICLG)</label><span>${item.demandaSiclg}</span></div>
+          <div class="info-item"><label>Modalidade</label><span>${this.formatarModalidadeAviso(item.modalidade)}</span></div>
+          <div class="info-item"><label>Situação do laudo de avaliação</label><span>${this.formatarSituacaoLaudoAvaliacao(item.situacaoLaudoAvaliacao)}</span></div>
+          <div class="info-item"><label>Protocolo FORMAL</label><span>${detalheProtocoloFormal}</span></div>
+          <div class="info-item"><label>Protocolo CONTRATACAO</label><span>${detalheProtocoloContratacao}</span></div>
+          <div class="info-item"><label>Requisição do laudo</label><span>${detalheRequisicaoLaudo}</span></div>
+          <div class="info-item"><label>Número do laudo</label><span>${detalheNumeroLaudo}</span></div>
+          <div class="info-item"><label>Prazo de entrega do laudo</label><span>${detalhePrazoLaudo}</span></div>
+          <div class="info-item"><label>Validade do laudo até</label><span>${detalheValidadeLaudo}</span></div>
+          ${alertaValidadeLaudo ? `<div class="info-item" style="grid-column: 1 / -1;"><label>Alerta de validade</label><span>${alertaValidadeLaudo}</span></div>` : ''}
+          <div class="info-item" style="grid-column: 1 / -1;"><label>Histórico de reabertura da prorrogação</label><span>${detalheHistoricoProrrogacao}</span></div>
           <div class="info-item"><label>Colegiado</label><span>${item.colegiado}</span></div>
           <div class="info-item"><label>Limite legal para ingresso da AR</label><span>${item.limiteLegalAr}</span></div>
           <div class="info-item"><label>Último valor pago no SAP</label><span>${this.formatCurrency(item.ultimoValorPagoSap)}</span></div>
@@ -3100,12 +3572,12 @@ export class SistemaSILIC {
       'Ultimo valor pago no SAP',
       'Decisao de prorrogar',
       'Decisao de acao renovatoria',
+      'Status',
+      'Protocolo de contratacao',
       'Protocolo formal',
       'Fase',
       'Demanda SICLG',
       'Colegiado',
-      'Janela de vencimento',
-      'Contagem D',
       'Limite legal AR',
       'Fim da vigencia',
       'Ultimo pagamento SAP'
@@ -3128,12 +3600,12 @@ export class SistemaSILIC {
       'Último valor pago no SAP': item.ultimoValorPagoSap,
       'Decisão de prorrogar': this.formatarDecisaoAviso(item.decisaoProrrogar),
       'Decisão de ação renovatória': this.formatarDecisaoAcaoRenovatoria(item.decisaoAcaoRenovatoria),
+      'Status': item.situacaoSiclg,
+      'Protocolo de contratação': item.protocoloContratacao || '-',
       'Protocolo formal': item.protocoloFormal || '-',
       'Fase': item.fase,
       'Demanda (SICLG)': item.demandaSiclg,
       'Colegiado': item.colegiado,
-      'Janela de vencimento': this.obterRotuloJanelaAviso(item),
-      'Contagem D': this.formatarContagemJanelaAviso(item),
       'Limite legal para ingresso da AR': item.limiteLegalAr,
       'Fim da vigência': item.fimVigencia,
       'Último pagamento SAP': item.ultimoPagamentoSap
@@ -3180,12 +3652,12 @@ export class SistemaSILIC {
       item.ultimoValorPagoSap.toFixed(2),
       this.formatarDecisaoAviso(item.decisaoProrrogar),
       this.formatarDecisaoAcaoRenovatoria(item.decisaoAcaoRenovatoria),
+      item.situacaoSiclg,
+      item.protocoloContratacao || '-',
       item.protocoloFormal || '-',
       item.fase,
       item.demandaSiclg,
       item.colegiado,
-      this.obterRotuloJanelaAviso(item),
-      this.formatarContagemJanelaAviso(item),
       item.limiteLegalAr,
       item.fimVigencia,
       item.ultimoPagamentoSap
@@ -3358,6 +3830,7 @@ export class SistemaSILIC {
       if (contratoSap && !item.contratoSap.toLowerCase().includes(contratoSap)) return false;
       if (contratoSiclg && !item.contratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
       if (situacaoSiclg && item.situacaoSiclg !== situacaoSiclg) return false;
+      if (this.avisoStatusBadgeFiltroAtivo && item.situacaoSiclg !== this.avisoStatusBadgeFiltroAtivo) return false;
       if (decisao && item.decisaoProrrogar !== decisao) return false;
       if (decisaoAr && item.decisaoAcaoRenovatoria !== decisaoAr) return false;
       if (fase && item.fase !== fase) return false;
@@ -3365,6 +3838,7 @@ export class SistemaSILIC {
       if (colegiado && item.colegiado !== colegiado) return false;
       if (janela && this.classificarJanelaAviso(item) !== janela) return false;
       if (this.avisoFaixaFiltroAtiva && this.classificarFaixaSinalizacaoAviso(item) !== this.avisoFaixaFiltroAtiva) return false;
+      if (this.avisoFiltroRiscoAr87Ativo && !(item.decisaoAcaoRenovatoria === 'a_decidir' && this.estaNaFaixaAlertaAr87(item))) return false;
 
       if (fimVigenciaDate) {
         if (!item.fimVigenciaDate || item.fimVigenciaDate > fimVigenciaDate) return false;
@@ -3384,6 +3858,8 @@ export class SistemaSILIC {
 
     this.currentPagePainelAviso = 1;
     this.atualizarEstadoVisualFiltroFaixaAviso();
+    this.atualizarEstadoVisualFiltroRiscoAr87();
+    this.atualizarRotuloFiltroAtivoAviso();
     this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
   }
 
@@ -3409,10 +3885,14 @@ export class SistemaSILIC {
     if (demanda) demanda.value = '';
     if (colegiado) colegiado.value = '';
     this.avisoFaixaFiltroAtiva = '';
+    this.avisoFiltroRiscoAr87Ativo = false;
+    this.avisoStatusBadgeFiltroAtivo = '';
 
     this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
     this.currentPagePainelAviso = 1;
     this.atualizarEstadoVisualFiltroFaixaAviso();
+    this.atualizarEstadoVisualFiltroRiscoAr87();
+    this.atualizarRotuloFiltroAtivoAviso();
     this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
   }
 
@@ -3620,63 +4100,126 @@ export class SistemaSILIC {
     const dadosPaginados = dados.slice(inicio, fim);
 
     dadosPaginados.forEach((item) => {
+      this.sincronizarSituacaoLaudoAvaliacao(item);
       const tr = document.createElement('tr');
-      const situacaoClass = item.situacaoSiclg === 'Ativo' ? 'badge badge-ativo' : 'badge badge-warning';
-      const janelaClass = this.obterClasseJanelaAviso(item);
-      const janelaLabel = this.obterRotuloJanelaAviso(item);
-      const contagem = this.formatarContagemJanelaAviso(item);
+      const faixaSinalizacao = this.classificarFaixaSinalizacaoAviso(item);
+      const dadosInsuficientes = faixaSinalizacao === 'dados_insuficientes';
+      const situacaoClass = this.obterClasseStatusAviso(item.situacaoSiclg);
+      const statusBadgeAtivo = this.avisoStatusBadgeFiltroAtivo === item.situacaoSiclg;
       const opcaoADecidir = item.decisaoProrrogar === 'a_decidir' ? 'selected' : '';
       const opcaoProrrogar = item.decisaoProrrogar === 'prorrogar' ? 'selected' : '';
       const opcaoNaoProrrogar = item.decisaoProrrogar === 'nao_prorrogar' ? 'selected' : '';
       const opcaoArADecidir = item.decisaoAcaoRenovatoria === 'a_decidir' ? 'selected' : '';
       const opcaoArIngressar = item.decisaoAcaoRenovatoria === 'ingressar' ? 'selected' : '';
       const opcaoArNaoIngressar = item.decisaoAcaoRenovatoria === 'nao_ingressar' ? 'selected' : '';
-      const mostrarSolicitacao = item.decisaoProrrogar === 'prorrogar' && !item.protocoloFormal;
       const decisaoTravada = !!item.protocoloFormal;
       const seletorDesabilitado = decisaoTravada ? 'disabled' : '';
       const seletorTitulo = decisaoTravada ? 'title="Decisão bloqueada após solicitação de Ato Formal"' : '';
+      const podeADecidirProrrogacao = this.podeManterADecidirProrrogacao(item);
+      const opcoesProrrogacao = podeADecidirProrrogacao
+        ? `
+            <option value="a_decidir" ${opcaoADecidir}>A decidir</option>
+            <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
+            <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
+          `
+        : `
+            <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
+            <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
+          `;
       const podeDecidirAr = this.estaNaJanelaLegalAcaoRenovatoria(item);
+      const podeDecidirArComSeguranca = this.estaNaJanelaPrudenteGestorAr(item);
+      const alertaAr87 = item.decisaoAcaoRenovatoria === 'a_decidir' && this.estaNaFaixaAlertaAr87(item);
       const prazoDecadencialEncerrado = this.estaAposPrazoDecadencialAr(item);
       const decisaoArTitulo = !podeDecidirAr
         ? (prazoDecadencialEncerrado
           ? 'title="Prazo legal encerrado para ingresso da ação renovatória"'
           : 'title="Decisão liberada apenas entre 12 e 6 meses antes do fim da vigência"')
         : '';
-      const opcaoIngressarMarkup = podeDecidirAr
+      const opcaoIngressarMarkup = (podeDecidirAr && podeDecidirArComSeguranca)
         ? `<option value="ingressar" ${opcaoArIngressar}>Ingressar</option>`
         : '';
-      const legendaAr = podeDecidirAr
-        ? 'Janela AR ativa (12-6 meses)'
-        : 'Ingressar so entre 12 e 6 meses';
+      const legendaAr = podeDecidirArComSeguranca
+        ? 'Janela prudente do gestor ativa (12-7 meses)'
+        : (podeDecidirAr
+          ? 'Janela legal ainda ativa (12-6), mas fora do prazo prudente do gestor (<7 meses)'
+          : 'Ingressar so entre 12 e 6 meses');
+      const legendaArCompleta = alertaAr87
+        ? `${legendaAr}. Alerta: contrato na faixa 8-7 meses sem decisão de AR.`
+        : legendaAr;
       const legendaArClass = podeDecidirAr ? 'aviso-ar-hint is-open' : 'aviso-ar-hint is-closed';
+      const exigeLaudo = this.exigeLaudoAvaliacao(item);
+      const exibirPerguntaLaudo = exigeLaudo;
+      const opcaoLaudoNaoSolicitado = item.situacaoLaudoAvaliacao === 'nao_solicitado' ? 'selected' : '';
+      const opcaoLaudoSolicitado = item.situacaoLaudoAvaliacao === 'solicitado' ? 'selected' : '';
+      const opcaoLaudoEntregue = item.situacaoLaudoAvaliacao === 'entregue' ? 'selected' : '';
+      const exibirBotaoPrazoFormal = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
+      const exibirBotaoEntregaLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
+      const detalhamentoSolicitacao = item.laudoRequisicaoNumero && item.laudoRequisicaoData
+        ? `Requisicao do laudo - n. ${item.laudoRequisicaoNumero} em ${item.laudoRequisicaoData}.`
+        : '';
+      const resumoSlaLaudo = this.obterResumoSlaLaudo(item);
+      const validadeLaudo = item.laudoValidoAte ? `Validade do laudo ate ${item.laudoValidoAte}.` : '';
+      const alertaValidadeLaudo = this.obterAlertaValidadeLaudo(item);
+      const laudoNumeroAtual = item.laudoNumero || '';
+      const laudoValidadeInput = this.formatarDataParaInputDate(item.laudoValidoAte);
+      const contextoFaixa = faixaSinalizacao === 'faixa_14_12'
+        ? 'Faixa de preparacao ativa (14-12 meses).'
+        : '';
+      const blocoLaudo = exibirPerguntaLaudo
+        ? `
+            <div class="aviso-laudo-bloco">
+              <label class="aviso-laudo-label" for="avisoLaudo-${item.contratoId}">Laudo de avaliação (locação):</label>
+              <select id="avisoLaudo-${item.contratoId}" class="filter-select aviso-laudo-select" data-aviso-laudo-id="${item.contratoId}">
+                <option value="nao_solicitado" ${opcaoLaudoNaoSolicitado}>Não solicitado</option>
+                <option value="solicitado" ${opcaoLaudoSolicitado}>Solicitado</option>
+                <option value="entregue" ${opcaoLaudoEntregue}>Entregue (válido)</option>
+              </select>
+              <input type="text" class="filter-search" data-aviso-laudo-numero-id="${item.contratoId}" placeholder="Número do laudo (obrigatório em Entregue)" title="Formato: 5 a 30 caracteres, com letras/números e separadores / - ." maxlength="30" value="${laudoNumeroAtual}">
+              <input type="date" class="filter-date" data-aviso-laudo-validade-id="${item.contratoId}" value="${laudoValidadeInput}" title="Data de validade do laudo (obrigatória em Entregue)">
+              <small class="aviso-ar-hint is-closed">Validade máxima de 12 meses e deve cobrir toda a negociação. ${contextoFaixa}</small>
+              ${detalhamentoSolicitacao ? `<small class="aviso-ar-hint is-closed">${detalhamentoSolicitacao}</small>` : ''}
+              ${resumoSlaLaudo ? `<small class="aviso-ar-hint is-closed">${resumoSlaLaudo}</small>` : ''}
+              ${validadeLaudo ? `<small class="aviso-ar-hint is-open">${validadeLaudo}</small>` : ''}
+              ${alertaValidadeLaudo ? `<small class="aviso-ar-hint is-closed">${alertaValidadeLaudo}</small>` : ''}
+              ${exibirBotaoPrazoFormal ? `<button class="btn-clear" type="button" data-aviso-prazo-formal-laudo-id="${item.contratoId}">Registrar prazo formal</button>` : ''}
+              ${exibirBotaoEntregaLaudo ? `<button class="btn-clear" type="button" data-aviso-entregar-laudo-id="${item.contratoId}">Registrar entrega do laudo</button>` : ''}
+            </div>
+          `
+        : '';
+      const podeContratacao = this.podeSolicitarContratacao(item);
+      const mostrarSolicitacaoAtoFormal = item.decisaoProrrogar === 'prorrogar' && !item.protocoloFormal;
+      const protocoloContratacaoMarkup = item.protocoloContratacao
+        ? `<span class="badge badge-info">${item.protocoloContratacao}</span>`
+        : (podeContratacao ? `<button class="btn-clear" type="button" data-aviso-solicitar-contratacao-id="${item.contratoId}">Solicitar contratação</button>` : '<span class="aviso-protocolo-vazio">-</span>');
+      const protocoloFormalMarkup = item.protocoloFormal
+        ? `<span class="badge badge-info">${item.protocoloFormal}</span>`
+        : (mostrarSolicitacaoAtoFormal ? `<button class="btn-clear" type="button" data-aviso-solicitar-id="${item.contratoId}">Solicitar ato formal</button>` : '<span class="aviso-protocolo-vazio">-</span>');
 
       tr.innerHTML = `
         <td>${item.contratoSap}</td>
         <td>${item.fimVigencia}</td>
         <td>
-          <select class="filter-select aviso-decisao-select" data-aviso-decisao-id="${item.contratoId}" ${seletorDesabilitado} ${seletorTitulo}>
-            <option value="a_decidir" ${opcaoADecidir}>A decidir</option>
-            <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
-            <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
+          <select class="filter-select aviso-decisao-select" data-aviso-decisao-id="${item.contratoId}" ${seletorDesabilitado} ${seletorTitulo} ${dadosInsuficientes ? 'disabled' : ''}>
+            ${opcoesProrrogacao}
           </select>
         </td>
         <td>
-          <select class="filter-select aviso-decisao-select" data-aviso-decisao-ar-id="${item.contratoId}" ${decisaoArTitulo}>
+          <select class="filter-select aviso-decisao-select" data-aviso-decisao-ar-id="${item.contratoId}" ${decisaoArTitulo} ${dadosInsuficientes ? 'disabled' : ''}>
             <option value="a_decidir" ${opcaoArADecidir}>A decidir</option>
             ${opcaoIngressarMarkup}
             <option value="nao_ingressar" ${opcaoArNaoIngressar}>Não ingressar</option>
           </select>
-          <small class="${legendaArClass}">${legendaAr}</small>
+          <small class="${legendaArClass}">${legendaArCompleta}</small>
         </td>
-        <td><span class="${janelaClass}">${janelaLabel}</span></td>
-        <td>${contagem}</td>
-        <td>${item.protocoloFormal ? `<span class="badge badge-info">${item.protocoloFormal}</span>` : '-'}</td>
+        <td><span class="${situacaoClass} aviso-status-badge ${statusBadgeAtivo ? 'is-active' : ''}" data-aviso-status-filter="${item.situacaoSiclg}" role="button" tabindex="0" aria-pressed="${statusBadgeAtivo ? 'true' : 'false'}" title="Filtrar por status">${item.situacaoSiclg}</span></td>
+        <td class="aviso-protocolo-cell">${protocoloContratacaoMarkup}</td>
+        <td class="aviso-protocolo-cell">${protocoloFormalMarkup}</td>
         <td>
           <div class="aviso-acoes-coluna">
-            <span class="${situacaoClass}">${item.situacaoSiclg}</span>
+            ${blocoLaudo}
             <button class="btn-clear" type="button" data-aviso-contexto-drawer="${item.contratoId}">Ver contexto</button>
-            ${mostrarSolicitacao ? `<button class="btn-clear" type="button" data-aviso-solicitar-id="${item.contratoId}">Solicitar ato</button>` : ''}
             <button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar</button>
+            ${dadosInsuficientes ? `<small class="aviso-ar-hint is-closed">Dados insuficientes de vigência: revisar cadastro do contrato.</small>` : ''}
           </div>
         </td>
       `;
@@ -3700,6 +4243,81 @@ export class SistemaSILIC {
       const btnSolicitar = tr.querySelector('[data-aviso-solicitar-id]') as HTMLButtonElement | null;
       if (btnSolicitar) {
         btnSolicitar.addEventListener('click', () => this.solicitarProrrogacaoFormal(item.contratoId));
+      }
+
+      const badgeStatus = tr.querySelector('[data-aviso-status-filter]') as HTMLElement | null;
+      if (badgeStatus) {
+        const alternarFiltroStatus = () => {
+          const statusSelecionado = badgeStatus.getAttribute('data-aviso-status-filter') || '';
+          this.avisoStatusBadgeFiltroAtivo = this.avisoStatusBadgeFiltroAtivo === statusSelecionado ? '' : statusSelecionado;
+
+          const selectSituacao = document.getElementById('avisoSituacaoSiclgFiltro') as HTMLSelectElement | null;
+          if (selectSituacao) {
+            if (!this.avisoStatusBadgeFiltroAtivo) {
+              selectSituacao.value = '';
+            } else if (Array.from(selectSituacao.options).some((opt) => opt.value === this.avisoStatusBadgeFiltroAtivo)) {
+              selectSituacao.value = this.avisoStatusBadgeFiltroAtivo;
+            }
+          }
+
+          this.aplicarFiltrosPainelAvisoVencimento();
+        };
+
+        badgeStatus.addEventListener('click', () => {
+          alternarFiltroStatus();
+        });
+
+        badgeStatus.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            alternarFiltroStatus();
+          }
+        });
+      }
+
+      const btnSolicitarContratacao = tr.querySelector('[data-aviso-solicitar-contratacao-id]') as HTMLButtonElement | null;
+      if (btnSolicitarContratacao) {
+        btnSolicitarContratacao.addEventListener('click', () => this.solicitarContratacaoCecot(item.contratoId));
+      }
+
+      const selectLaudo = tr.querySelector('[data-aviso-laudo-id]') as HTMLSelectElement | null;
+      const inputNumeroLaudo = tr.querySelector('[data-aviso-laudo-numero-id]') as HTMLInputElement | null;
+      if (inputNumeroLaudo) {
+        inputNumeroLaudo.addEventListener('input', () => {
+          const atual = inputNumeroLaudo.value;
+          const sanitizado = this.sanitizarNumeroLaudoInput(atual);
+          if (sanitizado !== atual) {
+            inputNumeroLaudo.value = sanitizado;
+          }
+        });
+      }
+      if (selectLaudo) {
+        selectLaudo.addEventListener('change', () => {
+          const novoValor = selectLaudo.value as PainelAvisoVencimentoRow['situacaoLaudoAvaliacao'];
+          const inputNumero = tr.querySelector('[data-aviso-laudo-numero-id]') as HTMLInputElement | null;
+          const inputValidade = tr.querySelector('[data-aviso-laudo-validade-id]') as HTMLInputElement | null;
+          this.atualizarSituacaoLaudoPainelAviso(item.contratoId, novoValor, {
+            laudoNumero: inputNumero?.value || '',
+            laudoValidoAte: inputValidade?.value || ''
+          });
+        });
+      }
+
+      const btnPrazoFormalLaudo = tr.querySelector('[data-aviso-prazo-formal-laudo-id]') as HTMLButtonElement | null;
+      if (btnPrazoFormalLaudo) {
+        btnPrazoFormalLaudo.addEventListener('click', () => this.registrarPrazoFormalLaudo(item.contratoId));
+      }
+
+      const btnEntregarLaudo = tr.querySelector('[data-aviso-entregar-laudo-id]') as HTMLButtonElement | null;
+      if (btnEntregarLaudo) {
+        btnEntregarLaudo.addEventListener('click', () => {
+          const inputNumero = tr.querySelector('[data-aviso-laudo-numero-id]') as HTMLInputElement | null;
+          const inputValidade = tr.querySelector('[data-aviso-laudo-validade-id]') as HTMLInputElement | null;
+          this.atualizarSituacaoLaudoPainelAviso(item.contratoId, 'entregue', {
+            laudoNumero: inputNumero?.value || '',
+            laudoValidoAte: inputValidade?.value || ''
+          });
+        });
       }
 
       const btnContexto = tr.querySelector('[data-aviso-contexto-drawer]') as HTMLButtonElement | null;
@@ -3743,6 +4361,8 @@ export class SistemaSILIC {
       const faixa1412 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_14_12').length;
       const faixa126 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_12_6').length;
       const faixaMenor6 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_menor_6').length;
+      const alertaAr87 = dados.filter((item) => item.decisaoAcaoRenovatoria === 'a_decidir' && this.estaNaFaixaAlertaAr87(item)).length;
+      const dadosInsuficientes = dados.filter((item) => this.possuiDadosVigenciaInsuficientes(item)).length;
       resumo.innerHTML = `
         <div class="aviso-regras-box">
           <strong>Regras de negocio aplicadas neste prototipo</strong>
@@ -3750,9 +4370,19 @@ export class SistemaSILIC {
             <li>Classificacao por janela de vencimento (D+ e D-): Vencido (D+), Menor que 1 mes (D-1 a D-29), 1 mes (D-30), 2 meses (D-31 a D-60), 3 meses (D-61 a D-90), 6 meses (D-91 a D-180) e 1 ano (acima de D-180).</li>
             <li>KPIs com fechamento: Registros no aviso = Com decisao de prorrogar + Janela de decisao + Vencidos em prazo indeterminado.</li>
             <li>Fluxo decisorio por prazo: prorrogacao e acao renovatoria podem ser decididas em momentos distintos, com monitoramento continuo das janelas 14-12, 12-6 e abaixo de 6 meses.</li>
+            <li>Decisao de prorrogar: status "a decidir" somente entre 14 meses e 12 meses antes do fim da vigencia; com 12 meses ou menos a decisao deve ser "prorrogar" ou "nao prorrogar".</li>
+            <li>Preparacao (14-12 meses): na modalidade locacao o sistema pergunta se ja existe laudo de avaliacao valido; se nao houver, orienta solicitar a area responsavel.</li>
+            <li>Laudo de avaliacao (somente locacao): validade legal de ate 12 meses da emissao e obrigacao de permanecer valido ate o encerramento da negociacao com o locador.</li>
+            <li>Estados de controle do laudo: nao solicitado, solicitado (com requisicao e data), entregue (dentro da validade) e vencido.</li>
+            <li>SLA padrao do laudo: 30 dias apos solicitacao com documentacao completa e acesso liberado ao imovel.</li>
+            <li>Em caso de complexidade elevada ou volume expressivo, o gestor registra prazo formal informado pela area responsavel.</li>
+            <li>Novo laudo pode ser solicitado antes de 12 meses quando houver variacao de mercado na regiao que impacte a negociacao.</li>
             <li>KPI "Janela de decisao": contratos sem decisao de prorrogar e nao vencidos, distribuidos entre 1 ano, 6 meses, 3 meses, 2 meses e 1 mes (inclui menor que 1 mes).</li>
             <li>Acao renovatoria: decisao de ingressar permitida somente entre 12 e 6 meses antes do fim da vigencia (janela legal).</li>
+            <li>Janela prudente operacional para decisao do gestor sobre ingresso na AR: entre 12 e 7 meses antes do fim da vigencia, com escalonamento para Gestao Formal/Juridico quando abaixo de 7 meses.</li>
             <li>Prazo decadencial: contagem por ano e mes civil (Art. 132 do Codigo Civil), com limite final no marco de 6 meses retroativos.</li>
+            <li>Alerta automatico AR (8-7 meses): ${alertaAr87} contrato(s) sem decisao de AR na faixa de atencao operacional.</li>
+            <li>Qualidade de dados: ${dadosInsuficientes} contrato(s) com dados insuficientes de vigencia para decisao (acoes bloqueadas ate saneamento).</li>
             <li>Decisao de prorrogar fica bloqueada quando existe protocolo formal, preservando o fluxo formal ja iniciado.</li>
             <li>Solicitacao de Ato Formal so aparece quando a decisao estiver em "Prorrogar" e ainda nao houver protocolo formal.</li>
           </ul>
@@ -3763,6 +4393,7 @@ export class SistemaSILIC {
       this.setElementText('avisoKpiProrrogar', String(prorrogar));
       this.setElementText('avisoKpiCriticos', String(janelaDecisao));
       this.setElementText('avisoKpiVencidos', String(vencidos));
+      this.setElementText('avisoKpiRiscoAr87', String(alertaAr87));
       this.setElementText('avisoFaixa1412', String(faixa1412));
       this.setElementText('avisoFaixa126', String(faixa126));
       this.setElementText('avisoFaixaMenor6', String(faixaMenor6));

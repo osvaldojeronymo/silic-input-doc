@@ -94,6 +94,41 @@ Subfaixas recomendadas para vencido:
 5. Sempre mostrar coluna Proxima acao e Prazo.
 6. Exigir justificativa quando decisao for nao prorrogar.
 
+## 6.1) Regra complementar: Laudo de avaliacao do imovel
+
+Premissas de negocio:
+
+- Laudo de avaliacao e obrigatorio para contratacoes na modalidade locacao.
+- Para cessao e comodato, laudo fica como nao aplicavel no bloco operacional.
+- Validade do laudo: ate 12 meses a partir da emissao.
+- O laudo deve permanecer valido ate o encerramento da negociacao do valor de locacao com o locador.
+- Novo laudo pode ser solicitado antes de 12 meses quando houver variacao conjuntural relevante no mercado imobiliario da regiao.
+
+Regra de execucao na faixa Preparacao (14-12 meses):
+
+1. Para modalidade locacao, o sistema deve perguntar: "Ja possui laudo de avaliacao valido?".
+2. Se resposta for "Nao", registrar status e acionar botao/acao "Solicitar laudo a area responsavel".
+3. Se resposta for "Sim", manter monitoramento para evitar vencimento do laudo durante a negociacao.
+
+Estados operacionais recomendados para o laudo:
+
+- nao_solicitado
+- solicitado (Requisicao do laudo - n. XXXXXXX em DD/MM/AAAA)
+- entregue (validade dentro de 12 meses)
+- vencido
+
+Regras operacionais adicionais implementadas no prototipo:
+
+- Dados insuficientes de vigencia: quando nao houver data valida de fim de vigencia, bloquear decisoes e sinalizar saneamento cadastral.
+- Reabertura de decisao de prorrogacao (prorrogar <-> nao_prorrogar): exigir justificativa obrigatoria e registrar trilha de auditoria.
+- Protocolo formal existente: manter decisao travada em prorrogar e informar que o fluxo ja foi encaminhado para Gestao Formal.
+- Alerta automatico AR (8-7 meses): sinalizar contratos sem decisao de acao renovatoria para escalonamento preventivo.
+
+SLA operacional do laudo:
+
+- Prazo padrao: ate 30 dias para emissao, quando documentacao estiver completa e acesso ao imovel estiver liberado.
+- Excecao por complexidade/volume: registrar prazo formal informado pela area responsavel e manter trilha de auditoria no contrato.
+
 ## 7) KPIs recomendados
 
 1. Total em D-30.

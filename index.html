@@ -879,13 +879,17 @@
                     <span class="aviso-kpi-label">Vencidos em prazo indeterminado</span>
                     <strong id="avisoKpiVencidos">0</strong>
                 </article>
+                <article id="avisoKpiRiscoAr87Card" class="aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses sem decisão)">
+                    <span class="aviso-kpi-label">Risco AR 8-7 meses sem decisão</span>
+                    <strong id="avisoKpiRiscoAr87">0</strong>
+                </article>
             </div>
 
             <div class="aviso-faixa-grid">
                 <article class="aviso-faixa-card aviso-faixa-preparacao" data-aviso-faixa-filter="faixa_14_12" role="button" tabindex="0" aria-pressed="false">
                     <span class="aviso-faixa-label">Preparação (14-12 meses)</span>
                     <strong id="avisoFaixa1412">0</strong>
-                    <small>Definir prorrogação e estratégia para ação renovatória.</small>
+                    <small>Definir prorrogação, estratégia de AR e confirmar laudo (somente locação).</small>
                 </article>
                 <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_6" role="button" tabindex="0" aria-pressed="false">
                     <span class="aviso-faixa-label">Janela legal AR (12-6 meses)</span>
@@ -988,19 +992,23 @@
             </div>
 
             <div class="mini-label" id="avisoResumo" style="margin-bottom: 8px;"></div>
+            <div class="mini-label" id="avisoFiltroAtivoLabel" style="margin-bottom: 8px; display: none;"></div>
 
             <div class="table-wrapper">
                 <table class="imoveis-table">
                     <thead>
                         <tr>
-                            <th>Contrato (SAP)</th>
-                            <th>Final da vigência</th>
-                            <th>Decisão de prorrogar</th>
-                            <th>Decisão sobre ação renovatória</th>
-                            <th>Janela</th>
-                            <th>Contagem</th>
-                            <th>Protocolo de ato formal</th>
-                            <th>Ações</th>
+                            <th rowspan="2">Contrato (SAP)</th>
+                            <th rowspan="2">Final da vigência</th>
+                            <th rowspan="2">Decisão de prorrogar</th>
+                            <th rowspan="2">Decisão sobre ação renovatória</th>
+                            <th rowspan="2">Status</th>
+                            <th colspan="2" class="aviso-protocolo-group">Protocolo</th>
+                            <th rowspan="2">Ações</th>
+                        </tr>
+                        <tr>
+                            <th class="aviso-protocolo-subcol">Contratação</th>
+                            <th class="aviso-protocolo-subcol">Ato formal</th>
                         </tr>
                     </thead>
                     <tbody id="avisoVencimentoBody"></tbody>

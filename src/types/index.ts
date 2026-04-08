@@ -257,6 +257,7 @@ export interface PainelVencimentosContrato {
 
   vigenciaSiclg: string;               // VigenciaSICLG
   situacaoSiclg: string;               // SituacaoSICLG
+  modalidade: 'locacao' | 'cessao' | 'comodato' | 'nao_informada';
   descricaoSiclg: string;              // DescricaoSICLG
   demandaSiclg: string;                // DemandaSICLG
   situacaoDemanda: string;             // SituacaoDemanda
@@ -308,11 +309,22 @@ export interface PainelAvisoVencimentoRow {
   contratoSap: string;
   contratoSiclg: string;
   situacaoSiclg: string;
+  modalidade: 'locacao' | 'cessao' | 'comodato' | 'nao_informada';
   descricao: string;
   ultimoValorPagoSap: number;
   ultimoPagamentoSap: string;
   decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar';
   decisaoAcaoRenovatoria: 'a_decidir' | 'ingressar' | 'nao_ingressar';
+  situacaoLaudoAvaliacao: 'nao_aplicavel' | 'nao_solicitado' | 'solicitado' | 'entregue';
+  laudoRequisicaoNumero?: string;
+  laudoRequisicaoData?: string;
+  laudoNumero?: string;
+  laudoPrazoEntregaDias?: number;
+  laudoPrazoFormalInformado?: boolean;
+  laudoDataEmissao?: string;
+  laudoValidoAte?: string;
+  historicoDecisaoProrrogacao?: string[];
+  protocoloContratacao?: string;
   protocoloFormal?: string;
   fase: string;
   demandaSiclg: string;
@@ -321,6 +333,7 @@ export interface PainelAvisoVencimentoRow {
   fimVigencia: string;
   fimVigenciaDate: Date | null;
   ultimoPagamentoDate: Date | null;
+  ordemCasoTeste?: number;
 }
 
 export interface PaginationConfig {

@@ -1245,6 +1245,20 @@ body {
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
+.aviso-kpi-card[role='button'] {
+    cursor: pointer;
+}
+
+.aviso-kpi-card.is-active {
+    border-color: #b91c1c;
+    box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.14), 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.aviso-kpi-card:focus-visible {
+    outline: 2px solid #2f70b8;
+    outline-offset: 2px;
+}
+
 .aviso-kpi-card strong {
     display: block;
     font-size: 1.55rem;
@@ -1352,6 +1366,11 @@ body {
 
 .aviso-kpi-vencidos {
     background: linear-gradient(120deg, #f4f4f8, #ffffff);
+}
+
+.aviso-kpi-risco-ar87 {
+    background: linear-gradient(120deg, #ffe8e8, #ffffff);
+    border-color: #f2b3b3;
 }
 
 .aviso-faixa-grid {
@@ -1466,6 +1485,27 @@ body {
     min-width: 150px;
 }
 
+.aviso-laudo-bloco {
+    width: 100%;
+    padding: 0.45rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #f5d0a3;
+    background: #fff8ef;
+}
+
+.aviso-laudo-label {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: #92400e;
+}
+
+.aviso-laudo-select {
+    min-width: 100%;
+    max-width: 100%;
+}
+
 .aviso-ar-hint {
     display: block;
     margin-top: 0.2rem;
@@ -1489,6 +1529,41 @@ body {
     padding: 0.65rem 0.55rem;
 }
 
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .imoveis-table thead tr:nth-child(2) th {
+    font-size: 0.67rem;
+    font-weight: 600;
+    color: var(--color-gray-700);
+    padding-top: 0.35rem;
+    padding-bottom: 0.45rem;
+}
+
+.aviso-protocolo-group {
+    text-align: center;
+}
+
+.aviso-protocolo-subcol {
+    text-align: center;
+}
+
+.formal-panel-view[data-formal-panel="aviso-vencimento"] .imoveis-table td.aviso-protocolo-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.aviso-protocolo-vazio {
+    color: var(--color-gray-600);
+    font-weight: 500;
+}
+
+#avisoFiltroAtivoLabel {
+    padding: 0.35rem 0.55rem;
+    border-radius: 8px;
+    border: 1px solid #f2b3b3;
+    background: #fff4f4;
+    color: #991b1b;
+    font-weight: 600;
+}
+
 .formal-panel-view[data-formal-panel="aviso-vencimento"] .imoveis-table td {
     padding: 0.65rem 0.55rem;
     font-size: 0.84rem;
@@ -1498,6 +1573,15 @@ body {
 .formal-panel-view[data-formal-panel="aviso-vencimento"] .badge {
     padding: 0.28rem 0.52rem;
     font-size: 0.66rem;
+}
+
+.aviso-status-badge {
+    cursor: pointer;
+}
+
+.aviso-status-badge.is-active {
+    box-shadow: 0 0 0 2px rgba(47, 112, 184, 0.2);
+    border-color: #2f70b8;
 }
 
 .formal-panel-view[data-formal-panel="aviso-vencimento"] .aviso-decisao-select {
