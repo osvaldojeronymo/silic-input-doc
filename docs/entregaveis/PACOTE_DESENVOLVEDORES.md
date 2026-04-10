@@ -18,7 +18,7 @@ Objetivo: permitir implementacao do modulo com contexto funcional, dados e prior
 2. US-001.2 Motor de conciliacao
 3. US-001.3 Tela A-I
 4. US-001.4 Workflow operacional
-5. US-001.5 Regra D-180
+5. US-001.5 Regra de prazo AR (legal 12-6 + operacional 12-7)
 6. US-001.6 Tela A-II
 7. US-001.7 Integracao DIJUR API
 8. US-001.8 Tela A-III

@@ -64,7 +64,7 @@ Senhor(a),
 
 5.1 Chave de conciliacao principal: `contrato_sap`.
 
-5.2 Regra de prazo: `limite_ar_go = fim_vigencia_sap - 6 meses`.
+5.2 Regra de prazo AR: janela legal 12-6 (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor 12-7.
 
 5.3 Segregacao de input por perfil:
 

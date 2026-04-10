@@ -16,7 +16,7 @@ Objetivo desta etapa:
 
 - Transformar o prototipo atual de baixa fidelidade em prototipo de alta fidelidade.
 - Cobrir os modulos A-I, A-II, A-III e fluxos B-a..B-h.
-- Respeitar regras de perfil e regra de prazo D-180.
+- Respeitar regras de perfil e regra de prazo AR (janela legal 12-6 e janela operacional 12-7).
 
 Documentos anexos/referencias:
 
@@ -113,7 +113,7 @@ Documentos anexos/referencias:
 Premissas criticas:
 
 - Chave de conciliacao: `contrato_sap`
-- Regra de prazo: `limite_ar_go = fim_vigencia_sap - 6 meses`
+- Regra de prazo AR: janela legal 12-6 (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor 12-7
 - Inputs por perfil (Gestor Operacional e Gestor Formal)
 - Campos removidos nao devem ser implementados
 

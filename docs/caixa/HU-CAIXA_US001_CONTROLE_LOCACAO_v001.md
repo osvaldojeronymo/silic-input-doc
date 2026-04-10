@@ -63,7 +63,7 @@ para acompanhar vencimentos, reduzir inconsistencias de conciliacao e conduzir a
 ## 7. Regras de negocio obrigatorias
 
 1. Chave principal de conciliacao: `contrato_sap`.
-2. Regra de prazo oficial: `limite_ar_go = fim_vigencia_sap - 6 meses`.
+2. Regra de prazo AR: janela legal de ingresso entre 12 e 6 meses (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor entre 12 e 7 meses.
 3. Campos por perfil:
    - Gestor Operacional: `decisao_operacional`, `houve_acordo`, `incluir_no_siclg`
    - Gestor Formal: `radar_sucot`, `notas`
@@ -125,11 +125,11 @@ para acompanhar vencimentos, reduzir inconsistencias de conciliacao e conduzir a
 - When ocorrer sincronizacao
 - Then `codigo_sijur`, `situacao_sijur` e `situacao_cefor` devem ser atualizados e exibidos no A-III
 
-### CA-06 Regra D-180
+### CA-06 Regra de prazo AR (legal 12-6 + operacional 12-7)
 
 - Given `fim_vigencia_sap` preenchida
 - When o sistema calcular prazo operacional
-- Then deve calcular `limite_ar_go` e classificar `status_prazo_ar_go` em `no_prazo`, `alerta` ou `vencido`
+- Then deve calcular `limite_ar_go` (marco legal de 6 meses) e classificar `status_prazo_ar_go` em `no_prazo`, `alerta` ou `vencido`, destacando a janela operacional de decisao direta do gestor entre 12 e 7 meses
 
 ### CA-07 Origem rastreavel
 
@@ -148,7 +148,7 @@ para acompanhar vencimentos, reduzir inconsistencias de conciliacao e conduzir a
 
 - Integracoes de pagamento SAP dos ultimos 12 meses.
 - Regras detalhadas de colegiado.
-- Regras juridicas alem da janela D-180 no escopo atual.
+- Regras juridicas alem da janela legal de 6 meses no escopo atual.
 
 ## 12. Dependencias
 

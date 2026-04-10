@@ -168,7 +168,8 @@ export class SistemaSILIC {
   private currentPagePainelAviso = 1;
   private itemsPerPagePainelAviso = 10;
   private avisoKpiComposicaoExpandida = false;
-  private avisoFaixaFiltroAtiva: '' | 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6' = '';
+  private avisoKpiRiscoAr87ComposicaoExpandida = false;
+  private avisoFaixaFiltroAtiva: '' | 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6' = '';
   private avisoFiltroRiscoAr87Ativo = false;
   private avisoStatusBadgeFiltroAtivo = '';
   private fase1Rows: Fase1OperacionalRow[] = [];
@@ -206,7 +207,6 @@ export class SistemaSILIC {
     this.configurarPainelVencimentos();
     this.configurarPainelAcoesRenovatorias();
     this.configurarPainelAvisoVencimento();
-    this.configurarDrawerContextoAviso();
     this.configurarItemsPorPagina();
     this.configurarPaginacaoPainelPortfolio();
     this.configurarPaginacaoPainelFormal();
@@ -2660,26 +2660,49 @@ export class SistemaSILIC {
     this.salvarEstadoPainelAviso(estado);
   }
 
-  private atualizarSituacaoLaudoPainelAviso(contratoId: string, situacao: PainelAvisoVencimentoRow['situacaoLaudoAvaliacao'], dados?: { laudoNumero?: string; laudoValidoAte?: string }): void {
+  private atualizarSituacaoLaudoPainelAviso(
+    contratoId: string,
+    situacao: PainelAvisoVencimentoRow['situacaoLaudoAvaliacao'],
+    dados?: { laudoRequisicaoNumero?: string; laudoDataEmissao?: string }
+  ): void {
     const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
     if (!row) return;
 
+    if (this.exigeLaudoAvaliacao(row) && situacao === 'solicitado') {
+      const numeroRequisicao = (dados?.laudoRequisicaoNumero || '').trim();
+      if (!numeroRequisicao) {
+        this.showToast('Para marcar "Solicitado", informe o número da solicitação do laudo.');
+        this.aplicarFiltrosPainelAvisoVencimento();
+        return;
+      }
+      if (!this.validarFormatoNumeroLaudo(numeroRequisicao)) {
+        this.showToast('Número da solicitação inválido. Use 5 a 30 caracteres com letras/números e separadores permitidos (/, -, .). Ex.: 12345/2026.');
+        this.aplicarFiltrosPainelAvisoVencimento();
+        return;
+      }
+      row.laudoRequisicaoNumero = numeroRequisicao;
+      row.laudoRequisicaoData = row.laudoRequisicaoData || this.formatDate(new Date().toISOString());
+      row.laudoNumero = undefined;
+      row.laudoDataEmissao = undefined;
+      row.laudoValidoAte = undefined;
+    }
+
     if (this.exigeLaudoAvaliacao(row) && situacao === 'entregue') {
-      const numero = (dados?.laudoNumero || '').trim();
-      const validade = (dados?.laudoValidoAte || '').trim();
-      if (!numero || !validade) {
-        this.showToast('Para marcar "Entregue (válido)", informe obrigatoriamente Número do laudo e Data de validade.');
+      const dataEmissao = (dados?.laudoDataEmissao || '').trim();
+      if (!dataEmissao) {
+        this.showToast('Para marcar "Entregue (válido)", informe obrigatoriamente a data do laudo.');
         this.aplicarFiltrosPainelAvisoVencimento();
         return;
       }
-      if (!this.validarFormatoNumeroLaudo(numero)) {
-        this.showToast('Número do laudo inválido. Use 5 a 30 caracteres com letras/números e separadores permitidos (/, -, .). Ex.: 12345/2026.');
+      const dataEmissaoDate = this.parseDate(dataEmissao);
+      if (!dataEmissaoDate) {
+        this.showToast('Data do laudo inválida.');
         this.aplicarFiltrosPainelAvisoVencimento();
         return;
       }
-      row.laudoNumero = numero;
-      row.laudoValidoAte = this.formatDate(validade);
-      row.laudoDataEmissao = row.laudoDataEmissao || this.formatDate(new Date().toISOString());
+      row.laudoDataEmissao = this.formatDate(dataEmissaoDate.toISOString());
+      row.laudoValidoAte = this.formatDate(this.adicionarMesesCivis(dataEmissaoDate, 12).toISOString());
+      row.laudoNumero = undefined;
     }
 
     row.situacaoLaudoAvaliacao = this.exigeLaudoAvaliacao(row) ? situacao : 'nao_aplicavel';
@@ -2776,6 +2799,12 @@ export class SistemaSILIC {
     return hojeBase >= inicioFaixa && hojeBase < fimFaixa;
   }
 
+  private estaEmRiscoAr87(item: PainelAvisoVencimentoRow): boolean {
+    return this.estaNaFaixaAlertaAr87(item)
+      && item.decisaoProrrogar === 'a_decidir'
+      && item.decisaoAcaoRenovatoria === 'a_decidir';
+  }
+
   private registrarReaberturaDecisaoProrrogacao(row: PainelAvisoVencimentoRow, decisaoAnterior: 'a_decidir' | 'prorrogar' | 'nao_prorrogar', novaDecisao: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'): boolean {
     const foiReabertura = (decisaoAnterior === 'prorrogar' && novaDecisao === 'nao_prorrogar') || (decisaoAnterior === 'nao_prorrogar' && novaDecisao === 'prorrogar');
     if (!foiReabertura) return true;
@@ -2792,17 +2821,17 @@ export class SistemaSILIC {
     return true;
   }
 
-  private classificarFaixaSinalizacaoAviso(item: PainelAvisoVencimentoRow): 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6' | 'dados_insuficientes' | 'fora_escopo' {
+  private classificarFaixaSinalizacaoAviso(item: PainelAvisoVencimentoRow): 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6' | 'dados_insuficientes' | 'fora_escopo' {
     if (this.possuiDadosVigenciaInsuficientes(item)) return 'dados_insuficientes';
     if (!item.fimVigenciaDate) return 'fora_escopo';
     const hojeBase = this.obterDataBase(new Date());
     const inicioEscopo = this.subtrairMesesCivis(item.fimVigenciaDate, 14);
     const inicioJanelaLegal = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
-    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(item.fimVigenciaDate);
+    const limitePrudente = this.subtrairMesesCivis(item.fimVigenciaDate, 7);
 
     if (hojeBase < inicioEscopo) return 'fora_escopo';
     if (hojeBase < inicioJanelaLegal) return 'faixa_14_12';
-    if (hojeBase <= prazoFinal) return 'faixa_12_6';
+    if (hojeBase <= limitePrudente) return 'faixa_12_7';
     return 'faixa_menor_6';
   }
 
@@ -2854,7 +2883,7 @@ export class SistemaSILIC {
       if (this.estaAposPrazoDecadencialAr(row)) {
         this.showToast('Prazo decadencial encerrado: após o marco legal de 6 meses antes do fim da vigência não é possível ingressar com ação renovatória.');
       } else {
-        this.showToast('Ingresso na ação renovatória permitido apenas na janela legal entre 12 e 6 meses (contagem por mês civil).');
+        this.showToast('Ingresso na ação renovatória permitido apenas na janela legal entre 12 e 6 meses (contagem por mês civil). Na visão operacional, a decisão direta do gestor ocorre até 7 meses.');
       }
       this.aplicarFiltrosPainelAvisoVencimento();
       return;
@@ -2919,7 +2948,7 @@ export class SistemaSILIC {
     if (!label) return;
     const filtrosAtivos: string[] = [];
     if (this.avisoFiltroRiscoAr87Ativo) {
-      filtrosAtivos.push('Risco AR 8-7 meses sem decisão');
+      filtrosAtivos.push('Risco AR 8-7 meses');
     }
     if (this.avisoStatusBadgeFiltroAtivo) {
       filtrosAtivos.push(`Status: ${this.avisoStatusBadgeFiltroAtivo}`);
@@ -3276,7 +3305,7 @@ export class SistemaSILIC {
     });
 
     document.querySelectorAll<HTMLElement>('[data-aviso-faixa-filter]').forEach((card) => {
-      const faixa = card.dataset.avisoFaixaFilter as '' | 'faixa_14_12' | 'faixa_12_6' | 'faixa_menor_6';
+      const faixa = card.dataset.avisoFaixaFilter as '' | 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6';
       if (!faixa) return;
 
       card.addEventListener('click', () => {
@@ -3305,6 +3334,23 @@ export class SistemaSILIC {
           event.preventDefault();
           this.avisoFiltroRiscoAr87Ativo = !this.avisoFiltroRiscoAr87Ativo;
           this.aplicarFiltrosPainelAvisoVencimento();
+        }
+      });
+    }
+
+    const gatilhoComposicaoRisco = document.getElementById('avisoKpiRiscoAr87');
+    if (gatilhoComposicaoRisco && gatilhoComposicaoRisco.dataset.bound !== 'true') {
+      gatilhoComposicaoRisco.dataset.bound = 'true';
+      gatilhoComposicaoRisco.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.alternarComposicaoRiscoAr87();
+      });
+      gatilhoComposicaoRisco.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.stopPropagation();
+          this.alternarComposicaoRiscoAr87();
         }
       });
     }
@@ -3845,7 +3891,7 @@ export class SistemaSILIC {
       if (colegiado && item.colegiado !== colegiado) return false;
       if (janela && this.classificarJanelaAviso(item) !== janela) return false;
       if (this.avisoFaixaFiltroAtiva && this.classificarFaixaSinalizacaoAviso(item) !== this.avisoFaixaFiltroAtiva) return false;
-      if (this.avisoFiltroRiscoAr87Ativo && !(item.decisaoAcaoRenovatoria === 'a_decidir' && this.estaNaFaixaAlertaAr87(item))) return false;
+      if (this.avisoFiltroRiscoAr87Ativo && !this.estaEmRiscoAr87(item)) return false;
 
       if (fimVigenciaDate) {
         if (!item.fimVigenciaDate || item.fimVigenciaDate > fimVigenciaDate) return false;
@@ -4095,6 +4141,23 @@ export class SistemaSILIC {
     this.aplicarEstadoComposicaoJanelaDecisao();
   }
 
+  private aplicarEstadoComposicaoRiscoAr87(): void {
+    const detalhe = document.getElementById('avisoKpiRiscoAr87Detalhe');
+    const gatilho = document.getElementById('avisoKpiRiscoAr87');
+    if (detalhe) {
+      detalhe.hidden = false;
+      detalhe.classList.toggle('is-open', this.avisoKpiRiscoAr87ComposicaoExpandida);
+    }
+    if (gatilho) {
+      gatilho.setAttribute('aria-expanded', String(this.avisoKpiRiscoAr87ComposicaoExpandida));
+    }
+  }
+
+  private alternarComposicaoRiscoAr87(): void {
+    this.avisoKpiRiscoAr87ComposicaoExpandida = !this.avisoKpiRiscoAr87ComposicaoExpandida;
+    this.aplicarEstadoComposicaoRiscoAr87();
+  }
+
   private atualizarPainelAvisoVencimento(dados: PainelAvisoVencimentoRow[]): void {
     const tbody = document.getElementById('avisoVencimentoBody') as HTMLTableSectionElement | null;
     const resumo = document.getElementById('avisoResumo');
@@ -4135,12 +4198,12 @@ export class SistemaSILIC {
           `;
       const podeDecidirAr = this.estaNaJanelaLegalAcaoRenovatoria(item);
       const podeDecidirArComSeguranca = this.estaNaJanelaPrudenteGestorAr(item);
-      const alertaAr87 = item.decisaoAcaoRenovatoria === 'a_decidir' && this.estaNaFaixaAlertaAr87(item);
+      const alertaAr87 = this.estaEmRiscoAr87(item);
       const prazoDecadencialEncerrado = this.estaAposPrazoDecadencialAr(item);
       const decisaoArTitulo = !podeDecidirAr
         ? (prazoDecadencialEncerrado
           ? 'title="Prazo legal encerrado para ingresso da ação renovatória"'
-          : 'title="Decisão liberada apenas entre 12 e 6 meses antes do fim da vigência"')
+          : 'title="Ingresso na AR somente na janela legal (12-6 meses). Na visão operacional, a decisão direta do gestor vai até 7 meses."')
         : '';
       const opcaoIngressarMarkup = (podeDecidirAr && podeDecidirArComSeguranca)
         ? `<option value="ingressar" ${opcaoArIngressar}>Ingressar</option>`
@@ -4148,10 +4211,10 @@ export class SistemaSILIC {
       const legendaAr = podeDecidirArComSeguranca
         ? 'Janela prudente do gestor ativa (12-7 meses)'
         : (podeDecidirAr
-          ? 'Janela legal ainda ativa (12-6), mas fora do prazo prudente do gestor (<7 meses)'
-          : 'Ingressar so entre 12 e 6 meses');
+          ? 'Janela legal da AR ativa (12-6), mas fora da janela operacional do gestor (12-7); escalar Gestao Formal/Juridico'
+          : 'Fora da janela legal da AR (12-6 meses)');
       const legendaArCompleta = alertaAr87
-        ? `${legendaAr}. Alerta: contrato na faixa 8-7 meses sem decisão de AR.`
+        ? `${legendaAr}. Alerta: contrato na faixa 8-7 meses com pendencia simultanea de prorrogacao e AR.`
         : legendaAr;
       const legendaArClass = podeDecidirAr ? 'aviso-ar-hint is-open' : 'aviso-ar-hint is-closed';
       const exigeLaudo = this.exigeLaudoAvaliacao(item);
@@ -4159,6 +4222,8 @@ export class SistemaSILIC {
       const opcaoLaudoNaoSolicitado = item.situacaoLaudoAvaliacao === 'nao_solicitado' ? 'selected' : '';
       const opcaoLaudoSolicitado = item.situacaoLaudoAvaliacao === 'solicitado' ? 'selected' : '';
       const opcaoLaudoEntregue = item.situacaoLaudoAvaliacao === 'entregue' ? 'selected' : '';
+      const exibirInputRequisicaoLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
+      const exibirInputDataLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'entregue';
       const exibirBotaoPrazoFormal = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
       const exibirBotaoEntregaLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
       const detalhamentoSolicitacao = item.laudoRequisicaoNumero && item.laudoRequisicaoData
@@ -4167,8 +4232,8 @@ export class SistemaSILIC {
       const resumoSlaLaudo = this.obterResumoSlaLaudo(item);
       const validadeLaudo = item.laudoValidoAte ? `Validade do laudo ate ${item.laudoValidoAte}.` : '';
       const alertaValidadeLaudo = this.obterAlertaValidadeLaudo(item);
-      const laudoNumeroAtual = item.laudoNumero || '';
-      const laudoValidadeInput = this.formatarDataParaInputDate(item.laudoValidoAte);
+      const laudoRequisicaoAtual = item.laudoRequisicaoNumero || '';
+      const laudoDataEmissaoInput = this.formatarDataParaInputDate(item.laudoDataEmissao);
       const contextoFaixa = faixaSinalizacao === 'faixa_14_12'
         ? 'Faixa de preparacao ativa (14-12 meses).'
         : '';
@@ -4181,8 +4246,12 @@ export class SistemaSILIC {
                 <option value="solicitado" ${opcaoLaudoSolicitado}>Solicitado</option>
                 <option value="entregue" ${opcaoLaudoEntregue}>Entregue (válido)</option>
               </select>
-              <input type="text" class="filter-search" data-aviso-laudo-numero-id="${item.contratoId}" placeholder="Número do laudo (obrigatório em Entregue)" title="Formato: 5 a 30 caracteres, com letras/números e separadores / - ." maxlength="30" value="${laudoNumeroAtual}">
-              <input type="date" class="filter-date" data-aviso-laudo-validade-id="${item.contratoId}" value="${laudoValidadeInput}" title="Data de validade do laudo (obrigatória em Entregue)">
+              ${exibirInputRequisicaoLaudo
+                ? `<input type="text" class="filter-search" data-aviso-laudo-requisicao-id="${item.contratoId}" placeholder="Número da solicitação do laudo" title="Formato: 5 a 30 caracteres, com letras/números e separadores / - ." maxlength="30" value="${laudoRequisicaoAtual}">`
+                : ''}
+              ${exibirInputDataLaudo
+                ? `<input type="date" class="filter-date" data-aviso-laudo-data-emissao-id="${item.contratoId}" value="${laudoDataEmissaoInput}" title="Data do laudo (obrigatória em Entregue)">`
+                : ''}
               <small class="aviso-ar-hint is-closed">Validade máxima de 12 meses e deve cobrir toda a negociação. ${contextoFaixa}</small>
               ${detalhamentoSolicitacao ? `<small class="aviso-ar-hint is-closed">${detalhamentoSolicitacao}</small>` : ''}
               ${resumoSlaLaudo ? `<small class="aviso-ar-hint is-closed">${resumoSlaLaudo}</small>` : ''}
@@ -4224,8 +4293,7 @@ export class SistemaSILIC {
         <td>
           <div class="aviso-acoes-coluna">
             ${blocoLaudo}
-            <button class="btn-clear" type="button" data-aviso-contexto-drawer="${item.contratoId}">Ver contexto</button>
-            <button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar</button>
+            <button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar contrato</button>
             ${dadosInsuficientes ? `<small class="aviso-ar-hint is-closed">Dados insuficientes de vigência: revisar cadastro do contrato.</small>` : ''}
           </div>
         </td>
@@ -4288,24 +4356,24 @@ export class SistemaSILIC {
       }
 
       const selectLaudo = tr.querySelector('[data-aviso-laudo-id]') as HTMLSelectElement | null;
-      const inputNumeroLaudo = tr.querySelector('[data-aviso-laudo-numero-id]') as HTMLInputElement | null;
-      if (inputNumeroLaudo) {
-        inputNumeroLaudo.addEventListener('input', () => {
-          const atual = inputNumeroLaudo.value;
+      const inputRequisicaoLaudo = tr.querySelector('[data-aviso-laudo-requisicao-id]') as HTMLInputElement | null;
+      if (inputRequisicaoLaudo) {
+        inputRequisicaoLaudo.addEventListener('input', () => {
+          const atual = inputRequisicaoLaudo.value;
           const sanitizado = this.sanitizarNumeroLaudoInput(atual);
           if (sanitizado !== atual) {
-            inputNumeroLaudo.value = sanitizado;
+            inputRequisicaoLaudo.value = sanitizado;
           }
         });
       }
       if (selectLaudo) {
         selectLaudo.addEventListener('change', () => {
           const novoValor = selectLaudo.value as PainelAvisoVencimentoRow['situacaoLaudoAvaliacao'];
-          const inputNumero = tr.querySelector('[data-aviso-laudo-numero-id]') as HTMLInputElement | null;
-          const inputValidade = tr.querySelector('[data-aviso-laudo-validade-id]') as HTMLInputElement | null;
+          const inputRequisicao = tr.querySelector('[data-aviso-laudo-requisicao-id]') as HTMLInputElement | null;
+          const inputDataEmissao = tr.querySelector('[data-aviso-laudo-data-emissao-id]') as HTMLInputElement | null;
           this.atualizarSituacaoLaudoPainelAviso(item.contratoId, novoValor, {
-            laudoNumero: inputNumero?.value || '',
-            laudoValidoAte: inputValidade?.value || ''
+            laudoRequisicaoNumero: inputRequisicao?.value || '',
+            laudoDataEmissao: inputDataEmissao?.value || ''
           });
         });
       }
@@ -4318,18 +4386,11 @@ export class SistemaSILIC {
       const btnEntregarLaudo = tr.querySelector('[data-aviso-entregar-laudo-id]') as HTMLButtonElement | null;
       if (btnEntregarLaudo) {
         btnEntregarLaudo.addEventListener('click', () => {
-          const inputNumero = tr.querySelector('[data-aviso-laudo-numero-id]') as HTMLInputElement | null;
-          const inputValidade = tr.querySelector('[data-aviso-laudo-validade-id]') as HTMLInputElement | null;
+          const inputDataEmissao = tr.querySelector('[data-aviso-laudo-data-emissao-id]') as HTMLInputElement | null;
           this.atualizarSituacaoLaudoPainelAviso(item.contratoId, 'entregue', {
-            laudoNumero: inputNumero?.value || '',
-            laudoValidoAte: inputValidade?.value || ''
+            laudoDataEmissao: inputDataEmissao?.value || ''
           });
         });
-      }
-
-      const btnContexto = tr.querySelector('[data-aviso-contexto-drawer]') as HTMLButtonElement | null;
-      if (btnContexto) {
-        btnContexto.addEventListener('click', () => this.abrirDrawerContextoAviso(item));
       }
 
       const button = tr.querySelector('[data-formal-aviso-id]');
@@ -4366,9 +4427,12 @@ export class SistemaSILIC {
       const janelaDecisao = baseJanelaDecisao.length;
 
       const faixa1412 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_14_12').length;
-      const faixa126 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_12_6').length;
+      const faixa127 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_12_7').length;
       const faixaMenor6 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_menor_6').length;
-      const alertaAr87 = dados.filter((item) => item.decisaoAcaoRenovatoria === 'a_decidir' && this.estaNaFaixaAlertaAr87(item)).length;
+      const baseFaixaAr87 = dados.filter((item) => this.estaNaFaixaAlertaAr87(item));
+      const pendenciaProrrogacaoAr87 = baseFaixaAr87.filter((item) => item.decisaoProrrogar === 'a_decidir').length;
+      const pendenciaArAr87 = baseFaixaAr87.filter((item) => item.decisaoAcaoRenovatoria === 'a_decidir').length;
+      const alertaAr87 = baseFaixaAr87.filter((item) => this.estaEmRiscoAr87(item)).length;
       const dadosInsuficientes = dados.filter((item) => this.possuiDadosVigenciaInsuficientes(item)).length;
       resumo.innerHTML = `
         <div class="aviso-regras-box">
@@ -4376,7 +4440,7 @@ export class SistemaSILIC {
           <ul>
             <li>Classificacao por janela de vencimento (D+ e D-): Vencido (D+), Menor que 1 mes (D-1 a D-29), 1 mes (D-30), 2 meses (D-31 a D-60), 3 meses (D-61 a D-90), 6 meses (D-91 a D-180) e 1 ano (acima de D-180).</li>
             <li>KPIs com fechamento: Registros no aviso = Com decisao de prorrogar + Janela de decisao + Vencidos em prazo indeterminado.</li>
-            <li>Fluxo decisorio por prazo: prorrogacao e acao renovatoria podem ser decididas em momentos distintos, com monitoramento continuo das janelas 14-12, 12-6 e abaixo de 6 meses.</li>
+            <li>Fluxo decisorio por prazo: prorrogacao e acao renovatoria podem ser decididas em momentos distintos, com monitoramento continuo das janelas 14-12, 12-7 e abaixo de 7 meses.</li>
             <li>Decisao de prorrogar: status "a decidir" somente entre 14 meses e 12 meses antes do fim da vigencia; com 12 meses ou menos a decisao deve ser "prorrogar" ou "nao prorrogar".</li>
             <li>Preparacao (14-12 meses): na modalidade locacao o sistema pergunta se ja existe laudo de avaliacao valido; se nao houver, orienta solicitar a area responsavel.</li>
             <li>Laudo de avaliacao (somente locacao): validade legal de ate 12 meses da emissao e obrigacao de permanecer valido ate o encerramento da negociacao com o locador.</li>
@@ -4385,10 +4449,10 @@ export class SistemaSILIC {
             <li>Em caso de complexidade elevada ou volume expressivo, o gestor registra prazo formal informado pela area responsavel.</li>
             <li>Novo laudo pode ser solicitado antes de 12 meses quando houver variacao de mercado na regiao que impacte a negociacao.</li>
             <li>KPI "Janela de decisao": contratos sem decisao de prorrogar e nao vencidos, distribuidos entre 1 ano, 6 meses, 3 meses, 2 meses e 1 mes (inclui menor que 1 mes).</li>
-            <li>Acao renovatoria: decisao de ingressar permitida somente entre 12 e 6 meses antes do fim da vigencia (janela legal).</li>
-            <li>Janela prudente operacional para decisao do gestor sobre ingresso na AR: entre 12 e 7 meses antes do fim da vigencia, com escalonamento para Gestao Formal/Juridico quando abaixo de 7 meses.</li>
+            <li>Acao renovatoria: janela legal para ingresso entre 12 e 6 meses antes do fim da vigencia.</li>
+            <li>Janela AR (12-7 meses): recorte operacional para decisao direta do gestor; entre 7 e 6 meses, manter escalonamento para Gestao Formal/Juridico.</li>
             <li>Prazo decadencial: contagem por ano e mes civil (Art. 132 do Codigo Civil), com limite final no marco de 6 meses retroativos.</li>
-            <li>Alerta automatico AR (8-7 meses): ${alertaAr87} contrato(s) sem decisao de AR na faixa de atencao operacional.</li>
+            <li>Alerta automatico AR (8-7 meses): ${alertaAr87} contrato(s) com pendencia simultanea de prorrogacao e AR na faixa de atencao operacional.</li>
             <li>Qualidade de dados: ${dadosInsuficientes} contrato(s) com dados insuficientes de vigencia para decisao (acoes bloqueadas ate saneamento).</li>
             <li>Decisao de prorrogar fica bloqueada quando existe protocolo formal, preservando o fluxo formal ja iniciado.</li>
             <li>Solicitacao de Ato Formal so aparece quando a decisao estiver em "Prorrogar" e ainda nao houver protocolo formal.</li>
@@ -4402,7 +4466,7 @@ export class SistemaSILIC {
       this.setElementText('avisoKpiVencidos', String(vencidos));
       this.setElementText('avisoKpiRiscoAr87', String(alertaAr87));
       this.setElementText('avisoFaixa1412', String(faixa1412));
-      this.setElementText('avisoFaixa126', String(faixa126));
+      this.setElementText('avisoFaixa126', String(faixa127));
       this.setElementText('avisoFaixaMenor6', String(faixaMenor6));
 
       const gatilhoComposicao = document.getElementById('avisoKpiCriticos');
@@ -4428,7 +4492,17 @@ export class SistemaSILIC {
         `;
       }
 
+      const detalheRiscoAr87 = document.getElementById('avisoKpiRiscoAr87Detalhe');
+      if (detalheRiscoAr87) {
+        detalheRiscoAr87.innerHTML = `
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${pendenciaProrrogacaoAr87}</span><span class="aviso-kpi-chip-label">Prorrogacao pendente</span></span>
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${pendenciaArAr87}</span><span class="aviso-kpi-chip-label">AR pendente</span></span>
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${alertaAr87}</span><span class="aviso-kpi-chip-label">Risco real (dupla pendencia)</span></span>
+        `;
+      }
+
       this.aplicarEstadoComposicaoJanelaDecisao();
+      this.aplicarEstadoComposicaoRiscoAr87();
     }
 
     this.atualizarPaginacaoPainelAviso(dados.length);

@@ -122,7 +122,7 @@ Regras operacionais adicionais implementadas no prototipo:
 - Dados insuficientes de vigencia: quando nao houver data valida de fim de vigencia, bloquear decisoes e sinalizar saneamento cadastral.
 - Reabertura de decisao de prorrogacao (prorrogar <-> nao_prorrogar): exigir justificativa obrigatoria e registrar trilha de auditoria.
 - Protocolo formal existente: manter decisao travada em prorrogar e informar que o fluxo ja foi encaminhado para Gestao Formal.
-- Alerta automatico AR (8-7 meses): sinalizar contratos sem decisao de acao renovatoria para escalonamento preventivo.
+- Alerta automatico AR (8-7 meses): sinalizar contratos com AR pendente para escalonamento preventivo.
 
 SLA operacional do laudo:
 

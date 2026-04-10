@@ -179,7 +179,7 @@ Tabela:
 5. Fim Vigencia
 6. Valor Maximo
 7. Incluir no SICLG?
-8. Limite AR (6 meses) G.O.
+8. Janela AR (12-7 meses) G.O. (operacional)
 9. Lupa (icone)
 
 ## 4.5 Fase 5 - Demandar SUCOT (Demandante)

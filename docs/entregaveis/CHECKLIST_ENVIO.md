@@ -14,7 +14,7 @@ Use este checklist para garantir qualidade no repasse entre UX, Analista de Requ
 
 1. Link Figma final recebido.
 2. Estados de tela cobertos (vazio, carregando, erro, inconsistencia).
-3. Regras de negocio chave representadas (perfil e D-180).
+3. Regras de negocio chave representadas (perfil e prazo AR: legal 12-6 + operacional 12-7).
 4. Pacote do Analista montado conforme `docs/entregaveis/PACOTE_ANALISTA_REQUISITOS.md`.
 
 ## Etapa 3 - Envio do Analista para Desenvolvedores

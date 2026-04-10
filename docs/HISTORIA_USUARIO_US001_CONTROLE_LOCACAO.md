@@ -45,7 +45,7 @@ para tomar decisoes no prazo, reduzir inconsistencias e manter rastreabilidade p
 3. `decisao_operacional`, `houve_acordo`, `incluir_no_siclg` sao inputs do perfil `Gestor Operacional`.
 4. `radar_sucot` e `notas` sao inputs do perfil `Gestor Formal`.
 5. `codigo_sijur` e `situacao_sijur/cefor` sao fornecidos por `DIJUR_API`.
-6. Regra de prazo: `limite_ar_go = fim_vigencia_sap - 6 meses`.
+6. Regra de prazo AR: janela legal de ingresso entre 12 e 6 meses (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor entre 12 e 7 meses.
 
 ## Criterios de aceite (Given/When/Then)
 
@@ -83,7 +83,7 @@ para tomar decisoes no prazo, reduzir inconsistencias e manter rastreabilidade p
 
 - Given `fim_vigencia_sap` preenchida
 - When o sistema calcular os indicadores de prazo
-- Then deve calcular `limite_ar_go` em D-180 e classificar `status_prazo_ar_go` como `no_prazo`, `alerta` ou `vencido`.
+- Then deve calcular `limite_ar_go` (marco legal de 6 meses) e classificar `status_prazo_ar_go` como `no_prazo`, `alerta` ou `vencido`, destacando a janela operacional de decisao direta do gestor entre 12 e 7 meses.
 
 ### CA-07 - Rastreabilidade de origem
 
@@ -95,7 +95,7 @@ para tomar decisoes no prazo, reduzir inconsistencias e manter rastreabilidade p
 
 - Integracoes de pagamento SAP (12 meses e ultimo pagamento)
 - Fase operacional e situacao colegiado
-- Regras juridicas detalhadas alem da janela de 6 meses para AR
+- Regras juridicas detalhadas alem da janela legal de 6 meses para AR
 
 ## Definicao de pronto (DoD)
 

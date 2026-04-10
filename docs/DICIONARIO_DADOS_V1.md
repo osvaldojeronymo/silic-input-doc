@@ -124,12 +124,13 @@ Documento base para integracao e uso de dados no dominio de locacao, considerand
 
 ## 6) Regras de negocio oficiais
 
-1. `limite_ar_go = fim_vigencia_sap - 6 meses`
-2. `status_prazo_ar_go`:
+1. `limite_ar_go = fim_vigencia_sap - 6 meses` (marco legal da AR, janela 12-6)
+2. Janela operacional do gestor para decisao direta de AR: entre 12 e 7 meses antes do fim da vigencia.
+3. `status_prazo_ar_go`:
    - `no_prazo`: hoje < limite_ar_go
    - `alerta`: hoje dentro da janela de alerta (ex.: 30 dias antes do limite)
    - `vencido`: hoje > limite_ar_go
-3. Campos removidos por decisao de negocio (nao usar):
+4. Campos removidos por decisao de negocio (nao usar):
    - `pago_ultimos_12_meses`
    - `ultimo_pagamento`
    - `fase_operacional`

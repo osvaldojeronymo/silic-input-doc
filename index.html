@@ -861,7 +861,7 @@
             <section class="formal-panel-view" data-formal-panel="aviso-vencimento" hidden>
             <div class="mini-label" style="margin-bottom: 10px;">Painel de Aviso de Vencimento para priorização operacional por janelas de vencimento, com sinalização de contratos em prazo indeterminado.</div>
 
-            <div class="aviso-kpi-grid">
+            <div class="aviso-kpi-grid aviso-kpi-grid-principal">
                 <article class="aviso-kpi-card aviso-kpi-total">
                     <span class="aviso-kpi-label">Registros no aviso</span>
                     <strong id="avisoKpiTotal">0</strong>
@@ -879,9 +879,13 @@
                     <span class="aviso-kpi-label">Vencidos em prazo indeterminado</span>
                     <strong id="avisoKpiVencidos">0</strong>
                 </article>
-                <article id="avisoKpiRiscoAr87Card" class="aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses sem decisão)">
-                    <span class="aviso-kpi-label">Risco AR 8-7 meses sem decisão</span>
-                    <strong id="avisoKpiRiscoAr87">0</strong>
+            </div>
+
+            <div class="aviso-kpi-grid aviso-kpi-grid-risco">
+                <article id="avisoKpiRiscoAr87Card" class="aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses)">
+                    <span class="aviso-kpi-label">Risco AR 8-7 meses</span>
+                    <strong id="avisoKpiRiscoAr87" class="aviso-kpi-total-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="avisoKpiRiscoAr87Detalhe">0</strong>
+                    <div id="avisoKpiRiscoAr87Detalhe" class="aviso-kpi-composicao" hidden></div>
                 </article>
             </div>
 
@@ -891,15 +895,15 @@
                     <strong id="avisoFaixa1412">0</strong>
                     <small>Definir prorrogação, estratégia de AR e confirmar laudo (somente locação).</small>
                 </article>
-                <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_6" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Janela legal AR (12-6 meses)</span>
+                <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_7" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Janela AR (12 - 7 meses)</span>
                     <strong id="avisoFaixa126">0</strong>
-                    <small>Prazo válido para decidir e protocolar ação renovatória.</small>
+                    <small>Prazo prudente para decidir ingresso na ação renovatória.</small>
                 </article>
                 <article class="aviso-faixa-card aviso-faixa-critica" data-aviso-faixa-filter="faixa_menor_6" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Abaixo de 6 meses</span>
+                    <span class="aviso-faixa-label">Abaixo de 7 meses</span>
                     <strong id="avisoFaixaMenor6">0</strong>
-                    <small>Prazo decadencial da ação renovatória encerrado.</small>
+                    <small>Faixa de risco operacional; abaixo de 6 meses, há encerramento do prazo decadencial.</small>
                 </article>
             </div>
 
@@ -1031,15 +1035,6 @@
             </section>
         </section>
     </main>
-
-    <div id="avisoContextDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-    <aside id="avisoContextDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-label="Contexto do aviso de vencimento">
-        <div class="details-drawer-header">
-            <h3 id="avisoContextDrawerTitle">Contexto do aviso</h3>
-            <button id="avisoContextDrawerClose" class="details-drawer-close" type="button" aria-label="Fechar contexto">×</button>
-        </div>
-        <div id="avisoContextDrawerContent" class="details-drawer-content"></div>
-    </aside>
 
     <!-- Modal de Detalhes -->
     <div id="modalDetalhes" class="modal">

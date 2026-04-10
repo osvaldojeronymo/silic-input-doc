@@ -30,7 +30,7 @@ Objetivo: permitir que UX converta o prototipo de baixa fidelidade em prototipo 
 2. Inputs por perfil:
    - Gestor Operacional: `decisao_operacional`, `houve_acordo`, `incluir_no_siclg`
    - Gestor Formal: `radar_sucot`, `notas`
-3. Regra de prazo visualmente representada: `limite_ar_go = fim_vigencia_sap - 6 meses` (D-180).
+3. Regra de prazo AR visualmente representada: janela legal 12-6 (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor 12-7.
 
 ## Entregavel esperado de UX
 
@@ -48,5 +48,5 @@ Objetivo: permitir que UX converta o prototipo de baixa fidelidade em prototipo 
 
 1. Existe cobertura dos tres paineis A.
 2. Existe cobertura minima dos fluxos B.
-3. Regras de perfil e D-180 estao visiveis.
+3. Regras de perfil e de prazo AR (legal 12-6 + operacional 12-7) estao visiveis.
 4. Campos removidos nao aparecem no prototipo.

@@ -57,15 +57,16 @@ Referencia de dados:
   1. Permissao por perfil aplicada (Gestor Operacional vs Gestor Formal).
   2. Campos salvos com `updated_by` e `updated_at`.
 
-### US-001.5 - Regra de prazo AR (D-180)
+### US-001.5 - Regra de prazo AR (janela legal 12-6 + operacional 12-7)
 
-- Objetivo: calcular `limite_ar_go` e `status_prazo_ar_go`.
+- Objetivo: calcular `limite_ar_go`, `status_prazo_ar_go` e sinalizacao da janela operacional do gestor.
 - Prioridade: P0
 - Estimativa: 3
 - Dependencias: US-001.1
 - Criterios de aceite:
-  1. `limite_ar_go = fim_vigencia_sap - 6 meses`.
-  2. Classificacao `no_prazo|alerta|vencido` implementada.
+  1. `limite_ar_go = fim_vigencia_sap - 6 meses` (marco legal de ingresso da AR).
+  2. Janela operacional do gestor marcada entre 12 e 7 meses antes do fim da vigencia.
+  3. Classificacao `no_prazo|alerta|vencido` implementada.
 
 ### US-001.6 - Tela A-II Painel de Vencimento
 
