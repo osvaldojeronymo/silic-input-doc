@@ -324,6 +324,7 @@ export interface PainelAvisoVencimentoRow {
   laudoDataEmissao?: string;
   laudoValidoAte?: string;
   historicoDecisaoProrrogacao?: string[];
+  historicoDecisaoAcaoRenovatoria?: string[];
   protocoloContratacao?: string;
   protocoloFormal?: string;
   fase: string;

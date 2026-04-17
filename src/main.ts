@@ -136,7 +136,79 @@ interface EstadoPainelAvisoPersistido {
   laudoDataEmissao?: string;
   laudoValidoAte?: string;
   historicoDecisaoProrrogacao?: string[];
+  historicoDecisaoAcaoRenovatoria?: string[];
   protocoloContratacao?: string;
+}
+
+interface EtapaRtaRegistro {
+  areaContratada?: number;
+  benfeitoriasValor?: number;
+  possuiValorVenal?: 'sim' | 'nao' | '';
+  valorVenalImovel?: number;
+  parecerNumero?: string;
+  parecerData?: string;
+  percentualBenfeitorias?: number;
+  manifestacaoNegocio?: string;
+  manifestacaoInfra?: string;
+  uploadRelatorioArquivos?: string[];
+  uploadParecerArquivos?: string[];
+}
+
+interface EtapaLaudoRegistro {
+  uploadArquivos?: string[];
+  dataElaboracao?: string;
+  numeroDocumento?: string;
+  empresaNome?: string;
+  empresaCnpj?: string;
+  valorMinimo?: number;
+  valorMedio?: number;
+  valorMaximo?: number;
+  assinado?: 'sim' | 'nao' | '';
+}
+
+interface EtapaNegociacaoRegistro {
+  vigenciaMeses?: number;
+  temCarencia?: 'sim' | 'nao' | '';
+  carenciaDias?: number;
+  indiceReajuste?: string;
+  modalidade?: 'contrato_simplificado' | 'condicoes_suspensivas' | 'minuta_locador' | '';
+  temClausulaExtra?: 'sim' | 'nao' | '';
+  clausulaExtraTexto?: string;
+  uploadAnexosArquivos?: string[];
+  uploadMinutaArquivos?: string[];
+}
+
+interface ContratoBuscaResultado {
+  id: string;
+  sap: string;
+  fornecedor: string;
+  uf: string;
+  municipio: string;
+  label: string;
+  searchText: string;
+}
+
+interface ContratoBuscaParams {
+  query: string;
+  offset: number;
+  limit: number;
+}
+
+interface ContratoBuscaResponse {
+  items: ContratoBuscaResultado[];
+  total: number;
+  hasMore: boolean;
+}
+
+type ContratoBuscaProvider = (params: ContratoBuscaParams) => Promise<ContratoBuscaResponse>;
+
+interface ContratoBuscaUiState {
+  query: string;
+  offset: number;
+  total: number;
+  hasMore: boolean;
+  loading: boolean;
+  items: ContratoBuscaResultado[];
 }
 
 /**
@@ -145,6 +217,9 @@ interface EstadoPainelAvisoPersistido {
 export class SistemaSILIC {
   private static readonly FORMAL_STORAGE_KEY = 'silic.formal.edicoes.v1';
   private static readonly AVISO_STORAGE_KEY = 'silic.aviso.operacional.v1';
+  private static readonly ETAPA_RTA_STORAGE_KEY = 'silic.operacional.etapa.rta.v1';
+  private static readonly ETAPA_LAUDO_STORAGE_KEY = 'silic.operacional.etapa.laudo.v1';
+  private static readonly ETAPA_NEGOCIACAO_STORAGE_KEY = 'silic.operacional.etapa.negociacao.v1';
   private imoveis: Imovel[] = [];
   private imoveisOriginais: Imovel[] = []; // Lista completa sem filtros
   private locadores: Locador[] = [];
@@ -172,6 +247,16 @@ export class SistemaSILIC {
   private avisoFaixaFiltroAtiva: '' | 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6' = '';
   private avisoFiltroRiscoAr87Ativo = false;
   private avisoStatusBadgeFiltroAtivo = '';
+  private contratosEtapasBusca: ContratoBuscaResultado[] = [];
+  private contratoBuscaProvider: ContratoBuscaProvider | null = null;
+  private readonly contratoBuscaDebounceMs = 350;
+  private readonly contratoBuscaPageSize = 25;
+  private readonly contratoBuscaRecentesKey = 'silic.operacional.contrato.recentes.v1';
+  private readonly contratoBuscaFavoritosKey = 'silic.operacional.contrato.favoritos.v1';
+  private contratoBuscaTimers = new Map<string, number>();
+  private contratoBuscaUiState = new Map<string, ContratoBuscaUiState>();
+  private contratoBuscaRecentes: string[] = [];
+  private contratoBuscaFavoritos: Set<string> = new Set();
   private fase1Rows: Fase1OperacionalRow[] = [];
   private fase1RowsFiltradas: Fase1OperacionalRow[] = [];
   private fase2Rows: Fase2OperacionalRow[] = [];
@@ -217,6 +302,7 @@ export class SistemaSILIC {
     this.configurarAbasPerfilOperacional();
     this.configurarNavegacaoTopoOperacional();
     this.inicializarDadosFasesOperacionais();
+    this.configurarEtapasOperacionaisDocumentais();
     this.carregarFavoritosFases();
     this.carregarSelecaoPrazoChips();
     this.configurarFase1Operacional();
@@ -2480,6 +2566,7 @@ export class SistemaSILIC {
       if (atual.laudoDataEmissao) item.laudoDataEmissao = atual.laudoDataEmissao;
       if (atual.laudoValidoAte) item.laudoValidoAte = atual.laudoValidoAte;
       if (atual.historicoDecisaoProrrogacao) item.historicoDecisaoProrrogacao = [...atual.historicoDecisaoProrrogacao];
+      if (atual.historicoDecisaoAcaoRenovatoria) item.historicoDecisaoAcaoRenovatoria = [...atual.historicoDecisaoAcaoRenovatoria];
       if (atual.protocoloContratacao) item.protocoloContratacao = atual.protocoloContratacao;
 
       if (!this.exigeLaudoAvaliacao(item)) {
@@ -2487,14 +2574,11 @@ export class SistemaSILIC {
       }
 
       this.sincronizarSituacaoLaudoAvaliacao(item);
+      this.sincronizarDecisaoAcaoRenovatoria(item);
 
       // Regra de negócio: protocolo formal gerado implica decisão travada em prorrogar.
       if (item.protocoloFormal) {
         item.decisaoProrrogar = 'prorrogar';
-      }
-
-      if (item.decisaoAcaoRenovatoria === 'ingressar' && !this.estaNaJanelaLegalAcaoRenovatoria(item)) {
-        item.decisaoAcaoRenovatoria = this.estaAposPrazoDecadencialAr(item) ? 'nao_ingressar' : 'a_decidir';
       }
 
     });
@@ -2597,12 +2681,6 @@ export class SistemaSILIC {
     }
 
     if (row.situacaoLaudoAvaliacao === 'solicitado') {
-      if (!row.laudoRequisicaoNumero) {
-        row.laudoRequisicaoNumero = this.gerarNumeroRequisicaoLaudo(row.contratoSap);
-      }
-      if (!row.laudoRequisicaoData) {
-        row.laudoRequisicaoData = this.formatDate(new Date().toISOString());
-      }
       if (!row.laudoPrazoEntregaDias || row.laudoPrazoEntregaDias <= 0) {
         row.laudoPrazoEntregaDias = 30;
       }
@@ -2655,6 +2733,7 @@ export class SistemaSILIC {
       laudoDataEmissao: row.laudoDataEmissao,
       laudoValidoAte: row.laudoValidoAte,
       historicoDecisaoProrrogacao: row.historicoDecisaoProrrogacao,
+      historicoDecisaoAcaoRenovatoria: row.historicoDecisaoAcaoRenovatoria,
       protocoloContratacao: row.protocoloContratacao
     };
     this.salvarEstadoPainelAviso(estado);
@@ -2663,40 +2742,51 @@ export class SistemaSILIC {
   private atualizarSituacaoLaudoPainelAviso(
     contratoId: string,
     situacao: PainelAvisoVencimentoRow['situacaoLaudoAvaliacao'],
-    dados?: { laudoRequisicaoNumero?: string; laudoDataEmissao?: string }
+    dados?: { laudoRequisicaoNumero?: string; laudoRequisicaoData?: string; laudoDataEmissao?: string }
   ): void {
     const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
     if (!row) return;
 
     if (this.exigeLaudoAvaliacao(row) && situacao === 'solicitado') {
       const numeroRequisicao = (dados?.laudoRequisicaoNumero || '').trim();
-      if (!numeroRequisicao) {
-        this.showToast('Para marcar "Solicitado", informe o número da solicitação do laudo.');
-        this.aplicarFiltrosPainelAvisoVencimento();
-        return;
-      }
-      if (!this.validarFormatoNumeroLaudo(numeroRequisicao)) {
+      if (numeroRequisicao && !this.validarFormatoNumeroLaudo(numeroRequisicao)) {
         this.showToast('Número da solicitação inválido. Use 5 a 30 caracteres com letras/números e separadores permitidos (/, -, .). Ex.: 12345/2026.');
         this.aplicarFiltrosPainelAvisoVencimento();
         return;
       }
-      row.laudoRequisicaoNumero = numeroRequisicao;
-      row.laudoRequisicaoData = row.laudoRequisicaoData || this.formatDate(new Date().toISOString());
+      const dataSolicitacao = (dados?.laudoRequisicaoData || '').trim();
+      if (dataSolicitacao) {
+        const dataSolicitacaoDate = this.parseDate(dataSolicitacao);
+        if (!dataSolicitacaoDate) {
+          this.showToast('Data de solicitação do laudo inválida.');
+          this.aplicarFiltrosPainelAvisoVencimento();
+          return;
+        }
+        if (this.obterDataBase(dataSolicitacaoDate).getTime() > this.obterDataBase(new Date()).getTime()) {
+          this.showToast('A data de solicitação do laudo não pode ser maior que a data atual.');
+          this.aplicarFiltrosPainelAvisoVencimento();
+          return;
+        }
+        row.laudoRequisicaoData = this.formatDate(dataSolicitacaoDate.toISOString());
+      } else {
+        row.laudoRequisicaoData = undefined;
+      }
+      row.laudoRequisicaoNumero = numeroRequisicao || undefined;
       row.laudoNumero = undefined;
       row.laudoDataEmissao = undefined;
       row.laudoValidoAte = undefined;
     }
 
     if (this.exigeLaudoAvaliacao(row) && situacao === 'entregue') {
-      const dataEmissao = (dados?.laudoDataEmissao || '').trim();
-      if (!dataEmissao) {
-        this.showToast('Para marcar "Entregue (válido)", informe obrigatoriamente a data do laudo.');
-        this.aplicarFiltrosPainelAvisoVencimento();
-        return;
-      }
+      const dataEmissao = (dados?.laudoDataEmissao || '').trim() || new Date().toISOString().slice(0, 10);
       const dataEmissaoDate = this.parseDate(dataEmissao);
       if (!dataEmissaoDate) {
         this.showToast('Data do laudo inválida.');
+        this.aplicarFiltrosPainelAvisoVencimento();
+        return;
+      }
+      if (this.obterDataBase(dataEmissaoDate).getTime() > this.obterDataBase(new Date()).getTime()) {
+        this.showToast('A data do laudo não pode ser maior que a data atual.');
         this.aplicarFiltrosPainelAvisoVencimento();
         return;
       }
@@ -2721,14 +2811,14 @@ export class SistemaSILIC {
     }
 
     row.situacaoLaudoAvaliacao = 'solicitado';
-    row.laudoRequisicaoNumero = this.gerarNumeroRequisicaoLaudo(row.contratoSap);
-    row.laudoRequisicaoData = this.formatDate(new Date().toISOString());
+    row.laudoRequisicaoNumero = undefined;
+    row.laudoRequisicaoData = undefined;
     row.laudoPrazoEntregaDias = 30;
     row.laudoPrazoFormalInformado = false;
     this.sincronizarSituacaoLaudoAvaliacao(row);
     this.persistirEstadoAvisoRow(row);
 
-    this.showToast(`Solicitação de laudo registrada (${row.laudoRequisicaoNumero}) com prazo padrão de 30 dias.`);
+    this.showToast('Status de laudo alterado para "Solicitado". Preencha protocolo (opcional) e data da solicitação.');
     this.aplicarFiltrosPainelAvisoVencimento();
   }
 
@@ -2761,6 +2851,11 @@ export class SistemaSILIC {
     this.persistirEstadoAvisoRow(row);
     this.showToast(`Laudo entregue com validade ate ${row.laudoValidoAte || '-'}.`);
     this.aplicarFiltrosPainelAvisoVencimento();
+  }
+
+  private sincronizarDecisaoAcaoRenovatoria(row: PainelAvisoVencimentoRow): void {
+    if (this.estaNaJanelaLegalAcaoRenovatoria(row)) return;
+    row.decisaoAcaoRenovatoria = this.estaAposPrazoDecadencialAr(row) ? 'nao_ingressar' : 'a_decidir';
   }
 
   private estaNaJanelaLegalAcaoRenovatoria(item: PainelAvisoVencimentoRow): boolean {
@@ -2821,6 +2916,27 @@ export class SistemaSILIC {
     return true;
   }
 
+  private registrarReaberturaDecisaoAcaoRenovatoria(
+    row: PainelAvisoVencimentoRow,
+    decisaoAnterior: 'a_decidir' | 'ingressar' | 'nao_ingressar',
+    novaDecisao: 'a_decidir' | 'ingressar' | 'nao_ingressar'
+  ): boolean {
+    const foiReabertura = (decisaoAnterior === 'ingressar' && novaDecisao === 'nao_ingressar')
+      || (decisaoAnterior === 'nao_ingressar' && novaDecisao === 'ingressar');
+    if (!foiReabertura) return true;
+
+    const justificativa = window.prompt('Reabertura de decisão de ação renovatória detectada. Informe a justificativa para auditoria:');
+    if (!justificativa || justificativa.trim().length < 5) {
+      this.showToast('Justificativa obrigatória (mínimo de 5 caracteres) para reabrir a decisão de ação renovatória.');
+      return false;
+    }
+
+    const historico = row.historicoDecisaoAcaoRenovatoria || [];
+    historico.push(`${new Date().toLocaleString('pt-BR')} | ${decisaoAnterior} -> ${novaDecisao} | ${justificativa.trim()}`);
+    row.historicoDecisaoAcaoRenovatoria = historico;
+    return true;
+  }
+
   private classificarFaixaSinalizacaoAviso(item: PainelAvisoVencimentoRow): 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6' | 'dados_insuficientes' | 'fora_escopo' {
     if (this.possuiDadosVigenciaInsuficientes(item)) return 'dados_insuficientes';
     if (!item.fimVigenciaDate) return 'fora_escopo';
@@ -2873,6 +2989,14 @@ export class SistemaSILIC {
     const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
     if (!row) return;
 
+    if (!this.estaNaJanelaLegalAcaoRenovatoria(row)) {
+      this.sincronizarDecisaoAcaoRenovatoria(row);
+      this.persistirEstadoAvisoRow(row);
+      this.showToast('Decisão de ação renovatória só pode ser alterada na janela legal entre 12 e 6 meses antes do fim da vigência.');
+      this.aplicarFiltrosPainelAvisoVencimento();
+      return;
+    }
+
     if (decisao === 'ingressar' && !this.estaNaJanelaPrudenteGestorAr(row)) {
       this.showToast('Para o gestor operacional, o prazo prudente para decidir ingresso na ação renovatória é até 7 meses antes do fim da vigência. Escalone Gestão Formal/Jurídico.');
       this.aplicarFiltrosPainelAvisoVencimento();
@@ -2885,6 +3009,12 @@ export class SistemaSILIC {
       } else {
         this.showToast('Ingresso na ação renovatória permitido apenas na janela legal entre 12 e 6 meses (contagem por mês civil). Na visão operacional, a decisão direta do gestor ocorre até 7 meses.');
       }
+      this.aplicarFiltrosPainelAvisoVencimento();
+      return;
+    }
+
+    const decisaoAnterior = row.decisaoAcaoRenovatoria;
+    if (!this.registrarReaberturaDecisaoAcaoRenovatoria(row, decisaoAnterior, decisao)) {
       this.aplicarFiltrosPainelAvisoVencimento();
       return;
     }
@@ -3002,7 +3132,8 @@ export class SistemaSILIC {
     }
 
     if (row.decisaoAcaoRenovatoria === 'a_decidir') {
-      this.showToast('Atenção: decisão de ação renovatória ainda pendente. Monitore o prazo legal para não perder a janela.');
+      this.showToast('Defina também a decisão de ação renovatória antes de encaminhar o protocolo para Gestão Formal.');
+      return;
     }
 
     if (row.protocoloFormal) {
@@ -3400,15 +3531,23 @@ export class SistemaSILIC {
     if (!drawer || !backdrop || !title || !content) return;
 
     this.sincronizarSituacaoLaudoAvaliacao(item);
-    const detalheRequisicaoLaudo = item.laudoRequisicaoNumero && item.laudoRequisicaoData
-      ? `Requisicao do laudo - n. ${item.laudoRequisicaoNumero} em ${item.laudoRequisicaoData}`
-      : '-';
+    const partesDetalheRequisicaoLaudo: string[] = [];
+    if (item.laudoRequisicaoNumero) {
+      partesDetalheRequisicaoLaudo.push(`Protocolo: ${item.laudoRequisicaoNumero}`);
+    }
+    if (item.laudoRequisicaoData) {
+      partesDetalheRequisicaoLaudo.push(`Data da solicitação: ${item.laudoRequisicaoData}`);
+    }
+    const detalheRequisicaoLaudo = partesDetalheRequisicaoLaudo.join(' | ') || '-';
     const detalheNumeroLaudo = item.laudoNumero || '-';
     const detalhePrazoLaudo = this.obterResumoSlaLaudo(item) || '-';
     const detalheValidadeLaudo = item.laudoValidoAte || '-';
     const alertaValidadeLaudo = this.obterAlertaValidadeLaudo(item);
     const detalheHistoricoProrrogacao = (item.historicoDecisaoProrrogacao && item.historicoDecisaoProrrogacao.length)
       ? item.historicoDecisaoProrrogacao.join('<br>')
+      : '-';
+    const detalheHistoricoAr = (item.historicoDecisaoAcaoRenovatoria && item.historicoDecisaoAcaoRenovatoria.length)
+      ? item.historicoDecisaoAcaoRenovatoria.join('<br>')
       : '-';
     const detalheProtocoloFormal = item.protocoloFormal || '-';
     const detalheProtocoloContratacao = item.protocoloContratacao || '-';
@@ -3430,6 +3569,7 @@ export class SistemaSILIC {
           <div class="info-item"><label>Validade do laudo até</label><span>${detalheValidadeLaudo}</span></div>
           ${alertaValidadeLaudo ? `<div class="info-item" style="grid-column: 1 / -1;"><label>Alerta de validade</label><span>${alertaValidadeLaudo}</span></div>` : ''}
           <div class="info-item" style="grid-column: 1 / -1;"><label>Histórico de reabertura da prorrogação</label><span>${detalheHistoricoProrrogacao}</span></div>
+          <div class="info-item" style="grid-column: 1 / -1;"><label>Histórico de reabertura da ação renovatória</label><span>${detalheHistoricoAr}</span></div>
           <div class="info-item"><label>Colegiado</label><span>${item.colegiado}</span></div>
           <div class="info-item"><label>Limite legal para ingresso da AR</label><span>${item.limiteLegalAr}</span></div>
           <div class="info-item"><label>Último valor pago no SAP</label><span>${this.formatCurrency(item.ultimoValorPagoSap)}</span></div>
@@ -4171,11 +4311,15 @@ export class SistemaSILIC {
 
     dadosPaginados.forEach((item) => {
       this.sincronizarSituacaoLaudoAvaliacao(item);
+      this.sincronizarDecisaoAcaoRenovatoria(item);
       const tr = document.createElement('tr');
       const faixaSinalizacao = this.classificarFaixaSinalizacaoAviso(item);
       const dadosInsuficientes = faixaSinalizacao === 'dados_insuficientes';
       const situacaoClass = this.obterClasseStatusAviso(item.situacaoSiclg);
       const statusBadgeAtivo = this.avisoStatusBadgeFiltroAtivo === item.situacaoSiclg;
+      const tituloStatusBadge = statusBadgeAtivo
+        ? 'Filtro ativo: clique para remover'
+        : 'Clique para filtrar por este status';
       const opcaoADecidir = item.decisaoProrrogar === 'a_decidir' ? 'selected' : '';
       const opcaoProrrogar = item.decisaoProrrogar === 'prorrogar' ? 'selected' : '';
       const opcaoNaoProrrogar = item.decisaoProrrogar === 'nao_prorrogar' ? 'selected' : '';
@@ -4203,16 +4347,28 @@ export class SistemaSILIC {
       const decisaoArTitulo = !podeDecidirAr
         ? (prazoDecadencialEncerrado
           ? 'title="Prazo legal encerrado para ingresso da ação renovatória"'
-          : 'title="Ingresso na AR somente na janela legal (12-6 meses). Na visão operacional, a decisão direta do gestor vai até 7 meses."')
+          : 'title="Fora da janela legal da AR (12-6 meses): decisão indisponível no momento."')
         : '';
+      const seletorArDesabilitado = !podeDecidirAr ? 'disabled' : '';
       const opcaoIngressarMarkup = (podeDecidirAr && podeDecidirArComSeguranca)
         ? `<option value="ingressar" ${opcaoArIngressar}>Ingressar</option>`
         : '';
+      const opcoesAr = podeDecidirAr
+        ? `
+            <option value="a_decidir" ${opcaoArADecidir}>A decidir</option>
+            ${opcaoIngressarMarkup}
+            <option value="nao_ingressar" ${opcaoArNaoIngressar}>Não ingressar</option>
+          `
+        : (prazoDecadencialEncerrado
+          ? '<option value="nao_ingressar" selected>Não ingressar</option>'
+          : '<option value="a_decidir" selected>A decidir</option>');
       const legendaAr = podeDecidirArComSeguranca
         ? 'Janela prudente do gestor ativa (12-7 meses)'
         : (podeDecidirAr
           ? 'Janela legal da AR ativa (12-6), mas fora da janela operacional do gestor (12-7); escalar Gestao Formal/Juridico'
-          : 'Fora da janela legal da AR (12-6 meses)');
+          : (prazoDecadencialEncerrado
+            ? 'Prazo legal de ingresso encerrado; decisão travada em Não ingressar.'
+            : 'Antes da janela legal da AR (12-6 meses); decisão ainda indisponível.'));
       const legendaArCompleta = alertaAr87
         ? `${legendaAr}. Alerta: contrato na faixa 8-7 meses com pendencia simultanea de prorrogacao e AR.`
         : legendaAr;
@@ -4223,17 +4379,25 @@ export class SistemaSILIC {
       const opcaoLaudoSolicitado = item.situacaoLaudoAvaliacao === 'solicitado' ? 'selected' : '';
       const opcaoLaudoEntregue = item.situacaoLaudoAvaliacao === 'entregue' ? 'selected' : '';
       const exibirInputRequisicaoLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
+      const exibirInputDataRequisicaoLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
       const exibirInputDataLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'entregue';
       const exibirBotaoPrazoFormal = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
       const exibirBotaoEntregaLaudo = exibirPerguntaLaudo && item.situacaoLaudoAvaliacao === 'solicitado';
-      const detalhamentoSolicitacao = item.laudoRequisicaoNumero && item.laudoRequisicaoData
-        ? `Requisicao do laudo - n. ${item.laudoRequisicaoNumero} em ${item.laudoRequisicaoData}.`
-        : '';
+      const partesDetalhamentoSolicitacao: string[] = [];
+      if (item.laudoRequisicaoNumero) {
+        partesDetalhamentoSolicitacao.push(`Protocolo: ${item.laudoRequisicaoNumero}`);
+      }
+      if (item.laudoRequisicaoData) {
+        partesDetalhamentoSolicitacao.push(`Data da solicitação: ${item.laudoRequisicaoData}`);
+      }
+      const detalhamentoSolicitacao = partesDetalhamentoSolicitacao.join(' | ');
       const resumoSlaLaudo = this.obterResumoSlaLaudo(item);
       const validadeLaudo = item.laudoValidoAte ? `Validade do laudo ate ${item.laudoValidoAte}.` : '';
       const alertaValidadeLaudo = this.obterAlertaValidadeLaudo(item);
       const laudoRequisicaoAtual = item.laudoRequisicaoNumero || '';
+      const laudoDataRequisicaoInput = this.formatarDataParaInputDate(item.laudoRequisicaoData);
       const laudoDataEmissaoInput = this.formatarDataParaInputDate(item.laudoDataEmissao);
+      const dataAtualInput = new Date().toISOString().slice(0, 10);
       const contextoFaixa = faixaSinalizacao === 'faixa_14_12'
         ? 'Faixa de preparacao ativa (14-12 meses).'
         : '';
@@ -4247,10 +4411,13 @@ export class SistemaSILIC {
                 <option value="entregue" ${opcaoLaudoEntregue}>Entregue (válido)</option>
               </select>
               ${exibirInputRequisicaoLaudo
-                ? `<input type="text" class="filter-search" data-aviso-laudo-requisicao-id="${item.contratoId}" placeholder="Número da solicitação do laudo" title="Formato: 5 a 30 caracteres, com letras/números e separadores / - ." maxlength="30" value="${laudoRequisicaoAtual}">`
+                ? `<input type="text" class="filter-search" data-aviso-laudo-requisicao-id="${item.contratoId}" placeholder="Protocolo da solicitação (opcional)" title="Formato: 5 a 30 caracteres, com letras/números e separadores / - ." maxlength="30" value="${laudoRequisicaoAtual}">`
+                : ''}
+              ${exibirInputDataRequisicaoLaudo
+                ? `<input type="date" class="filter-date" data-aviso-laudo-requisicao-data-id="${item.contratoId}" value="${laudoDataRequisicaoInput}" max="${dataAtualInput}" title="Data da solicitação do laudo (não pode ser futura)">`
                 : ''}
               ${exibirInputDataLaudo
-                ? `<input type="date" class="filter-date" data-aviso-laudo-data-emissao-id="${item.contratoId}" value="${laudoDataEmissaoInput}" title="Data do laudo (obrigatória em Entregue)">`
+                ? `<input type="date" class="filter-date" data-aviso-laudo-data-emissao-id="${item.contratoId}" value="${laudoDataEmissaoInput}" max="${dataAtualInput}" title="Data do laudo (obrigatória em Entregue e não pode ser futura)">`
                 : ''}
               <small class="aviso-ar-hint is-closed">Validade máxima de 12 meses e deve cobrir toda a negociação. ${contextoFaixa}</small>
               ${detalhamentoSolicitacao ? `<small class="aviso-ar-hint is-closed">${detalhamentoSolicitacao}</small>` : ''}
@@ -4263,7 +4430,8 @@ export class SistemaSILIC {
           `
         : '';
       const podeContratacao = this.podeSolicitarContratacao(item);
-      const mostrarSolicitacaoAtoFormal = item.decisaoProrrogar === 'prorrogar' && !item.protocoloFormal;
+      const decisoesConcluidasAtoFormal = item.decisaoProrrogar !== 'a_decidir' && item.decisaoAcaoRenovatoria !== 'a_decidir';
+      const mostrarSolicitacaoAtoFormal = item.decisaoProrrogar === 'prorrogar' && decisoesConcluidasAtoFormal && !item.protocoloFormal;
       const protocoloContratacaoMarkup = item.protocoloContratacao
         ? `<span class="badge badge-info">${item.protocoloContratacao}</span>`
         : (podeContratacao ? `<button class="btn-clear" type="button" data-aviso-solicitar-contratacao-id="${item.contratoId}">Solicitar contratação</button>` : '<span class="aviso-protocolo-vazio">-</span>');
@@ -4280,14 +4448,12 @@ export class SistemaSILIC {
           </select>
         </td>
         <td>
-          <select class="filter-select aviso-decisao-select" data-aviso-decisao-ar-id="${item.contratoId}" ${decisaoArTitulo} ${dadosInsuficientes ? 'disabled' : ''}>
-            <option value="a_decidir" ${opcaoArADecidir}>A decidir</option>
-            ${opcaoIngressarMarkup}
-            <option value="nao_ingressar" ${opcaoArNaoIngressar}>Não ingressar</option>
+          <select class="filter-select aviso-decisao-select" data-aviso-decisao-ar-id="${item.contratoId}" ${decisaoArTitulo} ${seletorArDesabilitado} ${dadosInsuficientes ? 'disabled' : ''}>
+            ${opcoesAr}
           </select>
           <small class="${legendaArClass}">${legendaArCompleta}</small>
         </td>
-        <td><span class="${situacaoClass} aviso-status-badge ${statusBadgeAtivo ? 'is-active' : ''}" data-aviso-status-filter="${item.situacaoSiclg}" role="button" tabindex="0" aria-pressed="${statusBadgeAtivo ? 'true' : 'false'}" title="Filtrar por status">${item.situacaoSiclg}</span></td>
+        <td><span class="${situacaoClass} aviso-status-badge ${statusBadgeAtivo ? 'is-active' : ''}" data-aviso-status-filter="${item.situacaoSiclg}" data-filter-tag="${statusBadgeAtivo ? 'ativo' : 'filtrar'}" role="button" tabindex="0" aria-pressed="${statusBadgeAtivo ? 'true' : 'false'}" aria-label="${tituloStatusBadge}" title="${tituloStatusBadge}">${item.situacaoSiclg}</span></td>
         <td class="aviso-protocolo-cell">${protocoloContratacaoMarkup}</td>
         <td class="aviso-protocolo-cell">${protocoloFormalMarkup}</td>
         <td>
@@ -4357,6 +4523,7 @@ export class SistemaSILIC {
 
       const selectLaudo = tr.querySelector('[data-aviso-laudo-id]') as HTMLSelectElement | null;
       const inputRequisicaoLaudo = tr.querySelector('[data-aviso-laudo-requisicao-id]') as HTMLInputElement | null;
+      const inputDataRequisicaoLaudo = tr.querySelector('[data-aviso-laudo-requisicao-data-id]') as HTMLInputElement | null;
       if (inputRequisicaoLaudo) {
         inputRequisicaoLaudo.addEventListener('input', () => {
           const atual = inputRequisicaoLaudo.value;
@@ -4365,14 +4532,32 @@ export class SistemaSILIC {
             inputRequisicaoLaudo.value = sanitizado;
           }
         });
+
+        inputRequisicaoLaudo.addEventListener('change', () => {
+          this.atualizarSituacaoLaudoPainelAviso(item.contratoId, 'solicitado', {
+            laudoRequisicaoNumero: inputRequisicaoLaudo.value || '',
+            laudoRequisicaoData: inputDataRequisicaoLaudo?.value || ''
+          });
+        });
+      }
+
+      if (inputDataRequisicaoLaudo) {
+        inputDataRequisicaoLaudo.addEventListener('change', () => {
+          this.atualizarSituacaoLaudoPainelAviso(item.contratoId, 'solicitado', {
+            laudoRequisicaoNumero: inputRequisicaoLaudo?.value || '',
+            laudoRequisicaoData: inputDataRequisicaoLaudo.value || ''
+          });
+        });
       }
       if (selectLaudo) {
         selectLaudo.addEventListener('change', () => {
           const novoValor = selectLaudo.value as PainelAvisoVencimentoRow['situacaoLaudoAvaliacao'];
           const inputRequisicao = tr.querySelector('[data-aviso-laudo-requisicao-id]') as HTMLInputElement | null;
+          const inputDataRequisicao = tr.querySelector('[data-aviso-laudo-requisicao-data-id]') as HTMLInputElement | null;
           const inputDataEmissao = tr.querySelector('[data-aviso-laudo-data-emissao-id]') as HTMLInputElement | null;
           this.atualizarSituacaoLaudoPainelAviso(item.contratoId, novoValor, {
             laudoRequisicaoNumero: inputRequisicao?.value || '',
+            laudoRequisicaoData: inputDataRequisicao?.value || '',
             laudoDataEmissao: inputDataEmissao?.value || ''
           });
         });
@@ -4747,6 +4932,827 @@ export class SistemaSILIC {
         if (target) target.classList.add('active');
       });
     });
+  }
+
+  private configurarEtapasOperacionaisDocumentais(): void {
+    this.inicializarBuscaContratosEtapas();
+    this.configurarSeletorContratoEtapa('rta', 'rtaContratoBusca', 'rtaContratoSelect', 'rtaContratoAtalhos', 'rtaContratoResultados', 'rtaContratoCarregarMaisBtn', 'rtaContratoLoading');
+    this.configurarSeletorContratoEtapa('laudo', 'laudoContratoBusca', 'laudoContratoSelect', 'laudoContratoAtalhos', 'laudoContratoResultados', 'laudoContratoCarregarMaisBtn', 'laudoContratoLoading');
+    this.configurarSeletorContratoEtapa('negociacao', 'negociacaoContratoBusca', 'negociacaoContratoSelect', 'negociacaoContratoAtalhos', 'negociacaoContratoResultados', 'negociacaoContratoCarregarMaisBtn', 'negociacaoContratoLoading');
+    this.configurarEtapaRtaOperacional();
+    this.configurarEtapaLaudoOperacional();
+    this.configurarEtapaNegociacoesOperacional();
+  }
+
+  private inicializarBuscaContratosEtapas(): void {
+    const contratos = this.painelVencimentos.slice(0, 200);
+
+    this.contratosEtapasBusca = contratos.map((contrato) => {
+      const imovel = this.imoveisOriginais.find((item) => item.id === contrato.contratoId);
+      const municipio = (() => {
+        if (!imovel) return '-';
+        const enderecoRaw = (imovel as unknown as { endereco?: unknown }).endereco;
+        if (typeof enderecoRaw === 'string' && enderecoRaw.trim()) return enderecoRaw.trim();
+        if (enderecoRaw && typeof enderecoRaw === 'object' && 'cidade' in enderecoRaw) {
+          const cidade = (enderecoRaw as { cidade?: unknown }).cidade;
+          return typeof cidade === 'string' && cidade.trim() ? cidade.trim() : '-';
+        }
+        return '-';
+      })();
+      const sap = contrato.numeroContratoSap;
+      const fornecedor = contrato.locadorSap;
+      const uf = contrato.uf;
+      const label = `${sap} | ${fornecedor} | ${uf} | ${municipio}`;
+      return {
+        id: contrato.contratoId,
+        sap,
+        fornecedor,
+        uf,
+        municipio,
+        label,
+        searchText: `${sap} ${fornecedor} ${uf} ${municipio}`.toLowerCase()
+      };
+    });
+
+    this.contratoBuscaRecentes = this.carregarRecentesBuscaContrato();
+    this.contratoBuscaFavoritos = this.carregarFavoritosBuscaContrato();
+    this.contratoBuscaProvider = async (params: ContratoBuscaParams) => {
+      const remoto = await this.buscarContratosRemoto(params);
+      if (remoto) return remoto;
+      return this.buscarContratosLocalComRelevancia(params);
+    };
+  }
+
+  private configurarSeletorContratoEtapa(
+    contexto: 'rta' | 'laudo' | 'negociacao',
+    searchId: string,
+    selectId: string,
+    atalhosId: string,
+    resultadosId: string,
+    carregarMaisId: string,
+    loadingId: string
+  ): void {
+    const searchInput = document.getElementById(searchId) as HTMLInputElement | null;
+    const select = document.getElementById(selectId) as HTMLSelectElement | null;
+    const atalhos = document.getElementById(atalhosId);
+    const resultados = document.getElementById(resultadosId);
+    const carregarMaisBtn = document.getElementById(carregarMaisId) as HTMLButtonElement | null;
+    const loadingStatus = document.getElementById(loadingId) as HTMLDivElement | null;
+    if (!searchInput || !select || !atalhos || !resultados || !carregarMaisBtn || !loadingStatus) return;
+
+    const stateKey = `${contexto}:${searchId}`;
+    const listboxId = `${searchId}-listbox`;
+    this.contratoBuscaUiState.set(stateKey, {
+      query: '',
+      offset: 0,
+      total: 0,
+      hasMore: false,
+      loading: false,
+      items: []
+    });
+    let activeIndex = -1;
+
+    searchInput.setAttribute('role', 'combobox');
+    searchInput.setAttribute('aria-autocomplete', 'list');
+    searchInput.setAttribute('aria-haspopup', 'listbox');
+    searchInput.setAttribute('aria-controls', listboxId);
+    searchInput.setAttribute('aria-expanded', 'false');
+    resultados.id = listboxId;
+    resultados.setAttribute('role', 'listbox');
+    resultados.setAttribute('aria-label', 'Resultados de contratos');
+    resultados.setAttribute('aria-busy', 'false');
+
+    const renderAtalhos = (): void => {
+      atalhos.innerHTML = '';
+
+      const recentes = this.contratoBuscaRecentes
+        .map((id) => this.contratosEtapasBusca.find((item) => item.id === id))
+        .filter((item): item is ContratoBuscaResultado => Boolean(item))
+        .slice(0, 5);
+
+      const favoritos = Array.from(this.contratoBuscaFavoritos)
+        .map((id) => this.contratosEtapasBusca.find((item) => item.id === id))
+        .filter((item): item is ContratoBuscaResultado => Boolean(item))
+        .slice(0, 5);
+
+      if (favoritos.length) {
+        const favLabel = document.createElement('span');
+        favLabel.className = 'contrato-picker-shortcuts-label';
+        favLabel.textContent = 'Favoritos:';
+        atalhos.appendChild(favLabel);
+        favoritos.forEach((item) => {
+          atalhos.appendChild(this.criarBotaoAtalhoContrato(item, 'favorito', (escolhido) => selecionarContrato(escolhido)));
+        });
+      }
+
+      if (recentes.length) {
+        const recentLabel = document.createElement('span');
+        recentLabel.className = 'contrato-picker-shortcuts-label';
+        recentLabel.textContent = 'Recentes:';
+        atalhos.appendChild(recentLabel);
+        recentes.forEach((item) => {
+          atalhos.appendChild(this.criarBotaoAtalhoContrato(item, 'recente', (escolhido) => selecionarContrato(escolhido)));
+        });
+      }
+    };
+
+    const aplicarItemAtivo = (): void => {
+      const elementos = Array.from(resultados.querySelectorAll('.contrato-picker-item')) as HTMLElement[];
+      elementos.forEach((el, idx) => {
+        const ativo = idx === activeIndex;
+        el.classList.toggle('is-active', ativo);
+        el.tabIndex = ativo ? 0 : -1;
+        el.setAttribute('aria-selected', String(ativo));
+        if (ativo) el.scrollIntoView({ block: 'nearest' });
+      });
+
+      const itemAtivo = activeIndex >= 0 ? elementos[activeIndex] : null;
+      if (itemAtivo?.id) {
+        searchInput.setAttribute('aria-activedescendant', itemAtivo.id);
+      } else {
+        searchInput.removeAttribute('aria-activedescendant');
+      }
+    };
+
+    const ocultarResultados = (): void => {
+      resultados.hidden = true;
+      carregarMaisBtn.hidden = true;
+      searchInput.setAttribute('aria-expanded', 'false');
+      searchInput.removeAttribute('aria-activedescendant');
+      activeIndex = -1;
+    };
+
+    const atualizarLoading = (loading: boolean): void => {
+      loadingStatus.hidden = !loading;
+      resultados.setAttribute('aria-busy', String(loading));
+      searchInput.setAttribute('aria-busy', String(loading));
+    };
+
+    const renderResultados = (items: ContratoBuscaResultado[], query: string): void => {
+      resultados.innerHTML = '';
+      if (query.trim().length < 2) {
+        ocultarResultados();
+        return;
+      }
+
+      resultados.hidden = false;
+      searchInput.setAttribute('aria-expanded', 'true');
+      if (!items.length) {
+        const vazio = document.createElement('div');
+        vazio.className = 'contrato-picker-empty';
+        vazio.textContent = 'Nenhum contrato encontrado para esta busca.';
+        resultados.appendChild(vazio);
+        carregarMaisBtn.hidden = true;
+        activeIndex = -1;
+        return;
+      }
+
+      const cabecalho = document.createElement('div');
+      cabecalho.className = 'contrato-picker-header';
+      cabecalho.textContent = `Top resultados (${Math.min(items.length, this.contratoBuscaPageSize)} de ${this.contratoBuscaUiState.get(stateKey)?.total || items.length})`;
+      resultados.appendChild(cabecalho);
+
+      items.forEach((item, index) => {
+        const linha = document.createElement('div');
+        linha.className = 'contrato-picker-item';
+        linha.id = `${searchId}-option-${index}`;
+        linha.tabIndex = -1;
+        linha.setAttribute('role', 'option');
+        linha.setAttribute('aria-selected', String(index === activeIndex));
+        const fornecedorDestacado = this.destacarTermoBusca(item.fornecedor, query);
+        const sapDestacado = this.destacarTermoBusca(item.sap, query);
+        const municipioDestacado = this.destacarTermoBusca(item.municipio, query);
+        linha.innerHTML = `
+          <span class="contrato-picker-item-title">${sapDestacado} | ${fornecedorDestacado}</span>
+          <span class="contrato-picker-item-meta">UF: ${this.escaparHtml(item.uf)} | Município: ${municipioDestacado}</span>
+        `;
+
+        const favoritoBtn = document.createElement('button');
+        favoritoBtn.type = 'button';
+        favoritoBtn.className = `contrato-picker-fav ${this.contratoBuscaFavoritos.has(item.id) ? 'is-active' : ''}`;
+        favoritoBtn.textContent = this.contratoBuscaFavoritos.has(item.id) ? '★' : '☆';
+        favoritoBtn.title = this.contratoBuscaFavoritos.has(item.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+        favoritoBtn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.toggleFavoritoContratoBusca(item.id);
+          favoritoBtn.textContent = this.contratoBuscaFavoritos.has(item.id) ? '★' : '☆';
+          favoritoBtn.classList.toggle('is-active', this.contratoBuscaFavoritos.has(item.id));
+          renderAtalhos();
+        });
+
+        linha.appendChild(favoritoBtn);
+        linha.addEventListener('click', () => {
+          activeIndex = index;
+          selecionarContrato(item);
+        });
+        linha.addEventListener('mousemove', () => {
+          activeIndex = index;
+          aplicarItemAtivo();
+        });
+        resultados.appendChild(linha);
+      });
+
+      const state = this.contratoBuscaUiState.get(stateKey);
+      carregarMaisBtn.hidden = !(state?.hasMore);
+      if (activeIndex < 0 || activeIndex >= items.length) {
+        activeIndex = 0;
+      }
+      aplicarItemAtivo();
+    };
+
+    const selecionarContrato = (item: ContratoBuscaResultado): void => {
+      select.innerHTML = '';
+      const option = document.createElement('option');
+      option.value = item.id;
+      option.textContent = item.label;
+      option.selected = true;
+      select.appendChild(option);
+      searchInput.value = item.label;
+
+      this.registrarRecenteContratoBusca(item.id);
+      renderAtalhos();
+      ocultarResultados();
+
+      select.dispatchEvent(new Event('change'));
+    };
+
+    const executarBusca = async (append = false): Promise<void> => {
+      const state = this.contratoBuscaUiState.get(stateKey);
+      if (!state || state.loading) return;
+
+      const query = (searchInput.value || '').trim();
+      state.query = query;
+
+      if (query.length < 2) {
+        state.items = [];
+        state.offset = 0;
+        state.total = 0;
+        state.hasMore = false;
+        renderResultados([], query);
+        return;
+      }
+
+      state.loading = true;
+      atualizarLoading(true);
+      carregarMaisBtn.disabled = true;
+      try {
+        const response = await this.buscarContratosEtapas({
+          query,
+          offset: append ? state.offset : 0,
+          limit: this.contratoBuscaPageSize
+        });
+
+        state.items = append ? [...state.items, ...response.items] : response.items;
+        state.offset = append ? state.offset + response.items.length : response.items.length;
+        state.total = response.total;
+        state.hasMore = response.hasMore;
+        renderResultados(state.items, query);
+      } finally {
+        state.loading = false;
+        atualizarLoading(false);
+        carregarMaisBtn.disabled = false;
+      }
+    };
+
+    const buscarComDebounce = (): void => {
+      const timer = this.contratoBuscaTimers.get(stateKey);
+      if (timer) window.clearTimeout(timer);
+      const next = window.setTimeout(() => {
+        void executarBusca(false);
+      }, this.contratoBuscaDebounceMs);
+      this.contratoBuscaTimers.set(stateKey, next);
+    };
+
+    searchInput.addEventListener('input', buscarComDebounce);
+    searchInput.addEventListener('focus', () => {
+      renderAtalhos();
+      const state = this.contratoBuscaUiState.get(stateKey);
+      renderResultados(state?.items || [], searchInput.value || '');
+    });
+    searchInput.addEventListener('keydown', (event) => {
+      const state = this.contratoBuscaUiState.get(stateKey);
+      const items = state?.items || [];
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        ocultarResultados();
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (!items.length) return;
+        if (resultados.hidden) {
+          renderResultados(items, searchInput.value || '');
+          return;
+        }
+        activeIndex = Math.min(activeIndex + 1, items.length - 1);
+        aplicarItemAtivo();
+        return;
+      }
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!items.length) return;
+        activeIndex = Math.max(activeIndex - 1, 0);
+        aplicarItemAtivo();
+        return;
+      }
+
+      if (event.key === 'Tab' && !resultados.hidden && items.length) {
+        event.preventDefault();
+        if (event.shiftKey) {
+          activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
+        } else {
+          activeIndex = activeIndex >= items.length - 1 ? 0 : activeIndex + 1;
+        }
+        aplicarItemAtivo();
+        return;
+      }
+
+      if (event.key === 'Enter') {
+        if (resultados.hidden) return;
+        event.preventDefault();
+        if (!items.length) return;
+        const indiceSelecionado = activeIndex >= 0 ? activeIndex : 0;
+        const escolhido = items[indiceSelecionado];
+        if (escolhido) selecionarContrato(escolhido);
+      }
+    });
+    document.addEventListener('click', (event) => {
+      const target = event.target as Node;
+      if (searchInput.contains(target) || resultados.contains(target) || atalhos.contains(target) || carregarMaisBtn.contains(target)) {
+        return;
+      }
+      ocultarResultados();
+    });
+    carregarMaisBtn.addEventListener('click', () => {
+      void executarBusca(true);
+    });
+
+    renderAtalhos();
+    renderResultados([], '');
+  }
+
+  private escaparHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  private escaparRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private destacarTermoBusca(value: string, query: string): string {
+    const safeValue = this.escaparHtml(value);
+    const termo = query.trim();
+    if (termo.length < 2) return safeValue;
+
+    const regex = new RegExp(`(${this.escaparRegex(this.escaparHtml(termo))})`, 'ig');
+    return safeValue.replace(regex, '<mark class="contrato-picker-highlight">$1</mark>');
+  }
+
+  private async buscarContratosEtapas(params: ContratoBuscaParams): Promise<ContratoBuscaResponse> {
+    if (this.contratoBuscaProvider) {
+      return this.contratoBuscaProvider(params);
+    }
+    return this.buscarContratosLocalComRelevancia(params);
+  }
+
+  private async buscarContratosRemoto(params: ContratoBuscaParams): Promise<ContratoBuscaResponse | null> {
+    const endpoint = (window as Window & { SILIC_CONTRATO_BUSCA_ENDPOINT?: string }).SILIC_CONTRATO_BUSCA_ENDPOINT;
+    if (!endpoint) return null;
+
+    try {
+      const url = new URL(endpoint, window.location.origin);
+      url.searchParams.set('q', params.query);
+      url.searchParams.set('offset', String(params.offset));
+      url.searchParams.set('limit', String(params.limit));
+
+      const response = await fetch(url.toString(), { method: 'GET' });
+      if (!response.ok) return null;
+      const payload = await response.json() as { items?: ContratoBuscaResultado[]; total?: number; hasMore?: boolean };
+      if (!Array.isArray(payload.items)) return null;
+
+      return {
+        items: payload.items,
+        total: typeof payload.total === 'number' ? payload.total : payload.items.length,
+        hasMore: typeof payload.hasMore === 'boolean' ? payload.hasMore : false
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private buscarContratosLocalComRelevancia(params: ContratoBuscaParams): ContratoBuscaResponse {
+    const query = params.query.trim().toLowerCase();
+    const resultadosOrdenados = this.contratosEtapasBusca
+      .filter((item) => item.searchText.includes(query))
+      .sort((a, b) => {
+        const scoreA = this.obterScoreRelevanciaContrato(a, query);
+        const scoreB = this.obterScoreRelevanciaContrato(b, query);
+        if (scoreA !== scoreB) return scoreA - scoreB;
+        return a.sap.localeCompare(b.sap);
+      });
+
+    const total = resultadosOrdenados.length;
+    const items = resultadosOrdenados.slice(params.offset, params.offset + Math.min(params.limit, 50));
+    const hasMore = params.offset + items.length < total;
+    return { items, total, hasMore };
+  }
+
+  private obterScoreRelevanciaContrato(item: ContratoBuscaResultado, query: string): number {
+    if (item.sap.toLowerCase() === query) return 0;
+    if (item.sap.toLowerCase().startsWith(query)) return 1;
+    if (item.fornecedor.toLowerCase().startsWith(query)) return 2;
+    if (item.municipio.toLowerCase().startsWith(query)) return 3;
+    if (item.searchText.includes(query)) return 4;
+    return 99;
+  }
+
+  private carregarRecentesBuscaContrato(): string[] {
+    try {
+      const raw = localStorage.getItem(this.contratoBuscaRecentesKey);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private carregarFavoritosBuscaContrato(): Set<string> {
+    try {
+      const raw = localStorage.getItem(this.contratoBuscaFavoritosKey);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return new Set();
+      return new Set(parsed.filter((item) => typeof item === 'string'));
+    } catch {
+      return new Set();
+    }
+  }
+
+  private registrarRecenteContratoBusca(contratoId: string): void {
+    this.contratoBuscaRecentes = [contratoId, ...this.contratoBuscaRecentes.filter((id) => id !== contratoId)].slice(0, 10);
+    try {
+      localStorage.setItem(this.contratoBuscaRecentesKey, JSON.stringify(this.contratoBuscaRecentes));
+    } catch {
+      // Ignora indisponibilidade de localStorage.
+    }
+  }
+
+  private toggleFavoritoContratoBusca(contratoId: string): void {
+    if (this.contratoBuscaFavoritos.has(contratoId)) this.contratoBuscaFavoritos.delete(contratoId);
+    else this.contratoBuscaFavoritos.add(contratoId);
+    try {
+      localStorage.setItem(this.contratoBuscaFavoritosKey, JSON.stringify(Array.from(this.contratoBuscaFavoritos)));
+    } catch {
+      // Ignora indisponibilidade de localStorage.
+    }
+  }
+
+  private criarBotaoAtalhoContrato(
+    item: ContratoBuscaResultado,
+    tipo: 'favorito' | 'recente',
+    onClick: (item: ContratoBuscaResultado) => void
+  ): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `contrato-picker-shortcut contrato-picker-shortcut-${tipo}`;
+    button.textContent = `${tipo === 'favorito' ? '★' : '⟳'} ${item.sap}`;
+    button.title = item.label;
+    button.addEventListener('click', () => onClick(item));
+    return button;
+  }
+
+  private obterResumoContratoOperacional(contratoId: string): string {
+    const contrato = this.painelVencimentos.find((item) => item.contratoId === contratoId);
+    if (!contrato) return 'Contrato não encontrado na base atual.';
+    return `Contrato SAP ${contrato.numeroContratoSap} | SICLG ${contrato.numeroContratoSiclg} | Fornecedor ${contrato.locadorSap} | Vigência ${contrato.vigenciaSap}`;
+  }
+
+  private atualizarResumoContratoEtapa(selectId: string, resumoId: string): void {
+    const select = document.getElementById(selectId) as HTMLSelectElement | null;
+    const resumo = document.getElementById(resumoId);
+    if (!select || !resumo) return;
+
+    if (!select.value) {
+      resumo.textContent = 'Selecione um contrato para preencher os dados desta etapa.';
+      return;
+    }
+
+    resumo.textContent = this.obterResumoContratoOperacional(select.value);
+  }
+
+  private carregarMapaEtapa<T>(storageKey: string): Record<string, T> {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed as Record<string, T> : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private salvarMapaEtapa<T>(storageKey: string, data: Record<string, T>): void {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch {
+      // Ignora indisponibilidade de localStorage.
+    }
+  }
+
+  private obterNomesArquivosInput(inputId: string): string[] {
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    if (!input?.files?.length) return [];
+    return Array.from(input.files).map((file) => file.name);
+  }
+
+  private atualizarInfoUploadEtapa(infoId: string, nomesArquivos: string[]): void {
+    const info = document.getElementById(infoId);
+    if (!info) return;
+    info.textContent = nomesArquivos.length ? `Arquivo(s): ${nomesArquivos.join(', ')}` : '';
+  }
+
+  private lerNumeroInput(id: string): number | undefined {
+    const element = document.getElementById(id) as HTMLInputElement | null;
+    if (!element || element.value.trim() === '') return undefined;
+    const parsed = Number(element.value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  private configurarEtapaRtaOperacional(): void {
+    const selectContrato = document.getElementById('rtaContratoSelect') as HTMLSelectElement | null;
+    const areaInput = document.getElementById('rtaAreaContratada') as HTMLInputElement | null;
+    const benfeitoriasInput = document.getElementById('rtaBenfeitoriasValor') as HTMLInputElement | null;
+    const valorVenalInput = document.getElementById('rtaValorVenalImovel') as HTMLInputElement | null;
+    const salvarBtn = document.getElementById('rtaSalvarBtn') as HTMLButtonElement | null;
+    const uploadRelatorio = document.getElementById('rtaUploadRelatorio') as HTMLInputElement | null;
+    const uploadParecer = document.getElementById('rtaUploadParecer') as HTMLInputElement | null;
+
+    if (!selectContrato || !areaInput || !salvarBtn) return;
+
+    const atualizarVisibilidadeBenfeitorias = (): void => {
+      const section = document.getElementById('rtaBenfeitoriasSection');
+      if (!section) return;
+      const area = Number(areaInput.value || '0');
+      section.hidden = !(Number.isFinite(area) && area > 550);
+    };
+
+    const atualizarPercentual = (): void => {
+      const percentualInput = document.getElementById('rtaPercentualBenfeitorias') as HTMLInputElement | null;
+      if (!percentualInput) return;
+      const benfeitorias = this.lerNumeroInput('rtaBenfeitoriasValor');
+      const valorVenal = this.lerNumeroInput('rtaValorVenalImovel');
+      if (!benfeitorias || !valorVenal || valorVenal <= 0) {
+        percentualInput.value = '';
+        return;
+      }
+      percentualInput.value = ((benfeitorias / valorVenal) * 100).toFixed(2);
+    };
+
+    const preencherFormulario = (registro?: EtapaRtaRegistro): void => {
+      areaInput.value = registro?.areaContratada !== undefined ? String(registro.areaContratada) : '';
+      (document.getElementById('rtaBenfeitoriasValor') as HTMLInputElement | null)!.value = registro?.benfeitoriasValor !== undefined ? String(registro.benfeitoriasValor) : '';
+      (document.getElementById('rtaPossuiValorVenal') as HTMLSelectElement | null)!.value = registro?.possuiValorVenal || '';
+      (document.getElementById('rtaValorVenalImovel') as HTMLInputElement | null)!.value = registro?.valorVenalImovel !== undefined ? String(registro.valorVenalImovel) : '';
+      (document.getElementById('rtaParecerNumero') as HTMLInputElement | null)!.value = registro?.parecerNumero || '';
+      (document.getElementById('rtaParecerData') as HTMLInputElement | null)!.value = registro?.parecerData || '';
+      (document.getElementById('rtaPercentualBenfeitorias') as HTMLInputElement | null)!.value = registro?.percentualBenfeitorias !== undefined ? String(registro.percentualBenfeitorias) : '';
+      (document.getElementById('rtaManifestacaoNegocio') as HTMLTextAreaElement | null)!.value = registro?.manifestacaoNegocio || '';
+      (document.getElementById('rtaManifestacaoInfra') as HTMLTextAreaElement | null)!.value = registro?.manifestacaoInfra || '';
+      this.atualizarInfoUploadEtapa('rtaUploadRelatorioInfo', registro?.uploadRelatorioArquivos || []);
+      this.atualizarInfoUploadEtapa('rtaUploadParecerInfo', registro?.uploadParecerArquivos || []);
+      atualizarVisibilidadeBenfeitorias();
+      atualizarPercentual();
+    };
+
+    const carregarRegistroSelecionado = (): void => {
+      const mapa = this.carregarMapaEtapa<EtapaRtaRegistro>(SistemaSILIC.ETAPA_RTA_STORAGE_KEY);
+      preencherFormulario(mapa[selectContrato.value]);
+    };
+
+    selectContrato.addEventListener('change', () => {
+      this.atualizarResumoContratoEtapa('rtaContratoSelect', 'rtaContratoResumo');
+      carregarRegistroSelecionado();
+    });
+
+    areaInput.addEventListener('input', atualizarVisibilidadeBenfeitorias);
+    benfeitoriasInput?.addEventListener('input', atualizarPercentual);
+    valorVenalInput?.addEventListener('input', atualizarPercentual);
+
+    uploadRelatorio?.addEventListener('change', () => {
+      this.atualizarInfoUploadEtapa('rtaUploadRelatorioInfo', this.obterNomesArquivosInput('rtaUploadRelatorio'));
+    });
+    uploadParecer?.addEventListener('change', () => {
+      this.atualizarInfoUploadEtapa('rtaUploadParecerInfo', this.obterNomesArquivosInput('rtaUploadParecer'));
+    });
+
+    salvarBtn.addEventListener('click', () => {
+      const contratoId = selectContrato.value;
+      if (!contratoId) {
+        this.showToast('Selecione um contrato para salvar os dados do RTA.');
+        return;
+      }
+
+      const mapa = this.carregarMapaEtapa<EtapaRtaRegistro>(SistemaSILIC.ETAPA_RTA_STORAGE_KEY);
+      const uploadRelatorioArquivos = this.obterNomesArquivosInput('rtaUploadRelatorio');
+      const uploadParecerArquivos = this.obterNomesArquivosInput('rtaUploadParecer');
+      const areaContratada = this.lerNumeroInput('rtaAreaContratada');
+      const percentualCalculado = this.lerNumeroInput('rtaPercentualBenfeitorias');
+
+      mapa[contratoId] = {
+        areaContratada,
+        benfeitoriasValor: this.lerNumeroInput('rtaBenfeitoriasValor'),
+        possuiValorVenal: ((document.getElementById('rtaPossuiValorVenal') as HTMLSelectElement | null)?.value || '') as 'sim' | 'nao' | '',
+        valorVenalImovel: this.lerNumeroInput('rtaValorVenalImovel'),
+        parecerNumero: (document.getElementById('rtaParecerNumero') as HTMLInputElement | null)?.value.trim() || '',
+        parecerData: (document.getElementById('rtaParecerData') as HTMLInputElement | null)?.value || '',
+        percentualBenfeitorias: percentualCalculado,
+        manifestacaoNegocio: (document.getElementById('rtaManifestacaoNegocio') as HTMLTextAreaElement | null)?.value.trim() || '',
+        manifestacaoInfra: (document.getElementById('rtaManifestacaoInfra') as HTMLTextAreaElement | null)?.value.trim() || '',
+        uploadRelatorioArquivos: uploadRelatorioArquivos.length ? uploadRelatorioArquivos : (mapa[contratoId]?.uploadRelatorioArquivos || []),
+        uploadParecerArquivos: uploadParecerArquivos.length ? uploadParecerArquivos : (mapa[contratoId]?.uploadParecerArquivos || [])
+      };
+
+      this.salvarMapaEtapa(SistemaSILIC.ETAPA_RTA_STORAGE_KEY, mapa);
+      this.showToast('Dados da etapa RTA salvos para o contrato selecionado.');
+      carregarRegistroSelecionado();
+    });
+
+    this.atualizarResumoContratoEtapa('rtaContratoSelect', 'rtaContratoResumo');
+  }
+
+  private configurarEtapaLaudoOperacional(): void {
+    const selectContrato = document.getElementById('laudoContratoSelect') as HTMLSelectElement | null;
+    const uploadInput = document.getElementById('laudoUploadArquivo') as HTMLInputElement | null;
+    const dadosSection = document.getElementById('laudoDadosSection');
+    const salvarBtn = document.getElementById('laudoSalvarBtn') as HTMLButtonElement | null;
+    const cnpjInput = document.getElementById('laudoEmpresaCnpj') as HTMLInputElement | null;
+
+    if (!selectContrato || !uploadInput || !dadosSection || !salvarBtn) return;
+
+    const preencherFormulario = (registro?: EtapaLaudoRegistro): void => {
+      (document.getElementById('laudoDataElaboracao') as HTMLInputElement | null)!.value = registro?.dataElaboracao || '';
+      (document.getElementById('laudoNumeroDocumento') as HTMLInputElement | null)!.value = registro?.numeroDocumento || '';
+      (document.getElementById('laudoEmpresaNome') as HTMLInputElement | null)!.value = registro?.empresaNome || '';
+      (document.getElementById('laudoEmpresaCnpj') as HTMLInputElement | null)!.value = registro?.empresaCnpj || '';
+      (document.getElementById('laudoValorMinimo') as HTMLInputElement | null)!.value = registro?.valorMinimo !== undefined ? String(registro.valorMinimo) : '';
+      (document.getElementById('laudoValorMedio') as HTMLInputElement | null)!.value = registro?.valorMedio !== undefined ? String(registro.valorMedio) : '';
+      (document.getElementById('laudoValorMaximo') as HTMLInputElement | null)!.value = registro?.valorMaximo !== undefined ? String(registro.valorMaximo) : '';
+      (document.getElementById('laudoAssinado') as HTMLSelectElement | null)!.value = registro?.assinado || '';
+      this.atualizarInfoUploadEtapa('laudoUploadInfo', registro?.uploadArquivos || []);
+      dadosSection.hidden = !(registro?.uploadArquivos && registro.uploadArquivos.length);
+    };
+
+    const carregarRegistroSelecionado = (): void => {
+      const mapa = this.carregarMapaEtapa<EtapaLaudoRegistro>(SistemaSILIC.ETAPA_LAUDO_STORAGE_KEY);
+      preencherFormulario(mapa[selectContrato.value]);
+    };
+
+    selectContrato.addEventListener('change', () => {
+      this.atualizarResumoContratoEtapa('laudoContratoSelect', 'laudoContratoResumo');
+      carregarRegistroSelecionado();
+    });
+
+    uploadInput.addEventListener('change', () => {
+      const nomes = this.obterNomesArquivosInput('laudoUploadArquivo');
+      this.atualizarInfoUploadEtapa('laudoUploadInfo', nomes);
+      dadosSection.hidden = nomes.length === 0;
+    });
+
+    cnpjInput?.addEventListener('input', () => {
+      const digits = cnpjInput.value.replace(/\D/g, '').slice(0, 14);
+      cnpjInput.value = digits;
+    });
+
+    salvarBtn.addEventListener('click', () => {
+      const contratoId = selectContrato.value;
+      if (!contratoId) {
+        this.showToast('Selecione um contrato para salvar os dados do laudo.');
+        return;
+      }
+
+      const mapa = this.carregarMapaEtapa<EtapaLaudoRegistro>(SistemaSILIC.ETAPA_LAUDO_STORAGE_KEY);
+      const nomesUpload = this.obterNomesArquivosInput('laudoUploadArquivo');
+      const uploadsPersistidos = nomesUpload.length ? nomesUpload : (mapa[contratoId]?.uploadArquivos || []);
+      if (!uploadsPersistidos.length) {
+        this.showToast('Faça upload do laudo para registrar esta etapa.');
+        return;
+      }
+
+      const cnpj = ((document.getElementById('laudoEmpresaCnpj') as HTMLInputElement | null)?.value || '').replace(/\D/g, '');
+      if (cnpj && cnpj.length !== 14) {
+        this.showToast('CNPJ inválido. Informe 14 dígitos.');
+        return;
+      }
+
+      mapa[contratoId] = {
+        uploadArquivos: uploadsPersistidos,
+        dataElaboracao: (document.getElementById('laudoDataElaboracao') as HTMLInputElement | null)?.value || '',
+        numeroDocumento: (document.getElementById('laudoNumeroDocumento') as HTMLInputElement | null)?.value.trim() || '',
+        empresaNome: (document.getElementById('laudoEmpresaNome') as HTMLInputElement | null)?.value.trim() || '',
+        empresaCnpj: cnpj,
+        valorMinimo: this.lerNumeroInput('laudoValorMinimo'),
+        valorMedio: this.lerNumeroInput('laudoValorMedio'),
+        valorMaximo: this.lerNumeroInput('laudoValorMaximo'),
+        assinado: ((document.getElementById('laudoAssinado') as HTMLSelectElement | null)?.value || '') as 'sim' | 'nao' | ''
+      };
+
+      this.salvarMapaEtapa(SistemaSILIC.ETAPA_LAUDO_STORAGE_KEY, mapa);
+      this.showToast('Dados da etapa Laudo salvos para o contrato selecionado.');
+      carregarRegistroSelecionado();
+    });
+
+    this.atualizarResumoContratoEtapa('laudoContratoSelect', 'laudoContratoResumo');
+  }
+
+  private configurarEtapaNegociacoesOperacional(): void {
+    const selectContrato = document.getElementById('negociacaoContratoSelect') as HTMLSelectElement | null;
+    const temCarencia = document.getElementById('negociacaoTemCarencia') as HTMLSelectElement | null;
+    const carenciaWrap = document.getElementById('negociacaoCarenciaDiasWrap');
+    const temClausula = document.getElementById('negociacaoTemClausulaExtra') as HTMLSelectElement | null;
+    const clausulaWrap = document.getElementById('negociacaoClausulaExtraWrap');
+    const salvarBtn = document.getElementById('negociacaoSalvarBtn') as HTMLButtonElement | null;
+    const uploadAnexos = document.getElementById('negociacaoUploadAnexos') as HTMLInputElement | null;
+    const uploadMinuta = document.getElementById('negociacaoUploadMinuta') as HTMLInputElement | null;
+
+    if (!selectContrato || !temCarencia || !carenciaWrap || !temClausula || !clausulaWrap || !salvarBtn) return;
+
+    const atualizarCondicoes = (): void => {
+      carenciaWrap.hidden = temCarencia.value !== 'sim';
+      clausulaWrap.hidden = temClausula.value !== 'sim';
+    };
+
+    const preencherFormulario = (registro?: EtapaNegociacaoRegistro): void => {
+      (document.getElementById('negociacaoVigenciaMeses') as HTMLInputElement | null)!.value = registro?.vigenciaMeses !== undefined ? String(registro.vigenciaMeses) : '';
+      temCarencia.value = registro?.temCarencia || '';
+      (document.getElementById('negociacaoCarenciaDias') as HTMLInputElement | null)!.value = registro?.carenciaDias !== undefined ? String(registro.carenciaDias) : '';
+      (document.getElementById('negociacaoIndiceReajuste') as HTMLInputElement | null)!.value = registro?.indiceReajuste || '';
+      (document.getElementById('negociacaoModalidade') as HTMLSelectElement | null)!.value = registro?.modalidade || '';
+      temClausula.value = registro?.temClausulaExtra || '';
+      (document.getElementById('negociacaoClausulaExtraTexto') as HTMLTextAreaElement | null)!.value = registro?.clausulaExtraTexto || '';
+      this.atualizarInfoUploadEtapa('negociacaoUploadAnexosInfo', registro?.uploadAnexosArquivos || []);
+      this.atualizarInfoUploadEtapa('negociacaoUploadMinutaInfo', registro?.uploadMinutaArquivos || []);
+      atualizarCondicoes();
+    };
+
+    const carregarRegistroSelecionado = (): void => {
+      const mapa = this.carregarMapaEtapa<EtapaNegociacaoRegistro>(SistemaSILIC.ETAPA_NEGOCIACAO_STORAGE_KEY);
+      preencherFormulario(mapa[selectContrato.value]);
+    };
+
+    selectContrato.addEventListener('change', () => {
+      this.atualizarResumoContratoEtapa('negociacaoContratoSelect', 'negociacaoContratoResumo');
+      carregarRegistroSelecionado();
+    });
+
+    temCarencia.addEventListener('change', atualizarCondicoes);
+    temClausula.addEventListener('change', atualizarCondicoes);
+
+    uploadAnexos?.addEventListener('change', () => {
+      this.atualizarInfoUploadEtapa('negociacaoUploadAnexosInfo', this.obterNomesArquivosInput('negociacaoUploadAnexos'));
+    });
+    uploadMinuta?.addEventListener('change', () => {
+      this.atualizarInfoUploadEtapa('negociacaoUploadMinutaInfo', this.obterNomesArquivosInput('negociacaoUploadMinuta'));
+    });
+
+    salvarBtn.addEventListener('click', () => {
+      const contratoId = selectContrato.value;
+      if (!contratoId) {
+        this.showToast('Selecione um contrato para salvar os dados da negociação.');
+        return;
+      }
+
+      const mapa = this.carregarMapaEtapa<EtapaNegociacaoRegistro>(SistemaSILIC.ETAPA_NEGOCIACAO_STORAGE_KEY);
+      const nomesAnexos = this.obterNomesArquivosInput('negociacaoUploadAnexos');
+      const nomesMinuta = this.obterNomesArquivosInput('negociacaoUploadMinuta');
+
+      mapa[contratoId] = {
+        vigenciaMeses: this.lerNumeroInput('negociacaoVigenciaMeses'),
+        temCarencia: (temCarencia.value || '') as 'sim' | 'nao' | '',
+        carenciaDias: this.lerNumeroInput('negociacaoCarenciaDias'),
+        indiceReajuste: (document.getElementById('negociacaoIndiceReajuste') as HTMLInputElement | null)?.value.trim() || '',
+        modalidade: ((document.getElementById('negociacaoModalidade') as HTMLSelectElement | null)?.value || '') as 'contrato_simplificado' | 'condicoes_suspensivas' | 'minuta_locador' | '',
+        temClausulaExtra: (temClausula.value || '') as 'sim' | 'nao' | '',
+        clausulaExtraTexto: (document.getElementById('negociacaoClausulaExtraTexto') as HTMLTextAreaElement | null)?.value.trim() || '',
+        uploadAnexosArquivos: nomesAnexos.length ? nomesAnexos : (mapa[contratoId]?.uploadAnexosArquivos || []),
+        uploadMinutaArquivos: nomesMinuta.length ? nomesMinuta : (mapa[contratoId]?.uploadMinutaArquivos || [])
+      };
+
+      this.salvarMapaEtapa(SistemaSILIC.ETAPA_NEGOCIACAO_STORAGE_KEY, mapa);
+      this.showToast('Dados da etapa Negociações salvos para o contrato selecionado.');
+      carregarRegistroSelecionado();
+    });
+
+    this.atualizarResumoContratoEtapa('negociacaoContratoSelect', 'negociacaoContratoResumo');
   }
 
   private inicializarDadosFasesOperacionais(): void {

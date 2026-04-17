@@ -1601,11 +1601,40 @@ body {
 
 .aviso-status-badge {
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.aviso-status-badge:hover,
+.aviso-status-badge:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 2px rgba(47, 112, 184, 0.15);
+}
+
+.aviso-status-badge::after {
+    content: attr(data-filter-tag);
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 0.08rem 0.26rem;
+    border-radius: 999px;
+    border: 1px solid rgba(47, 112, 184, 0.35);
+    color: #1d4f8f;
+    background: #eff6ff;
 }
 
 .aviso-status-badge.is-active {
     box-shadow: 0 0 0 2px rgba(47, 112, 184, 0.2);
     border-color: #2f70b8;
+}
+
+.aviso-status-badge.is-active::after {
+    border-color: rgba(22, 101, 52, 0.45);
+    color: #166534;
+    background: #ecfdf5;
 }
 
 .formal-panel-view[data-formal-panel="aviso-vencimento"] .aviso-decisao-select {
@@ -1646,6 +1675,271 @@ body {
 
 .aviso-contexto-descricao {
     grid-column: 1 / -1;
+}
+
+.etapa-form-card {
+    border: 1px solid var(--color-gray-200);
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 0.85rem;
+}
+
+.etapa-contrato-resumo {
+    margin: 0.35rem 0 0.7rem;
+    color: var(--color-gray-700);
+}
+
+.etapa-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.65rem 0.8rem;
+}
+
+.etapa-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.82rem;
+    color: var(--color-gray-800);
+}
+
+.etapa-field span {
+    font-weight: 600;
+    color: var(--color-gray-900);
+}
+
+.etapa-field-full {
+    grid-column: 1 / -1;
+}
+
+.etapa-form-subsection {
+    margin: 0.75rem 0;
+    border: 1px dashed #cbd5e1;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 0.65rem;
+}
+
+.etapa-upload-info {
+    margin-top: 0.15rem;
+    color: var(--color-gray-700);
+}
+
+.contrato-picker-hidden-select {
+    display: none !important;
+}
+
+.contrato-picker-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 1.6rem;
+}
+
+.contrato-picker-loading {
+    margin: 0.35rem 0;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+.contrato-picker-shortcuts-label {
+    font-size: 0.72rem;
+    color: var(--color-gray-700);
+    font-weight: 700;
+}
+
+.contrato-picker-shortcut {
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #1f2937;
+    font-size: 0.7rem;
+    padding: 0.18rem 0.45rem;
+    cursor: pointer;
+}
+
+.contrato-picker-shortcut-favorito {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.contrato-picker-shortcut-recente {
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.contrato-picker-results {
+    border: 1px solid var(--color-gray-200);
+    border-radius: 8px;
+    background: #ffffff;
+    max-height: 280px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.3rem;
+}
+
+.contrato-picker-header {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 0.15rem 0.2rem 0.25rem;
+}
+
+.contrato-picker-item {
+    width: 100%;
+    text-align: left;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #f9fafb;
+    padding: 0.45rem 0.5rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.contrato-picker-item:hover {
+    background: #eef6ff;
+    border-color: #bfdbfe;
+}
+
+.contrato-picker-item.is-active {
+    background: #eaf4ff;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.contrato-picker-item:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
+}
+
+.contrato-picker-item-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    padding-right: 1.7rem;
+}
+
+.contrato-picker-item-meta {
+    display: block;
+    margin-top: 0.14rem;
+    font-size: 0.72rem;
+    color: var(--color-gray-700);
+}
+
+.contrato-picker-highlight {
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 800;
+}
+
+.contrato-picker-fav {
+    position: absolute;
+    top: 0.28rem;
+    right: 0.35rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.contrato-picker-fav.is-active {
+    color: #f59e0b;
+}
+
+.contrato-picker-empty {
+    font-size: 0.76rem;
+    color: var(--color-gray-700);
+    padding: 0.45rem;
+}
+
+.contrato-picker-more {
+    align-self: flex-start;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] {
+    border: 1px solid #cddff5;
+    border-radius: 16px;
+    padding: 1rem;
+    background:
+        radial-gradient(circle at 8% 0%, rgba(147, 197, 253, 0.26), transparent 38%),
+        linear-gradient(180deg, #f7fbff 0%, #eff6ff 100%);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .tabs.profile-tabs {
+    background: transparent;
+    border-bottom: 1px solid #cddff5;
+    margin-bottom: 0.9rem;
+    top: auto;
+    position: relative;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .tab-btn {
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: rgba(255, 255, 255, 0.72);
+    color: #334155;
+    font-weight: 700;
+    padding: 0.75rem 1.15rem;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .tab-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    border-color: #bfdbfe;
+    box-shadow: inset 0 -3px 0 #2563eb;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .tab-btn:hover {
+    background: #f8fbff;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .tab-content {
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 0.95rem;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .tab-content.active {
+    box-shadow: 0 10px 24px rgba(30, 41, 59, 0.08);
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .mini-label {
+    color: #334155;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-form-card {
+    border-color: #d4e4f7;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.07);
+    padding: 1rem;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-form-subsection {
+    border: 1px dashed #93c5fd;
+    background: #f8fbff;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-field span {
+    color: #0f172a;
 }
 
 #avisoVencimentoBody .btn-table-action {
