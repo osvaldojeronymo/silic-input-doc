@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-CdM215vF.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-CEiyu_qY.js"></script>
   <link rel="modulepreload" crossorigin href="/silic-input-doc/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-CZoI0xxT.css">
+  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-BfWz3hug.css">
 </head>
 <body>
     <header class="modern-header">
@@ -320,423 +320,248 @@
             <div class="section-header">
                 <h3 class="section-subtitle">Jornada do Gestor Operacional</h3>
                 <div class="filter-actions">
-                    <button id="resetSessaoJornadaBtn" class="btn-clear" type="button">Resetar sessao da jornada</button>
+                    <button id="resetSessaoJornadaBtn" class="btn-clear" type="button">Reset do painel de Aviso de Vencimento</button>
                     <button class="btn-clear" data-route="/" type="button">Voltar para home</button>
                 </div>
             </div>
 
             <div class="operacional-panel-switcher" role="tablist" aria-label="Navegação da Jornada Operacional">
-                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Passos da sua Jornada</button>
+                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Etapas</button>
                 <button class="operacional-panel-tab" data-operacional-panel-target="aviso-vencimento" type="button">Aviso de Vencimento</button>
             </div>
 
             <section class="operacional-panel-view is-active" data-operacional-panel="passos-jornada">
 
             <div class="tabs profile-tabs">
-                <button class="tab-btn active" data-fase-target="fase1">Fase 1</button>
-                <button class="tab-btn" data-fase-target="fase2">Fase 2</button>
-                <button class="tab-btn" data-fase-target="fase3">Fase 3</button>
-                <button class="tab-btn" data-fase-target="fase4">Fase 4</button>
-                <button class="tab-btn" data-fase-target="fase5">Fase 5</button>
-                <button class="tab-btn" data-fase-target="fase61">Fase 6.1</button>
-                <button class="tab-btn" data-fase-target="fase62">Fase 6.2</button>
-                <button class="tab-btn" data-fase-target="fase7">Fase 7</button>
+                <button class="tab-btn active" data-fase-target="fase3">RTA</button>
+                <button class="tab-btn" data-fase-target="fase4">Laudo</button>
+                <button class="tab-btn" data-fase-target="fase61">Negociações</button>
             </div>
 
-            <div id="fase1" class="tab-content active fase-pane">
-                <div class="mini-label">Fase 1 - Aviso de Vencimento</div>
-
-                <div class="filters-container">
+            <div id="fase3" class="tab-content active fase-pane">
+                <div class="mini-label">RTA - Relatório Técnico Administrativo</div>
+                <div class="etapa-form-card">
                     <div class="filter-group">
-                        <input type="text" id="fase1ProcurarFiltro" class="filter-search" placeholder="Procurar">
-                    </div>
-                    <div class="filter-actions">
-                        <button id="fase1LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase1BuscarBtn" class="btn-primary">Aplicar filtros</button>
-                    </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Data da Notificação</th>
-                                <th>Contratos na Lista A</th>
-                                <th>Contratos na Lista B</th>
-                                <th>Contratos na Lista C</th>
-                                <th>Contratos na Lista D</th>
-                                <th>Total</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase1TabelaBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="fase2" class="tab-content fase-pane">
-                <div class="mini-label">Fase 2 - Decisão de Prorrogação (Demandante)</div>
-
-                <div class="filters-container">
-                    <div class="filter-group">
-                        <input type="date" id="fase2FimVigenciaFiltro" class="filter-date" placeholder="Fim da Vigência">
-                        <select id="fase2UfFiltro" class="filter-select">
-                            <option value="">Todas as UFs</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="DF">DF</option>
-                            <option value="BA">BA</option>
-                            <option value="CE">CE</option>
-                            <option value="MG">MG</option>
-                            <option value="AM">AM</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="GO">GO</option>
+                        <input type="text" id="rtaContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
+                        <div id="rtaContratoAtalhos" class="contrato-picker-shortcuts"></div>
+                        <div id="rtaContratoLoading" class="contrato-picker-loading" role="status" aria-live="polite" hidden>Buscando contratos...</div>
+                        <div id="rtaContratoResultados" class="contrato-picker-results" hidden></div>
+                        <button id="rtaContratoCarregarMaisBtn" class="btn-clear contrato-picker-more" type="button" hidden>Carregar mais resultados</button>
+                        <select id="rtaContratoSelect" class="filter-select contrato-picker-hidden-select" aria-hidden="true" tabindex="-1">
+                            <option value="">Selecione um imóvel/contrato da base (200 contratos)</option>
                         </select>
                     </div>
+                    <div id="rtaContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para registrar os dados do RTA.</div>
+
+                    <div class="etapa-form-grid">
+                        <label class="etapa-field">
+                            <span>Área a ser contratada (m²)</span>
+                            <input type="number" id="rtaAreaContratada" class="filter-input" min="0" step="0.01" placeholder="Ex.: 620.50">
+                        </label>
+                    </div>
+
+                    <div id="rtaBenfeitoriasSection" class="etapa-form-subsection" hidden>
+                        <div class="mini-label">Detalhamento de benfeitorias não-recuperáveis (área acima de 550m²)</div>
+                        <div class="etapa-form-grid">
+                            <label class="etapa-field">
+                                <span>Valor das benfeitorias não-recuperáveis (R$)</span>
+                                <input type="number" id="rtaBenfeitoriasValor" class="filter-input" min="0" step="0.01" placeholder="Ex.: 200000">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Possui valor venal do imóvel?</span>
+                                <select id="rtaPossuiValorVenal" class="filter-select">
+                                    <option value="">Selecione</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </label>
+                            <label class="etapa-field">
+                                <span>Valor venal do imóvel (R$)</span>
+                                <input type="number" id="rtaValorVenalImovel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 800000">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Parecer CAIXA - número</span>
+                                <input type="text" id="rtaParecerNumero" class="filter-input" placeholder="Número do parecer">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Parecer CAIXA - data</span>
+                                <input type="date" id="rtaParecerData" class="filter-date">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Percentual benfeitorias x valor venal (%)</span>
+                                <input type="number" id="rtaPercentualBenfeitorias" class="filter-input" min="0" step="0.01" readonly>
+                            </label>
+                            <label class="etapa-field etapa-field-full">
+                                <span>Manifestação do negócio</span>
+                                <textarea id="rtaManifestacaoNegocio" class="filter-search" rows="3" placeholder="Descreva a manifestação da área de negócio"></textarea>
+                            </label>
+                            <label class="etapa-field etapa-field-full">
+                                <span>Manifestação da infraestrutura</span>
+                                <textarea id="rtaManifestacaoInfra" class="filter-search" rows="3" placeholder="Descreva a manifestação da infraestrutura"></textarea>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="etapa-form-grid">
+                        <label class="etapa-field etapa-field-full">
+                            <span>Upload do Relatório Técnico Administrativo (RTA)</span>
+                            <input type="file" id="rtaUploadRelatorio" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                            <small id="rtaUploadRelatorioInfo" class="mini-label etapa-upload-info"></small>
+                        </label>
+                        <label class="etapa-field etapa-field-full">
+                            <span>Upload do parecer da Arquitetura/Engenharia CAIXA</span>
+                            <input type="file" id="rtaUploadParecer" class="filter-input" accept=".pdf,.doc,.docx">
+                            <small id="rtaUploadParecerInfo" class="mini-label etapa-upload-info"></small>
+                        </label>
+                    </div>
+
                     <div class="filter-actions">
-                        <button id="fase2LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase2BuscarBtn" class="btn-primary">Aplicar filtros</button>
+                        <button id="rtaSalvarBtn" class="btn-primary" type="button">Salvar RTA</button>
                     </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Contrato (SAP)</th>
-                                <th>Vigência (SAP)</th>
-                                <th>Contrato (SICLG)</th>
-                                <th>Vigência (SICLG)</th>
-                                <th>Fornecedor</th>
-                                <th>Descrição</th>
-                                <th>Limite AR G.O.</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase2TabelaBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="fase3" class="tab-content fase-pane">
-                <div class="mini-label">Fase 3 - Laudo de Avaliação (Demandante)</div>
-
-                <div class="filters-container">
-                    <div class="filter-group">
-                        <input type="date" id="fase3FimVigenciaFiltro" class="filter-date" placeholder="Fim da Vigência">
-                        <select id="fase3UfFiltro" class="filter-select">
-                            <option value="">Todas as UFs</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="DF">DF</option>
-                            <option value="BA">BA</option>
-                            <option value="CE">CE</option>
-                            <option value="MG">MG</option>
-                            <option value="AM">AM</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="GO">GO</option>
-                        </select>
-                    </div>
-                    <div class="filter-actions">
-                        <button id="fase3LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase3BuscarBtn" class="btn-primary">Aplicar filtros</button>
-                    </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Contrato (SAP - SICLG)</th>
-                                <th>Fornecedor</th>
-                                <th>Descrição Contrato</th>
-                                <th>Início Vigência</th>
-                                <th>Fim Vigência</th>
-                                <th>Situação Laudo</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase3TabelaBody"></tbody>
-                    </table>
                 </div>
             </div>
             <div id="fase4" class="tab-content fase-pane">
-                <div class="mini-label">Fase 4 - Negociação (Demandante)</div>
-
-                <div class="filters-container">
+                <div class="mini-label">Laudo - Laudo de Avaliação do Imóvel</div>
+                <div class="etapa-form-card">
                     <div class="filter-group">
-                        <input type="date" id="fase4FimVigenciaFiltro" class="filter-date" placeholder="Fim da Vigência">
-                        <select id="fase4UfFiltro" class="filter-select">
-                            <option value="">Todas as UFs</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="DF">DF</option>
-                            <option value="BA">BA</option>
-                            <option value="CE">CE</option>
-                            <option value="MG">MG</option>
-                            <option value="AM">AM</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="GO">GO</option>
+                        <input type="text" id="laudoContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
+                        <div id="laudoContratoAtalhos" class="contrato-picker-shortcuts"></div>
+                        <div id="laudoContratoLoading" class="contrato-picker-loading" role="status" aria-live="polite" hidden>Buscando contratos...</div>
+                        <div id="laudoContratoResultados" class="contrato-picker-results" hidden></div>
+                        <button id="laudoContratoCarregarMaisBtn" class="btn-clear contrato-picker-more" type="button" hidden>Carregar mais resultados</button>
+                        <select id="laudoContratoSelect" class="filter-select contrato-picker-hidden-select" aria-hidden="true" tabindex="-1">
+                            <option value="">Selecione um imóvel/contrato da base (200 contratos)</option>
                         </select>
                     </div>
+                    <div id="laudoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para registrar os dados do laudo.</div>
+
+                    <div class="etapa-form-grid">
+                        <label class="etapa-field etapa-field-full">
+                            <span>Upload do laudo do imóvel</span>
+                            <input type="file" id="laudoUploadArquivo" class="filter-input" accept=".pdf,.doc,.docx,.xlsx,.xls">
+                            <small id="laudoUploadInfo" class="mini-label etapa-upload-info"></small>
+                        </label>
+                    </div>
+
+                    <div id="laudoDadosSection" class="etapa-form-subsection" hidden>
+                        <div class="mini-label">Informações do laudo</div>
+                        <div class="etapa-form-grid">
+                            <label class="etapa-field">
+                                <span>Data de elaboração</span>
+                                <input type="date" id="laudoDataElaboracao" class="filter-date">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Número do documento</span>
+                                <input type="text" id="laudoNumeroDocumento" class="filter-input" placeholder="Ex.: LAUDO-2026-001">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Empresa responsável</span>
+                                <input type="text" id="laudoEmpresaNome" class="filter-input" placeholder="Nome da empresa">
+                            </label>
+                            <label class="etapa-field">
+                                <span>CNPJ da empresa</span>
+                                <input type="text" id="laudoEmpresaCnpj" class="filter-input" placeholder="Somente números" maxlength="18">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Valor mínimo de locação/mês (R$)</span>
+                                <input type="number" id="laudoValorMinimo" class="filter-input" min="0" step="0.01">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Valor médio de locação/mês (R$)</span>
+                                <input type="number" id="laudoValorMedio" class="filter-input" min="0" step="0.01">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Valor máximo de locação/mês (R$)</span>
+                                <input type="number" id="laudoValorMaximo" class="filter-input" min="0" step="0.01">
+                            </label>
+                            <label class="etapa-field">
+                                <span>Laudo assinado?</span>
+                                <select id="laudoAssinado" class="filter-select">
+                                    <option value="">Selecione</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="filter-actions">
-                        <button id="fase4LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase4BuscarBtn" class="btn-primary">Aplicar filtros</button>
+                        <button id="laudoSalvarBtn" class="btn-primary" type="button">Salvar Laudo</button>
                     </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Contrato (SAP - SICLG)</th>
-                                <th>Fornecedor</th>
-                                <th>Descrição Contrato (SAP)</th>
-                                <th>Início Vigência</th>
-                                <th>Fim Vigência</th>
-                                <th>Valor Máximo</th>
-                                <th>Incluir no SICLG?</th>
-                                <th>Limite AR (6 meses) G.O.</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase4TabelaBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="fase5" class="tab-content fase-pane">
-                <div class="mini-label">Fase 5 - Demandar SUCOT (Demandante)</div>
-
-                <div class="filters-container">
-                    <div class="filter-group">
-                        <input type="date" id="fase5FimVigenciaFiltro" class="filter-date" placeholder="Fim da Vigência">
-                        <select id="fase5UfFiltro" class="filter-select">
-                            <option value="">Todas as UFs</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="DF">DF</option>
-                            <option value="BA">BA</option>
-                            <option value="CE">CE</option>
-                            <option value="MG">MG</option>
-                            <option value="AM">AM</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="GO">GO</option>
-                        </select>
-                        <select id="fase5DecisaoFiltro" class="filter-select">
-                            <option value="">Todas as decisões</option>
-                            <option value="Prorrogar">Prorrogar</option>
-                            <option value="Encerrar">Encerrar</option>
-                            <option value="Reavaliar">Reavaliar</option>
-                        </select>
-                    </div>
-                    <div class="filter-actions">
-                        <button id="fase5LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase5BuscarBtn" class="btn-primary">Aplicar filtros</button>
-                    </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Contrato (SAP - SICLG)</th>
-                                <th>Fornecedor</th>
-                                <th>Descrição Contrato (SAP)</th>
-                                <th>Início Vigência</th>
-                                <th>Fim Vigência</th>
-                                <th>Decisão Operacional</th>
-                                <th>Houve Acordo?</th>
-                                <th>Incluir no SICLG?</th>
-                                <th>Situação AR</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase5TabelaBody"></tbody>
-                    </table>
                 </div>
             </div>
             <div id="fase61" class="tab-content fase-pane">
-                <div class="mini-label">Fase 6.1 - Contratação</div>
-
-                <div class="phase-kpi-strip">
-                    <button class="badge badge-danger kpi-chip" id="fase61ChipCritico" data-fase="61" data-prazo-filter="Crítico" type="button">Crítico: <strong id="fase61CriticoCount">0</strong></button>
-                    <button class="badge badge-warning kpi-chip" id="fase61ChipAtencao" data-fase="61" data-prazo-filter="Atenção" type="button">Atenção: <strong id="fase61AtencaoCount">0</strong></button>
-                    <button class="badge badge-ok kpi-chip" id="fase61ChipNoPrazo" data-fase="61" data-prazo-filter="No prazo" type="button">No prazo: <strong id="fase61NoPrazoCount">0</strong></button>
-                </div>
-
-                <div class="filters-container">
+                <div class="mini-label">Negociações - Negociações com o locador</div>
+                <div class="etapa-form-card">
                     <div class="filter-group">
-                        <input type="date" id="fase61FimVigenciaFiltro" class="filter-date" placeholder="Fim da Vigência">
-                        <select id="fase61UfFiltro" class="filter-select">
-                            <option value="">Todas as UFs</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="DF">DF</option>
-                            <option value="BA">BA</option>
-                            <option value="CE">CE</option>
-                            <option value="MG">MG</option>
-                            <option value="AM">AM</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="GO">GO</option>
+                        <input type="text" id="negociacaoContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
+                        <div id="negociacaoContratoAtalhos" class="contrato-picker-shortcuts"></div>
+                        <div id="negociacaoContratoLoading" class="contrato-picker-loading" role="status" aria-live="polite" hidden>Buscando contratos...</div>
+                        <div id="negociacaoContratoResultados" class="contrato-picker-results" hidden></div>
+                        <button id="negociacaoContratoCarregarMaisBtn" class="btn-clear contrato-picker-more" type="button" hidden>Carregar mais resultados</button>
+                        <select id="negociacaoContratoSelect" class="filter-select contrato-picker-hidden-select" aria-hidden="true" tabindex="-1">
+                            <option value="">Selecione um imóvel/contrato da base (200 contratos)</option>
                         </select>
-                        <input type="text" id="fase61DemandanteFiltro" class="filter-input" placeholder="Demandante">
-                        <input type="text" id="fase61EquipeFiltro" class="filter-input" placeholder="Equipe Remota">
-                        <input type="text" id="fase61ResponsavelFiltro" class="filter-input" placeholder="Responsável">
-                        <select id="fase61SituacaoFiltro" class="filter-select">
-                            <option value="">Situação Demanda (todas)</option>
-                            <option value="A iniciar">A iniciar</option>
-                            <option value="Em andamento">Em andamento</option>
-                            <option value="Concluída">Concluída</option>
-                        </select>
-                        <select id="fase61ModalidadeFiltro" class="filter-select">
-                            <option value="">Modalidade (todas)</option>
-                            <option value="Pregão">Pregão</option>
-                            <option value="Dispensa">Dispensa</option>
-                            <option value="Inexigibilidade">Inexigibilidade</option>
-                        </select>
-                        <input type="text" id="fase61ProtocoloFiltro" class="filter-input" placeholder="Protocolo SICLG">
-                        <input type="text" id="fase61ObjetoFiltro" class="filter-input" placeholder="Objeto">
-                        <input type="date" id="fase61IncluidoDeFiltro" class="filter-date" placeholder="Incluído de">
-                        <input type="date" id="fase61IncluidoAteFiltro" class="filter-date" placeholder="Incluído até">
-                        <input type="date" id="fase61ConcluidoDeFiltro" class="filter-date" placeholder="Concluído de">
-                        <input type="date" id="fase61ConcluidoAteFiltro" class="filter-date" placeholder="Concluído até">
                     </div>
+                    <div id="negociacaoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para registrar as negociações.</div>
+
+                    <div class="etapa-form-grid">
+                        <label class="etapa-field">
+                            <span>Vigência do contrato a firmar (meses)</span>
+                            <input type="number" id="negociacaoVigenciaMeses" class="filter-input" min="1" step="1" placeholder="Ex.: 60">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Existe carência?</span>
+                            <select id="negociacaoTemCarencia" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoCarenciaDiasWrap" class="etapa-field" hidden>
+                            <span>Quantidade de dias de carência</span>
+                            <input type="number" id="negociacaoCarenciaDias" class="filter-input" min="1" step="1" placeholder="Ex.: 30">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Índice de reajuste pactuado</span>
+                            <input type="text" id="negociacaoIndiceReajuste" class="filter-input" placeholder="Ex.: IPCA, IGP-M, etc.">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Modalidade da contratação</span>
+                            <select id="negociacaoModalidade" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="contrato_simplificado">Contrato simplificado</option>
+                                <option value="condicoes_suspensivas">Contrato com condições suspensivas</option>
+                                <option value="minuta_locador">Minuta disponibilizada pelo locador</option>
+                            </select>
+                        </label>
+                        <label class="etapa-field">
+                            <span>Há cláusulas fora do modelo padrão CAIXA?</span>
+                            <select id="negociacaoTemClausulaExtra" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoClausulaExtraWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Transcrição da cláusula necessária</span>
+                            <textarea id="negociacaoClausulaExtraTexto" class="filter-search" rows="4" placeholder="Transcreva a cláusula a ser incluída no contrato"></textarea>
+                        </label>
+                        <label class="etapa-field etapa-field-full">
+                            <span>Upload dos anexos de responsabilidades acordados</span>
+                            <input type="file" id="negociacaoUploadAnexos" class="filter-input" multiple>
+                            <small id="negociacaoUploadAnexosInfo" class="mini-label etapa-upload-info"></small>
+                        </label>
+                        <label class="etapa-field etapa-field-full">
+                            <span>Upload da minuta contratual negociada</span>
+                            <input type="file" id="negociacaoUploadMinuta" class="filter-input" accept=".pdf,.doc,.docx">
+                            <small id="negociacaoUploadMinutaInfo" class="mini-label etapa-upload-info"></small>
+                        </label>
+                    </div>
+
                     <div class="filter-actions">
-                        <button id="fase61LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase61BuscarBtn" class="btn-primary">Aplicar filtros</button>
+                        <button id="negociacaoSalvarBtn" class="btn-primary" type="button">Salvar Negociações</button>
                     </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Favorito</th>
-                                <th>Contrato (SAP - SICLG)</th>
-                                <th>Fornecedor</th>
-                                <th>Objeto</th>
-                                <th>Tipo de Processo</th>
-                                <th>Status Contratação</th>
-                                <th>Valor Referência</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase61TabelaBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="fase62" class="tab-content fase-pane">
-                <div class="mini-label">Fase 6.2 - Renovação</div>
-
-                <div class="phase-kpi-strip">
-                    <button class="badge badge-danger kpi-chip" id="fase62ChipCritico" data-fase="62" data-prazo-filter="Crítico" type="button">Crítico: <strong id="fase62CriticoCount">0</strong></button>
-                    <button class="badge badge-warning kpi-chip" id="fase62ChipAtencao" data-fase="62" data-prazo-filter="Atenção" type="button">Atenção: <strong id="fase62AtencaoCount">0</strong></button>
-                    <button class="badge badge-ok kpi-chip" id="fase62ChipNoPrazo" data-fase="62" data-prazo-filter="No prazo" type="button">No prazo: <strong id="fase62NoPrazoCount">0</strong></button>
-                </div>
-
-                <div class="filters-container">
-                    <div class="filter-group">
-                        <input type="date" id="fase62FimVigenciaFiltro" class="filter-date" placeholder="Fim da Vigência">
-                        <select id="fase62UfFiltro" class="filter-select">
-                            <option value="">Todas as UFs</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="DF">DF</option>
-                            <option value="BA">BA</option>
-                            <option value="CE">CE</option>
-                            <option value="MG">MG</option>
-                            <option value="AM">AM</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="GO">GO</option>
-                        </select>
-                        <input type="text" id="fase62GestorFiltro" class="filter-input" placeholder="Gestor Operacional">
-                        <input type="text" id="fase62FornecedorFiltro" class="filter-input" placeholder="Fornecedor">
-                        <input type="text" id="fase62ProtocoloFiltro" class="filter-input" placeholder="Protocolo SICLG">
-                        <select id="fase62SituacaoFiltro" class="filter-select">
-                            <option value="">Situação (todas)</option>
-                            <option value="Renovável">Renovável</option>
-                            <option value="Avaliar renovação">Avaliar renovação</option>
-                        </select>
-                        <select id="fase62TipoDemandaFiltro" class="filter-select">
-                            <option value="">Tipo de Demanda (todas)</option>
-                            <option value="Prorrogação">Prorrogação</option>
-                            <option value="Renovação">Renovação</option>
-                        </select>
-                        <input type="text" id="fase62ObjetoFiltro" class="filter-input" placeholder="Objeto">
-                        <input type="date" id="fase62IncluidoDeFiltro" class="filter-date" placeholder="Incluído de">
-                        <input type="date" id="fase62IncluidoAteFiltro" class="filter-date" placeholder="Incluído até">
-                        <input type="date" id="fase62ConcluidoDeFiltro" class="filter-date" placeholder="Concluído de">
-                        <input type="date" id="fase62ConcluidoAteFiltro" class="filter-date" placeholder="Concluído até">
-                    </div>
-                    <div class="filter-actions">
-                        <button id="fase62LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase62BuscarBtn" class="btn-primary">Aplicar filtros</button>
-                    </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Favorito</th>
-                                <th>Contrato (SAP - SICLG)</th>
-                                <th>Fornecedor</th>
-                                <th>Objeto</th>
-                                <th>Status Renovação</th>
-                                <th>Qtd. Aditivos</th>
-                                <th>Prazo Limite</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase62TabelaBody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="fase7" class="tab-content fase-pane">
-                <div class="mini-label">Fase 7 - Aguardar Notificação (Demandante)</div>
-
-                <div class="filters-container">
-                    <div class="filter-group">
-                        <input type="date" id="fase7FimVigenciaFiltro" class="filter-date" placeholder="Fim da Vigência">
-                        <select id="fase7UfFiltro" class="filter-select">
-                            <option value="">Todas as UFs</option>
-                            <option value="SP">SP</option>
-                            <option value="RJ">RJ</option>
-                            <option value="DF">DF</option>
-                            <option value="BA">BA</option>
-                            <option value="CE">CE</option>
-                            <option value="MG">MG</option>
-                            <option value="AM">AM</option>
-                            <option value="PR">PR</option>
-                            <option value="PE">PE</option>
-                            <option value="GO">GO</option>
-                        </select>
-                    </div>
-                    <div class="filter-actions">
-                        <button id="fase7LimparBtn" class="btn-clear">Limpar</button>
-                        <button id="fase7BuscarBtn" class="btn-primary">Aplicar filtros</button>
-                    </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="imoveis-table">
-                        <thead>
-                            <tr>
-                                <th>Contrato (SAP - SICLG)</th>
-                                <th>Fornecedor</th>
-                                <th>Objeto</th>
-                                <th>Data da Notificação</th>
-                                <th>Canal</th>
-                                <th>Status da Resposta</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fase7TabelaBody"></tbody>
-                    </table>
                 </div>
             </div>
             </section>
@@ -861,7 +686,7 @@
             <section class="formal-panel-view" data-formal-panel="aviso-vencimento" hidden>
             <div class="mini-label" style="margin-bottom: 10px;">Painel de Aviso de Vencimento para priorização operacional por janelas de vencimento, com sinalização de contratos em prazo indeterminado.</div>
 
-            <div class="aviso-kpi-grid">
+            <div class="aviso-kpi-grid aviso-kpi-grid-principal">
                 <article class="aviso-kpi-card aviso-kpi-total">
                     <span class="aviso-kpi-label">Registros no aviso</span>
                     <strong id="avisoKpiTotal">0</strong>
@@ -879,9 +704,13 @@
                     <span class="aviso-kpi-label">Vencidos em prazo indeterminado</span>
                     <strong id="avisoKpiVencidos">0</strong>
                 </article>
-                <article id="avisoKpiRiscoAr87Card" class="aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses sem decisão)">
-                    <span class="aviso-kpi-label">Risco AR 8-7 meses sem decisão</span>
-                    <strong id="avisoKpiRiscoAr87">0</strong>
+            </div>
+
+            <div class="aviso-kpi-grid aviso-kpi-grid-risco">
+                <article id="avisoKpiRiscoAr87Card" class="aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses)">
+                    <span class="aviso-kpi-label">Risco AR 8-7 meses</span>
+                    <strong id="avisoKpiRiscoAr87" class="aviso-kpi-total-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="avisoKpiRiscoAr87Detalhe">0</strong>
+                    <div id="avisoKpiRiscoAr87Detalhe" class="aviso-kpi-composicao" hidden></div>
                 </article>
             </div>
 
@@ -891,15 +720,15 @@
                     <strong id="avisoFaixa1412">0</strong>
                     <small>Definir prorrogação, estratégia de AR e confirmar laudo (somente locação).</small>
                 </article>
-                <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_6" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Janela legal AR (12-6 meses)</span>
+                <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_7" role="button" tabindex="0" aria-pressed="false">
+                    <span class="aviso-faixa-label">Janela AR (12 - 7 meses)</span>
                     <strong id="avisoFaixa126">0</strong>
-                    <small>Prazo válido para decidir e protocolar ação renovatória.</small>
+                    <small>Prazo prudente para decidir ingresso na ação renovatória.</small>
                 </article>
                 <article class="aviso-faixa-card aviso-faixa-critica" data-aviso-faixa-filter="faixa_menor_6" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Abaixo de 6 meses</span>
+                    <span class="aviso-faixa-label">Abaixo de 7 meses</span>
                     <strong id="avisoFaixaMenor6">0</strong>
-                    <small>Prazo decadencial da ação renovatória encerrado.</small>
+                    <small>Faixa de risco operacional; abaixo de 6 meses, há encerramento do prazo decadencial.</small>
                 </article>
             </div>
 
@@ -1031,15 +860,6 @@
             </section>
         </section>
     </main>
-
-    <div id="avisoContextDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-    <aside id="avisoContextDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-label="Contexto do aviso de vencimento">
-        <div class="details-drawer-header">
-            <h3 id="avisoContextDrawerTitle">Contexto do aviso</h3>
-            <button id="avisoContextDrawerClose" class="details-drawer-close" type="button" aria-label="Fechar contexto">×</button>
-        </div>
-        <div id="avisoContextDrawerContent" class="details-drawer-content"></div>
-    </aside>
 
     <!-- Modal de Detalhes -->
     <div id="modalDetalhes" class="modal">
@@ -1973,14 +1793,14 @@
     <div id="modalConfirmacaoReset" class="modal" aria-hidden="true">
         <div class="modal-content confirm-modal-content">
             <div class="modal-header">
-                <h2>Confirmar reset da jornada</h2>
+                <h2>Reset do painel de Aviso de Vencimento</h2>
                 <button id="fecharConfirmacaoResetBtn" class="modal-close" type="button" aria-label="Fechar">×</button>
             </div>
             <div class="modal-body">
-                <p>Esta ação limpa filtros e seleções salvas da jornada operacional nesta sessão.</p>
+                <p>Esta ação limpa todas as decisões e protocolos já registrados no painel de Aviso de Vencimento e restaura os 100 contratos para um novo ciclo de testes.</p>
                 <div class="confirm-modal-actions">
                     <button id="cancelarConfirmacaoResetBtn" class="btn-clear" type="button">Cancelar</button>
-                    <button id="confirmarResetSessaoBtn" class="btn-primary" type="button">Confirmar reset</button>
+                    <button id="confirmarResetSessaoBtn" class="btn-primary" type="button">Confirmar reset do painel</button>
                 </div>
             </div>
         </div>
