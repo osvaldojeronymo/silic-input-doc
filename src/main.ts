@@ -2289,6 +2289,7 @@ export class SistemaSILIC {
     this.painelAvisoVencimento = this.montarPainelAvisoVencimento(this.painelVencimentos);
     this.aplicarEstadoPersistidoPainelAviso();
     this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
+    this.atualizarOpcoesDinamicasFiltrosPainelAviso();
   }
 
   private montarReadModelPainelVencimentos(imovel: Imovel): PainelVencimentosContrato {
@@ -2423,6 +2424,7 @@ export class SistemaSILIC {
     this.painelAvisoVencimento = this.montarPainelAvisoVencimento(painelVencimentosSap);
     this.aplicarEstadoPersistidoPainelAviso();
     this.painelAvisoVencimentoFiltrado = [...this.painelAvisoVencimento];
+    this.atualizarOpcoesDinamicasFiltrosPainelAviso();
     this.currentPagePainelFormal = 1;
     this.currentPagePainelAviso = 1;
     this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
@@ -4001,7 +4003,147 @@ export class SistemaSILIC {
     this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
   }
 
+  private atualizarOpcoesSelectDinamicoAviso(
+    selectId: string,
+    placeholderLabel: string,
+    valores: string[],
+    opcoes?: {
+      ordem?: string[];
+      labels?: Record<string, string>;
+    }
+  ): void {
+    const select = document.getElementById(selectId) as HTMLSelectElement | null;
+    if (!select) return;
+
+    const valorSelecionado = select.value;
+    const valoresUnicos = Array.from(new Set(
+      valores
+        .map((valor) => (valor || '').trim())
+        .filter((valor) => valor.length > 0)
+    ));
+
+    const ordem = opcoes?.ordem || [];
+    const labels = opcoes?.labels || {};
+    const valoresOrdenados = [...valoresUnicos].sort((a, b) => {
+      const indiceA = ordem.indexOf(a);
+      const indiceB = ordem.indexOf(b);
+      const aOrdenado = indiceA >= 0;
+      const bOrdenado = indiceB >= 0;
+
+      if (aOrdenado && bOrdenado) return indiceA - indiceB;
+      if (aOrdenado) return -1;
+      if (bOrdenado) return 1;
+      return a.localeCompare(b, 'pt-BR');
+    });
+
+    select.innerHTML = '';
+
+    const optionTodas = document.createElement('option');
+    optionTodas.value = '';
+    optionTodas.textContent = placeholderLabel;
+    select.appendChild(optionTodas);
+
+    valoresOrdenados.forEach((valor) => {
+      const option = document.createElement('option');
+      option.value = valor;
+      option.textContent = labels[valor] || valor;
+      select.appendChild(option);
+    });
+
+    if (valorSelecionado && valoresOrdenados.includes(valorSelecionado)) {
+      select.value = valorSelecionado;
+      return;
+    }
+
+    select.value = '';
+  }
+
+  private atualizarOpcoesDinamicasFiltrosPainelAviso(): void {
+    const rows = this.painelAvisoVencimento;
+
+    this.atualizarOpcoesSelectDinamicoAviso(
+      'avisoSituacaoSiclgFiltro',
+      'Situação do instrumento (SICLG): todas',
+      rows.map((item) => item.situacaoSiclg)
+    );
+
+    this.atualizarOpcoesSelectDinamicoAviso(
+      'avisoDecisaoFiltro',
+      'Decisão de prorrogar: todas',
+      rows.map((item) => item.decisaoProrrogar),
+      {
+        ordem: ['a_decidir', 'prorrogar', 'nao_prorrogar'],
+        labels: {
+          a_decidir: 'A decidir',
+          prorrogar: 'Prorrogar',
+          nao_prorrogar: 'Não prorrogar'
+        }
+      }
+    );
+
+    this.atualizarOpcoesSelectDinamicoAviso(
+      'avisoDecisaoArFiltro',
+      'Ação renovatória: todas',
+      rows.map((item) => item.decisaoAcaoRenovatoria),
+      {
+        ordem: ['a_decidir', 'ingressar', 'nao_ingressar'],
+        labels: {
+          a_decidir: 'A decidir',
+          ingressar: 'Ingressar',
+          nao_ingressar: 'Não ingressar'
+        }
+      }
+    );
+
+    this.atualizarOpcoesSelectDinamicoAviso(
+      'avisoFaseFiltro',
+      'Fase do tratamento: todas',
+      rows.map((item) => item.fase),
+      {
+        ordem: ['Monitoramento', 'Negociação', 'Notificação', 'Aditivo', 'Encerramento']
+      }
+    );
+
+    this.atualizarOpcoesSelectDinamicoAviso(
+      'avisoDemandaFiltro',
+      'Tipo de demanda (SICLG): todas',
+      rows.map((item) => item.demandaSiclg),
+      {
+        ordem: ['Ato Formal - Prorrogação', 'Aditivo', '-'],
+        labels: {
+          '-': 'Sem demanda registrada'
+        }
+      }
+    );
+
+    this.atualizarOpcoesSelectDinamicoAviso(
+      'avisoColegiadoFiltro',
+      'Instância colegiada: todas',
+      rows.map((item) => item.colegiado)
+    );
+
+    this.atualizarOpcoesSelectDinamicoAviso(
+      'avisoJanelaFiltro',
+      'Janela de vencimento: todas',
+      rows.map((item) => this.classificarJanelaAviso(item)),
+      {
+        ordem: ['1_ano', '6_meses', '3_meses', '2_meses', '1_mes', 'menor_1_mes', 'vencido'],
+        labels: {
+          '1_ano': '1 ano',
+          '6_meses': '6 meses',
+          '3_meses': '3 meses',
+          '2_meses': '2 meses',
+          '1_mes': '1 mês',
+          'menor_1_mes': 'Menor que 1 mês',
+          vencido: 'Vencido (prazo indeterminado)'
+        }
+      }
+    );
+  }
+
   private aplicarFiltrosPainelAvisoVencimento(): void {
+    this.atualizarOpcoesDinamicasFiltrosPainelAviso();
+
     const contratoSap = ((document.getElementById('avisoContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const contratoSiclg = ((document.getElementById('avisoContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const situacaoSiclg = (document.getElementById('avisoSituacaoSiclgFiltro') as HTMLSelectElement | null)?.value || '';
@@ -4621,7 +4763,7 @@ export class SistemaSILIC {
       const dadosInsuficientes = dados.filter((item) => this.possuiDadosVigenciaInsuficientes(item)).length;
       resumo.innerHTML = `
         <div class="aviso-regras-box">
-          <strong>Regras de negocio aplicadas neste prototipo</strong>
+          <strong>Regras de negocio aplicadas neste painel</strong>
           <ul>
             <li>Classificacao por janela de vencimento (D+ e D-): Vencido (D+), Menor que 1 mes (D-1 a D-29), 1 mes (D-30), 2 meses (D-31 a D-60), 3 meses (D-61 a D-90), 6 meses (D-91 a D-180) e 1 ano (acima de D-180).</li>
             <li>KPIs com fechamento: Registros no aviso = Com decisao de prorrogar + Janela de decisao + Vencidos em prazo indeterminado.</li>
