@@ -142,6 +142,10 @@ interface EstadoPainelAvisoPersistido {
 
 interface EtapaRtaRegistro {
   areaContratada?: number;
+  dataInicioSupressaoAcrescimo?: string;
+  quitacaoAreaDevolvida?: 'sim' | 'nao' | '';
+  temArAndamento?: 'sim' | 'nao' | '';
+  arDesistenciaCondicoes?: string;
   benfeitoriasValor?: number;
   possuiValorVenal?: 'sim' | 'nao' | '';
   valorVenalImovel?: number;
@@ -157,6 +161,7 @@ interface EtapaRtaRegistro {
 interface EtapaLaudoRegistro {
   uploadArquivos?: string[];
   dataElaboracao?: string;
+  dataValidade?: string;
   numeroDocumento?: string;
   empresaNome?: string;
   empresaCnpj?: string;
@@ -166,16 +171,49 @@ interface EtapaLaudoRegistro {
   assinado?: 'sim' | 'nao' | '';
 }
 
+type NegociacaoContextoTipo = 'com_contrato' | 'sem_contrato';
+
+interface NegociacaoLocadorContexto {
+  locadorId: string;
+  nome: string;
+  tipo: 'fisica' | 'juridica';
+  percentualBase: number;
+}
+
+interface NegociacaoLocadorPercentualEdit {
+  locadorId: string;
+  nome: string;
+  tipo: 'fisica' | 'juridica';
+  percentualBase: number;
+  percentualNegociado: number;
+}
+
 interface EtapaNegociacaoRegistro {
+  contextoContrato?: NegociacaoContextoTipo;
+  valorPropostoAluguel?: number;
   vigenciaMeses?: number;
+  dataInicioVigencia?: string;
+  alterouDataPagamento?: 'sim' | 'nao' | '';
+  novaDataPagamento?: string;
   temCarencia?: 'sim' | 'nao' | '';
   carenciaDias?: number;
   indiceReajuste?: string;
+  dataProximoReajuste?: string;
+  preverMultaRescisao?: 'sim' | 'nao' | '';
   modalidade?: 'contrato_simplificado' | 'condicoes_suspensivas' | 'minuta_locador' | '';
   temClausulaExtra?: 'sim' | 'nao' | '';
   clausulaExtraTexto?: string;
+  alteracaoTitularidade?: 'sim' | 'nao' | '';
+  alteracaoTitularidadeDetalhe?: string;
+  alteracoesPercentualLocadores?: string;
+  alteracaoDadosBancarios?: 'sim' | 'nao' | '';
+  alteracaoDadosBancariosDetalhe?: string;
+  alteracaoContratoSocial?: 'sim' | 'nao' | '';
+  alteracaoContratoSocialDetalhe?: string;
+  locadoresPercentuais?: NegociacaoLocadorPercentualEdit[];
   uploadAnexosArquivos?: string[];
   uploadMinutaArquivos?: string[];
+  uploadContratoSocialArquivos?: string[];
 }
 
 interface ContratoBuscaResultado {
@@ -5592,6 +5630,58 @@ export class SistemaSILIC {
     resumo.textContent = this.obterResumoContratoOperacional(select.value);
   }
 
+  private contratoSiclgValido(numeroContratoSiclg?: string): boolean {
+    const valor = (numeroContratoSiclg || '').trim();
+    if (!valor) return false;
+    const normalizado = valor.toLowerCase();
+    const invalidos = new Set(['-', '--', 'n/a', 'na', 'null', 'undefined', 'sem contrato', 'sem instrumento']);
+    return !invalidos.has(normalizado);
+  }
+
+  private obterContextoContratoNegociacao(contratoId: string): { tipo: NegociacaoContextoTipo; contratoSiclg: string; regraAplicada: string } {
+    const contrato = this.painelVencimentos.find((item) => item.contratoId === contratoId);
+    const imovel = this.imoveisOriginais.find((item) => item.id === contratoId);
+    const contratoSiclg = (contrato?.numeroContratoSiclg || imovel?.numeroInstrumento || '').trim();
+    const possuiContratoSiclg = this.contratoSiclgValido(contratoSiclg);
+
+    return {
+      tipo: possuiContratoSiclg ? 'com_contrato' : 'sem_contrato',
+      contratoSiclg: possuiContratoSiclg ? contratoSiclg : '-',
+      regraAplicada: possuiContratoSiclg
+        ? 'Regra: com contrato quando numeroContratoSiclg/numeroInstrumento possui valor valido.'
+        : 'Regra: sem contrato quando numeroContratoSiclg/numeroInstrumento esta vazio ou com marcador de ausencia.'
+    };
+  }
+
+  private obterLocadoresContratoNegociacao(contratoId: string): NegociacaoLocadorContexto[] {
+    const imovel = this.imoveisOriginais.find((item) => item.id === contratoId);
+    if (!imovel) return [];
+
+    const participacoes = imovel.locadoresParticipacao || [];
+    if (participacoes.length) {
+      return participacoes.map((participacao, index) => {
+        const locador = this.locadores.find((item) => item.id === participacao.locadorId);
+        const tipoFallback = imovel.tipoIdFiscal === 'CNPJ' ? 'juridica' : 'fisica';
+        return {
+          locadorId: participacao.locadorId || `locador-${index + 1}`,
+          nome: locador?.nome || `Locador ${index + 1}`,
+          tipo: locador?.tipo || tipoFallback,
+          percentualBase: Number.isFinite(participacao.percentual) ? participacao.percentual : 0
+        };
+      });
+    }
+
+    const locadorPrincipal = this.locadores.find((item) => item.id === imovel.locadorId);
+    if (!locadorPrincipal && !imovel.locadorId && !imovel.parceiroNegocios) return [];
+
+    return [{
+      locadorId: locadorPrincipal?.id || imovel.locadorId || `locador-principal-${imovel.id}`,
+      nome: locadorPrincipal?.nome || imovel.parceiroNegocios || 'Locador principal',
+      tipo: locadorPrincipal?.tipo || (imovel.tipoIdFiscal === 'CNPJ' ? 'juridica' : 'fisica'),
+      percentualBase: 100
+    }];
+  }
+
   private carregarMapaEtapa<T>(storageKey: string): Record<string, T> {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -5633,6 +5723,8 @@ export class SistemaSILIC {
   private configurarEtapaRtaOperacional(): void {
     const selectContrato = document.getElementById('rtaContratoSelect') as HTMLSelectElement | null;
     const areaInput = document.getElementById('rtaAreaContratada') as HTMLInputElement | null;
+    const temArAndamentoSelect = document.getElementById('rtaTemArAndamento') as HTMLSelectElement | null;
+    const arDesistenciaWrap = document.getElementById('rtaArDesistenciaWrap');
     const benfeitoriasInput = document.getElementById('rtaBenfeitoriasValor') as HTMLInputElement | null;
     const valorVenalInput = document.getElementById('rtaValorVenalImovel') as HTMLInputElement | null;
     const salvarBtn = document.getElementById('rtaSalvarBtn') as HTMLButtonElement | null;
@@ -5640,6 +5732,11 @@ export class SistemaSILIC {
     const uploadParecer = document.getElementById('rtaUploadParecer') as HTMLInputElement | null;
 
     if (!selectContrato || !areaInput || !salvarBtn) return;
+
+    const atualizarCondicoesAr = (): void => {
+      if (!temArAndamentoSelect || !arDesistenciaWrap) return;
+      arDesistenciaWrap.hidden = temArAndamentoSelect.value !== 'sim';
+    };
 
     const atualizarVisibilidadeBenfeitorias = (): void => {
       const section = document.getElementById('rtaBenfeitoriasSection');
@@ -5662,6 +5759,12 @@ export class SistemaSILIC {
 
     const preencherFormulario = (registro?: EtapaRtaRegistro): void => {
       areaInput.value = registro?.areaContratada !== undefined ? String(registro.areaContratada) : '';
+      (document.getElementById('rtaDataInicioSupressaoAcrescimo') as HTMLInputElement | null)!.value = registro?.dataInicioSupressaoAcrescimo || '';
+      (document.getElementById('rtaQuitacaoAreaDevolvida') as HTMLSelectElement | null)!.value = registro?.quitacaoAreaDevolvida || '';
+      if (temArAndamentoSelect) {
+        temArAndamentoSelect.value = registro?.temArAndamento || '';
+      }
+      (document.getElementById('rtaArDesistenciaCondicoes') as HTMLTextAreaElement | null)!.value = registro?.arDesistenciaCondicoes || '';
       (document.getElementById('rtaBenfeitoriasValor') as HTMLInputElement | null)!.value = registro?.benfeitoriasValor !== undefined ? String(registro.benfeitoriasValor) : '';
       (document.getElementById('rtaPossuiValorVenal') as HTMLSelectElement | null)!.value = registro?.possuiValorVenal || '';
       (document.getElementById('rtaValorVenalImovel') as HTMLInputElement | null)!.value = registro?.valorVenalImovel !== undefined ? String(registro.valorVenalImovel) : '';
@@ -5673,6 +5776,7 @@ export class SistemaSILIC {
       this.atualizarInfoUploadEtapa('rtaUploadRelatorioInfo', registro?.uploadRelatorioArquivos || []);
       this.atualizarInfoUploadEtapa('rtaUploadParecerInfo', registro?.uploadParecerArquivos || []);
       atualizarVisibilidadeBenfeitorias();
+      atualizarCondicoesAr();
       atualizarPercentual();
     };
 
@@ -5687,6 +5791,7 @@ export class SistemaSILIC {
     });
 
     areaInput.addEventListener('input', atualizarVisibilidadeBenfeitorias);
+    temArAndamentoSelect?.addEventListener('change', atualizarCondicoesAr);
     benfeitoriasInput?.addEventListener('input', atualizarPercentual);
     valorVenalInput?.addEventListener('input', atualizarPercentual);
 
@@ -5712,6 +5817,10 @@ export class SistemaSILIC {
 
       mapa[contratoId] = {
         areaContratada,
+        dataInicioSupressaoAcrescimo: (document.getElementById('rtaDataInicioSupressaoAcrescimo') as HTMLInputElement | null)?.value || '',
+        quitacaoAreaDevolvida: ((document.getElementById('rtaQuitacaoAreaDevolvida') as HTMLSelectElement | null)?.value || '') as 'sim' | 'nao' | '',
+        temArAndamento: ((document.getElementById('rtaTemArAndamento') as HTMLSelectElement | null)?.value || '') as 'sim' | 'nao' | '',
+        arDesistenciaCondicoes: (document.getElementById('rtaArDesistenciaCondicoes') as HTMLTextAreaElement | null)?.value.trim() || '',
         benfeitoriasValor: this.lerNumeroInput('rtaBenfeitoriasValor'),
         possuiValorVenal: ((document.getElementById('rtaPossuiValorVenal') as HTMLSelectElement | null)?.value || '') as 'sim' | 'nao' | '',
         valorVenalImovel: this.lerNumeroInput('rtaValorVenalImovel'),
@@ -5730,6 +5839,7 @@ export class SistemaSILIC {
     });
 
     this.atualizarResumoContratoEtapa('rtaContratoSelect', 'rtaContratoResumo');
+    atualizarCondicoesAr();
   }
 
   private configurarEtapaLaudoOperacional(): void {
@@ -5743,6 +5853,7 @@ export class SistemaSILIC {
 
     const preencherFormulario = (registro?: EtapaLaudoRegistro): void => {
       (document.getElementById('laudoDataElaboracao') as HTMLInputElement | null)!.value = registro?.dataElaboracao || '';
+      (document.getElementById('laudoDataValidade') as HTMLInputElement | null)!.value = registro?.dataValidade || '';
       (document.getElementById('laudoNumeroDocumento') as HTMLInputElement | null)!.value = registro?.numeroDocumento || '';
       (document.getElementById('laudoEmpresaNome') as HTMLInputElement | null)!.value = registro?.empresaNome || '';
       (document.getElementById('laudoEmpresaCnpj') as HTMLInputElement | null)!.value = registro?.empresaCnpj || '';
@@ -5796,9 +5907,17 @@ export class SistemaSILIC {
         return;
       }
 
+      const dataElaboracao = (document.getElementById('laudoDataElaboracao') as HTMLInputElement | null)?.value || '';
+      const dataValidade = (document.getElementById('laudoDataValidade') as HTMLInputElement | null)?.value || '';
+      if (dataElaboracao && dataValidade && dataValidade < dataElaboracao) {
+        this.showToast('A data de validade do laudo não pode ser anterior à data de elaboração.');
+        return;
+      }
+
       mapa[contratoId] = {
         uploadArquivos: uploadsPersistidos,
-        dataElaboracao: (document.getElementById('laudoDataElaboracao') as HTMLInputElement | null)?.value || '',
+        dataElaboracao,
+        dataValidade,
         numeroDocumento: (document.getElementById('laudoNumeroDocumento') as HTMLInputElement | null)?.value.trim() || '',
         empresaNome: (document.getElementById('laudoEmpresaNome') as HTMLInputElement | null)?.value.trim() || '',
         empresaCnpj: cnpj,
@@ -5818,32 +5937,264 @@ export class SistemaSILIC {
 
   private configurarEtapaNegociacoesOperacional(): void {
     const selectContrato = document.getElementById('negociacaoContratoSelect') as HTMLSelectElement | null;
+    const contextoInfo = document.getElementById('negociacaoContextoContrato');
+    const alterouDataPagamento = document.getElementById('negociacaoAlterouDataPagamento') as HTMLSelectElement | null;
+    const novaDataPagamentoWrap = document.getElementById('negociacaoNovaDataPagamentoWrap');
     const temCarencia = document.getElementById('negociacaoTemCarencia') as HTMLSelectElement | null;
     const carenciaWrap = document.getElementById('negociacaoCarenciaDiasWrap');
     const temClausula = document.getElementById('negociacaoTemClausulaExtra') as HTMLSelectElement | null;
     const clausulaWrap = document.getElementById('negociacaoClausulaExtraWrap');
+    const alteracaoTitularidade = document.getElementById('negociacaoAlteracaoTitularidade') as HTMLSelectElement | null;
+    const alteracaoTitularidadeDetalheWrap = document.getElementById('negociacaoAlteracaoTitularidadeDetalheWrap');
+    const alteracaoDadosBancarios = document.getElementById('negociacaoAlteracaoDadosBancarios') as HTMLSelectElement | null;
+    const alteracaoDadosBancariosDetalheWrap = document.getElementById('negociacaoAlteracaoDadosBancariosDetalheWrap');
+    const alteracaoContratoSocial = document.getElementById('negociacaoAlteracaoContratoSocial') as HTMLSelectElement | null;
+    const alteracaoContratoSocialDetalheWrap = document.getElementById('negociacaoAlteracaoContratoSocialDetalheWrap');
+    const locadoresSection = document.getElementById('negociacaoLocadoresSection');
+    const locadoresLista = document.getElementById('negociacaoLocadoresLista');
+    const locadoresInfo = document.getElementById('negociacaoLocadoresInfo');
+    const uploadContratoSocialWrap = document.getElementById('negociacaoUploadContratoSocialWrap');
+    const uploadContratoSocialLabel = document.getElementById('negociacaoUploadContratoSocialLabel');
+    const uploadContratoSocial = document.getElementById('negociacaoUploadContratoSocial') as HTMLInputElement | null;
     const salvarBtn = document.getElementById('negociacaoSalvarBtn') as HTMLButtonElement | null;
     const uploadAnexos = document.getElementById('negociacaoUploadAnexos') as HTMLInputElement | null;
     const uploadMinuta = document.getElementById('negociacaoUploadMinuta') as HTMLInputElement | null;
 
-    if (!selectContrato || !temCarencia || !carenciaWrap || !temClausula || !clausulaWrap || !salvarBtn) return;
+    if (!selectContrato || !alterouDataPagamento || !novaDataPagamentoWrap || !temCarencia || !carenciaWrap || !temClausula || !clausulaWrap || !alteracaoTitularidade || !alteracaoTitularidadeDetalheWrap || !alteracaoDadosBancarios || !alteracaoDadosBancariosDetalheWrap || !alteracaoContratoSocial || !alteracaoContratoSocialDetalheWrap || !salvarBtn) return;
+
+    let contextoAtual = this.obterContextoContratoNegociacao('');
+    let locadoresAtuais: NegociacaoLocadorContexto[] = [];
+
+    const possuiLocadorJuridico = (): boolean => locadoresAtuais.some((locador) => locador.tipo === 'juridica');
 
     const atualizarCondicoes = (): void => {
+      novaDataPagamentoWrap.hidden = alterouDataPagamento.value !== 'sim';
       carenciaWrap.hidden = temCarencia.value !== 'sim';
       clausulaWrap.hidden = temClausula.value !== 'sim';
+      alteracaoTitularidadeDetalheWrap.hidden = alteracaoTitularidade.value !== 'sim';
+      alteracaoDadosBancariosDetalheWrap.hidden = alteracaoDadosBancarios.value !== 'sim';
+      alteracaoContratoSocialDetalheWrap.hidden = alteracaoContratoSocial.value !== 'sim';
+    };
+
+    const atualizarObrigatoriedadesDinamicas = (): void => {
+      const negociacaoInicial = contextoAtual.tipo === 'sem_contrato';
+
+      const valorProposto = document.getElementById('negociacaoValorPropostoAluguel') as HTMLInputElement | null;
+      const vigenciaMeses = document.getElementById('negociacaoVigenciaMeses') as HTMLInputElement | null;
+      const dataInicio = document.getElementById('negociacaoDataInicioVigencia') as HTMLInputElement | null;
+      const modalidade = document.getElementById('negociacaoModalidade') as HTMLSelectElement | null;
+      if (valorProposto) valorProposto.required = negociacaoInicial;
+      if (vigenciaMeses) vigenciaMeses.required = negociacaoInicial;
+      if (dataInicio) dataInicio.required = negociacaoInicial;
+      if (modalidade) modalidade.required = negociacaoInicial;
+
+      const exigirUploadContratoSocial = (negociacaoInicial && possuiLocadorJuridico()) || alteracaoContratoSocial.value === 'sim';
+      const mostrarUploadContratoSocial = possuiLocadorJuridico() || alteracaoContratoSocial.value === 'sim';
+      if (uploadContratoSocialWrap) uploadContratoSocialWrap.hidden = !mostrarUploadContratoSocial;
+      if (uploadContratoSocial) uploadContratoSocial.required = exigirUploadContratoSocial;
+
+      if (uploadContratoSocialLabel) {
+        if (negociacaoInicial && possuiLocadorJuridico()) {
+          uploadContratoSocialLabel.textContent = 'Upload do contrato social do(s) locador(es) PJ (obrigatório na negociação inicial)';
+        } else if (alteracaoContratoSocial.value === 'sim') {
+          uploadContratoSocialLabel.textContent = 'Upload do contrato social atualizado do locador';
+        } else {
+          uploadContratoSocialLabel.textContent = 'Upload do contrato social do locador';
+        }
+      }
+    };
+
+    const obterPercentuaisLocadoresDaTela = (): NegociacaoLocadorPercentualEdit[] => {
+      if (!locadoresLista) return [];
+
+      const inputs = Array.from(locadoresLista.querySelectorAll<HTMLInputElement>('input[data-negociacao-locador-id]'));
+      return inputs.map((input) => {
+        const locadorId = input.dataset.negociacaoLocadorId || '';
+        const contextoLocador = locadoresAtuais.find((item) => item.locadorId === locadorId);
+        const percentualNegociado = Number(input.value || '0');
+        return {
+          locadorId,
+          nome: contextoLocador?.nome || 'Locador',
+          tipo: contextoLocador?.tipo || 'fisica',
+          percentualBase: contextoLocador?.percentualBase || 0,
+          percentualNegociado: Number.isFinite(percentualNegociado) ? percentualNegociado : 0
+        };
+      });
+    };
+
+    const atualizarResumoPercentuaisLocadores = (): void => {
+      if (!locadoresInfo) return;
+      if (!locadoresAtuais.length) {
+        locadoresInfo.textContent = 'Sem locadores vinculados para o contrato selecionado.';
+        return;
+      }
+
+      const total = obterPercentuaisLocadoresDaTela().reduce((acc, item) => acc + item.percentualNegociado, 0);
+      locadoresInfo.textContent = `Total informado: ${total.toFixed(2)}%. O total deve ser 100%.`;
+    };
+
+    const renderizarLocadores = (registro?: EtapaNegociacaoRegistro): void => {
+      if (!locadoresSection || !locadoresLista) return;
+
+      if (!selectContrato.value) {
+        locadoresLista.innerHTML = '';
+        locadoresSection.hidden = true;
+        locadoresAtuais = [];
+        atualizarResumoPercentuaisLocadores();
+        atualizarObrigatoriedadesDinamicas();
+        return;
+      }
+
+      locadoresAtuais = this.obterLocadoresContratoNegociacao(selectContrato.value);
+      locadoresLista.innerHTML = '';
+
+      if (!locadoresAtuais.length) {
+        locadoresSection.hidden = true;
+        atualizarResumoPercentuaisLocadores();
+        atualizarObrigatoriedadesDinamicas();
+        return;
+      }
+
+      const percentualSalvoPorLocador = new Map((registro?.locadoresPercentuais || []).map((item) => [item.locadorId, item.percentualNegociado]));
+
+      locadoresAtuais.forEach((locador, index) => {
+        const campo = document.createElement('label');
+        campo.className = 'etapa-field';
+
+        const titulo = document.createElement('span');
+        titulo.textContent = `${locador.nome} (${locador.tipo === 'juridica' ? 'PJ' : 'PF'})`;
+
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.max = '100';
+        input.step = '0.01';
+        input.className = 'filter-input';
+        input.placeholder = 'Ex.: 50';
+        input.dataset.negociacaoLocadorId = locador.locadorId;
+        const percentualPadrao = percentualSalvoPorLocador.get(locador.locadorId);
+        input.value = String(percentualPadrao ?? locador.percentualBase);
+        input.required = contextoAtual.tipo === 'sem_contrato';
+
+        const detalhe = document.createElement('small');
+        detalhe.className = 'mini-label etapa-upload-info';
+        detalhe.textContent = `Base atual: ${locador.percentualBase.toFixed(2)}%`;
+
+        input.addEventListener('input', atualizarResumoPercentuaisLocadores);
+
+        campo.appendChild(titulo);
+        campo.appendChild(input);
+        campo.appendChild(detalhe);
+        locadoresLista.appendChild(campo);
+
+        if ((index + 1) % 2 === 0) {
+          const separador = document.createElement('div');
+          separador.className = 'etapa-field';
+          separador.hidden = true;
+          locadoresLista.appendChild(separador);
+        }
+      });
+
+      locadoresSection.hidden = false;
+      atualizarResumoPercentuaisLocadores();
+      atualizarObrigatoriedadesDinamicas();
+    };
+
+    const atualizarContextoContrato = (): void => {
+      if (!selectContrato.value) {
+        contextoAtual = this.obterContextoContratoNegociacao('');
+        if (contextoInfo) {
+          contextoInfo.textContent = 'Contexto da negociação: selecione um contrato para identificar se é negociação inicial (sem contrato SICLG) ou complementar (com contrato SICLG).';
+        }
+        atualizarObrigatoriedadesDinamicas();
+        return;
+      }
+
+      contextoAtual = this.obterContextoContratoNegociacao(selectContrato.value);
+      if (contextoInfo) {
+        contextoInfo.textContent = contextoAtual.tipo === 'sem_contrato'
+          ? `Modo contextual: sem contrato SICLG (negociação inicial). ${contextoAtual.regraAplicada}`
+          : `Modo contextual: com contrato SICLG ${contextoAtual.contratoSiclg} (negociação complementar). ${contextoAtual.regraAplicada}`;
+      }
+      atualizarObrigatoriedadesDinamicas();
+    };
+
+    const validarPercentuaisLocadores = (): NegociacaoLocadorPercentualEdit[] | null => {
+      if (!locadoresAtuais.length) return [];
+
+      const percentuais = obterPercentuaisLocadoresDaTela();
+      if (percentuais.some((item) => !Number.isFinite(item.percentualNegociado) || item.percentualNegociado < 0 || item.percentualNegociado > 100)) {
+        this.showToast('Informe percentuais válidos por locador entre 0 e 100.');
+        return null;
+      }
+
+      const total = percentuais.reduce((acc, item) => acc + item.percentualNegociado, 0);
+      if (Math.abs(total - 100) > 0.01) {
+        this.showToast(`A distribuição percentual por locador deve totalizar 100%. Total atual: ${total.toFixed(2)}%.`);
+        return null;
+      }
+
+      return percentuais;
+    };
+
+    const validarObrigatoriosNegociacaoInicial = (): boolean => {
+      if (contextoAtual.tipo !== 'sem_contrato') return true;
+
+      const valorProposto = this.lerNumeroInput('negociacaoValorPropostoAluguel');
+      const vigenciaMeses = this.lerNumeroInput('negociacaoVigenciaMeses');
+      const dataInicioVigencia = (document.getElementById('negociacaoDataInicioVigencia') as HTMLInputElement | null)?.value || '';
+      const modalidade = (document.getElementById('negociacaoModalidade') as HTMLSelectElement | null)?.value || '';
+
+      if (!valorProposto || valorProposto <= 0) {
+        this.showToast('Na negociação inicial (sem contrato), informe o valor proposto de aluguel.');
+        return false;
+      }
+
+      if (!vigenciaMeses || vigenciaMeses <= 0) {
+        this.showToast('Na negociação inicial (sem contrato), informe a vigência em meses.');
+        return false;
+      }
+
+      if (!dataInicioVigencia) {
+        this.showToast('Na negociação inicial (sem contrato), informe a data de início da vigência.');
+        return false;
+      }
+
+      if (!modalidade) {
+        this.showToast('Na negociação inicial (sem contrato), informe a modalidade da contratação.');
+        return false;
+      }
+
+      return true;
     };
 
     const preencherFormulario = (registro?: EtapaNegociacaoRegistro): void => {
+      (document.getElementById('negociacaoValorPropostoAluguel') as HTMLInputElement | null)!.value = registro?.valorPropostoAluguel !== undefined ? String(registro.valorPropostoAluguel) : '';
       (document.getElementById('negociacaoVigenciaMeses') as HTMLInputElement | null)!.value = registro?.vigenciaMeses !== undefined ? String(registro.vigenciaMeses) : '';
+      (document.getElementById('negociacaoDataInicioVigencia') as HTMLInputElement | null)!.value = registro?.dataInicioVigencia || '';
+      alterouDataPagamento.value = registro?.alterouDataPagamento || '';
+      (document.getElementById('negociacaoNovaDataPagamento') as HTMLInputElement | null)!.value = registro?.novaDataPagamento || '';
       temCarencia.value = registro?.temCarencia || '';
       (document.getElementById('negociacaoCarenciaDias') as HTMLInputElement | null)!.value = registro?.carenciaDias !== undefined ? String(registro.carenciaDias) : '';
       (document.getElementById('negociacaoIndiceReajuste') as HTMLInputElement | null)!.value = registro?.indiceReajuste || '';
+      (document.getElementById('negociacaoDataProximoReajuste') as HTMLInputElement | null)!.value = registro?.dataProximoReajuste || '';
+      (document.getElementById('negociacaoPreverMultaRescisao') as HTMLSelectElement | null)!.value = registro?.preverMultaRescisao || '';
       (document.getElementById('negociacaoModalidade') as HTMLSelectElement | null)!.value = registro?.modalidade || '';
       temClausula.value = registro?.temClausulaExtra || '';
       (document.getElementById('negociacaoClausulaExtraTexto') as HTMLTextAreaElement | null)!.value = registro?.clausulaExtraTexto || '';
+      alteracaoTitularidade.value = registro?.alteracaoTitularidade || '';
+      (document.getElementById('negociacaoAlteracaoTitularidadeDetalhe') as HTMLTextAreaElement | null)!.value = registro?.alteracaoTitularidadeDetalhe || '';
+      (document.getElementById('negociacaoAlteracoesPercentualLocadores') as HTMLTextAreaElement | null)!.value = registro?.alteracoesPercentualLocadores || '';
+      alteracaoDadosBancarios.value = registro?.alteracaoDadosBancarios || '';
+      (document.getElementById('negociacaoAlteracaoDadosBancariosDetalhe') as HTMLTextAreaElement | null)!.value = registro?.alteracaoDadosBancariosDetalhe || '';
+      alteracaoContratoSocial.value = registro?.alteracaoContratoSocial || '';
+      (document.getElementById('negociacaoAlteracaoContratoSocialDetalhe') as HTMLTextAreaElement | null)!.value = registro?.alteracaoContratoSocialDetalhe || '';
       this.atualizarInfoUploadEtapa('negociacaoUploadAnexosInfo', registro?.uploadAnexosArquivos || []);
       this.atualizarInfoUploadEtapa('negociacaoUploadMinutaInfo', registro?.uploadMinutaArquivos || []);
+      this.atualizarInfoUploadEtapa('negociacaoUploadContratoSocialInfo', registro?.uploadContratoSocialArquivos || []);
       atualizarCondicoes();
+      renderizarLocadores(registro);
+      atualizarObrigatoriedadesDinamicas();
     };
 
     const carregarRegistroSelecionado = (): void => {
@@ -5853,17 +6204,28 @@ export class SistemaSILIC {
 
     selectContrato.addEventListener('change', () => {
       this.atualizarResumoContratoEtapa('negociacaoContratoSelect', 'negociacaoContratoResumo');
+      atualizarContextoContrato();
       carregarRegistroSelecionado();
     });
 
+    alterouDataPagamento.addEventListener('change', atualizarCondicoes);
     temCarencia.addEventListener('change', atualizarCondicoes);
     temClausula.addEventListener('change', atualizarCondicoes);
+    alteracaoTitularidade.addEventListener('change', atualizarCondicoes);
+    alteracaoDadosBancarios.addEventListener('change', atualizarCondicoes);
+    alteracaoContratoSocial.addEventListener('change', () => {
+      atualizarCondicoes();
+      atualizarObrigatoriedadesDinamicas();
+    });
 
     uploadAnexos?.addEventListener('change', () => {
       this.atualizarInfoUploadEtapa('negociacaoUploadAnexosInfo', this.obterNomesArquivosInput('negociacaoUploadAnexos'));
     });
     uploadMinuta?.addEventListener('change', () => {
       this.atualizarInfoUploadEtapa('negociacaoUploadMinutaInfo', this.obterNomesArquivosInput('negociacaoUploadMinuta'));
+    });
+    uploadContratoSocial?.addEventListener('change', () => {
+      this.atualizarInfoUploadEtapa('negociacaoUploadContratoSocialInfo', this.obterNomesArquivosInput('negociacaoUploadContratoSocial'));
     });
 
     salvarBtn.addEventListener('click', () => {
@@ -5876,17 +6238,79 @@ export class SistemaSILIC {
       const mapa = this.carregarMapaEtapa<EtapaNegociacaoRegistro>(SistemaSILIC.ETAPA_NEGOCIACAO_STORAGE_KEY);
       const nomesAnexos = this.obterNomesArquivosInput('negociacaoUploadAnexos');
       const nomesMinuta = this.obterNomesArquivosInput('negociacaoUploadMinuta');
+      const nomesContratoSocial = this.obterNomesArquivosInput('negociacaoUploadContratoSocial');
+      const novaDataPagamento = (document.getElementById('negociacaoNovaDataPagamento') as HTMLInputElement | null)?.value || '';
+      const dataInicioVigencia = (document.getElementById('negociacaoDataInicioVigencia') as HTMLInputElement | null)?.value || '';
+      const dataProximoReajuste = (document.getElementById('negociacaoDataProximoReajuste') as HTMLInputElement | null)?.value || '';
+      const alteracaoTitularidadeDetalhe = (document.getElementById('negociacaoAlteracaoTitularidadeDetalhe') as HTMLTextAreaElement | null)?.value.trim() || '';
+      const alteracaoDadosBancariosDetalhe = (document.getElementById('negociacaoAlteracaoDadosBancariosDetalhe') as HTMLTextAreaElement | null)?.value.trim() || '';
+      const alteracaoContratoSocialDetalhe = (document.getElementById('negociacaoAlteracaoContratoSocialDetalhe') as HTMLTextAreaElement | null)?.value.trim() || '';
+
+      if (!validarObrigatoriosNegociacaoInicial()) {
+        return;
+      }
+
+      if (alterouDataPagamento.value === 'sim' && !novaDataPagamento) {
+        this.showToast('Informe a nova data de pagamento quando houver alteração.');
+        return;
+      }
+
+      if (alteracaoTitularidade.value === 'sim' && !alteracaoTitularidadeDetalhe) {
+        this.showToast('Detalhe a alteração de titularidade quando marcado Sim.');
+        return;
+      }
+
+      if (alteracaoDadosBancarios.value === 'sim' && !alteracaoDadosBancariosDetalhe) {
+        this.showToast('Detalhe os dados bancários quando houver alteração.');
+        return;
+      }
+
+      if (alteracaoContratoSocial.value === 'sim' && !alteracaoContratoSocialDetalhe) {
+        this.showToast('Detalhe a alteração do contrato social quando marcado Sim.');
+        return;
+      }
+
+      if (dataInicioVigencia && dataProximoReajuste && dataProximoReajuste < dataInicioVigencia) {
+        this.showToast('A data do próximo reajuste não pode ser anterior à data de início da vigência.');
+        return;
+      }
+
+      const locadoresPercentuais = validarPercentuaisLocadores();
+      if (locadoresPercentuais === null) return;
+
+      const uploadContratoSocialPersistido = nomesContratoSocial.length ? nomesContratoSocial : (mapa[contratoId]?.uploadContratoSocialArquivos || []);
+      const uploadContratoSocialObrigatorio = ((contextoAtual.tipo === 'sem_contrato') && possuiLocadorJuridico()) || alteracaoContratoSocial.value === 'sim';
+      if (uploadContratoSocialObrigatorio && !uploadContratoSocialPersistido.length) {
+        this.showToast('Anexe o contrato social do locador para prosseguir.');
+        return;
+      }
 
       mapa[contratoId] = {
+        contextoContrato: contextoAtual.tipo,
+        valorPropostoAluguel: this.lerNumeroInput('negociacaoValorPropostoAluguel'),
         vigenciaMeses: this.lerNumeroInput('negociacaoVigenciaMeses'),
+        dataInicioVigencia,
+        alterouDataPagamento: (alterouDataPagamento.value || '') as 'sim' | 'nao' | '',
+        novaDataPagamento,
         temCarencia: (temCarencia.value || '') as 'sim' | 'nao' | '',
         carenciaDias: this.lerNumeroInput('negociacaoCarenciaDias'),
         indiceReajuste: (document.getElementById('negociacaoIndiceReajuste') as HTMLInputElement | null)?.value.trim() || '',
+        dataProximoReajuste,
+        preverMultaRescisao: ((document.getElementById('negociacaoPreverMultaRescisao') as HTMLSelectElement | null)?.value || '') as 'sim' | 'nao' | '',
         modalidade: ((document.getElementById('negociacaoModalidade') as HTMLSelectElement | null)?.value || '') as 'contrato_simplificado' | 'condicoes_suspensivas' | 'minuta_locador' | '',
         temClausulaExtra: (temClausula.value || '') as 'sim' | 'nao' | '',
         clausulaExtraTexto: (document.getElementById('negociacaoClausulaExtraTexto') as HTMLTextAreaElement | null)?.value.trim() || '',
+        alteracaoTitularidade: (alteracaoTitularidade.value || '') as 'sim' | 'nao' | '',
+        alteracaoTitularidadeDetalhe,
+        alteracoesPercentualLocadores: (document.getElementById('negociacaoAlteracoesPercentualLocadores') as HTMLTextAreaElement | null)?.value.trim() || '',
+        locadoresPercentuais: locadoresPercentuais || [],
+        alteracaoDadosBancarios: (alteracaoDadosBancarios.value || '') as 'sim' | 'nao' | '',
+        alteracaoDadosBancariosDetalhe,
+        alteracaoContratoSocial: (alteracaoContratoSocial.value || '') as 'sim' | 'nao' | '',
+        alteracaoContratoSocialDetalhe,
         uploadAnexosArquivos: nomesAnexos.length ? nomesAnexos : (mapa[contratoId]?.uploadAnexosArquivos || []),
-        uploadMinutaArquivos: nomesMinuta.length ? nomesMinuta : (mapa[contratoId]?.uploadMinutaArquivos || [])
+        uploadMinutaArquivos: nomesMinuta.length ? nomesMinuta : (mapa[contratoId]?.uploadMinutaArquivos || []),
+        uploadContratoSocialArquivos: uploadContratoSocialPersistido
       };
 
       this.salvarMapaEtapa(SistemaSILIC.ETAPA_NEGOCIACAO_STORAGE_KEY, mapa);
@@ -5895,6 +6319,10 @@ export class SistemaSILIC {
     });
 
     this.atualizarResumoContratoEtapa('negociacaoContratoSelect', 'negociacaoContratoResumo');
+    atualizarContextoContrato();
+    atualizarCondicoes();
+    renderizarLocadores();
+    atualizarObrigatoriedadesDinamicas();
   }
 
   private inicializarDadosFasesOperacionais(): void {

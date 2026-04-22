@@ -358,6 +358,30 @@
                             <span>Área a ser contratada (m²)</span>
                             <input type="number" id="rtaAreaContratada" class="filter-input" min="0" step="0.01" placeholder="Ex.: 620.50">
                         </label>
+                        <label class="etapa-field">
+                            <span>Data de início da supressão ou acréscimo de área</span>
+                            <input type="date" id="rtaDataInicioSupressaoAcrescimo" class="filter-date">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Declaração de quitação da área devolvida</span>
+                            <select id="rtaQuitacaoAreaDevolvida" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label class="etapa-field">
+                            <span>Existe AR em andamento?</span>
+                            <select id="rtaTemArAndamento" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="rtaArDesistenciaWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Condições da desistência da AR em andamento</span>
+                            <textarea id="rtaArDesistenciaCondicoes" class="filter-search" rows="3" placeholder="Descreva as condições de desistência, partes envolvidas e prazos"></textarea>
+                        </label>
                     </div>
 
                     <div id="rtaBenfeitoriasSection" class="etapa-form-subsection" hidden>
@@ -451,6 +475,10 @@
                                 <input type="date" id="laudoDataElaboracao" class="filter-date">
                             </label>
                             <label class="etapa-field">
+                                <span>Data de validade do laudo</span>
+                                <input type="date" id="laudoDataValidade" class="filter-date">
+                            </label>
+                            <label class="etapa-field">
                                 <span>Número do documento</span>
                                 <input type="text" id="laudoNumeroDocumento" class="filter-input" placeholder="Ex.: LAUDO-2026-001">
                             </label>
@@ -504,11 +532,32 @@
                         </select>
                     </div>
                     <div id="negociacaoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para registrar as negociações.</div>
+                    <div id="negociacaoContextoContrato" class="mini-label etapa-contrato-resumo">Contexto da negociação: selecione um contrato para identificar se é negociação inicial (sem contrato SICLG) ou complementar (com contrato SICLG).</div>
 
                     <div class="etapa-form-grid">
                         <label class="etapa-field">
+                            <span>Valor proposto de aluguel (R$/mês)</span>
+                            <input type="number" id="negociacaoValorPropostoAluguel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 18500.00">
+                        </label>
+                        <label class="etapa-field">
                             <span>Vigência do contrato a firmar (meses)</span>
                             <input type="number" id="negociacaoVigenciaMeses" class="filter-input" min="1" step="1" placeholder="Ex.: 60">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data de início da vigência</span>
+                            <input type="date" id="negociacaoDataInicioVigencia" class="filter-date">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Ocorreu alteração da data de pagamento?</span>
+                            <select id="negociacaoAlterouDataPagamento" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoNovaDataPagamentoWrap" class="etapa-field" hidden>
+                            <span>Informe a nova data de pagamento</span>
+                            <input type="date" id="negociacaoNovaDataPagamento" class="filter-date">
                         </label>
                         <label class="etapa-field">
                             <span>Existe carência?</span>
@@ -527,6 +576,18 @@
                             <input type="text" id="negociacaoIndiceReajuste" class="filter-input" placeholder="Ex.: IPCA, IGP-M, etc.">
                         </label>
                         <label class="etapa-field">
+                            <span>Data do próximo reajuste</span>
+                            <input type="date" id="negociacaoDataProximoReajuste" class="filter-date">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Prever multa por rescisão antecipada?</span>
+                            <select id="negociacaoPreverMultaRescisao" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label class="etapa-field">
                             <span>Modalidade da contratação</span>
                             <select id="negociacaoModalidade" class="filter-select">
                                 <option value="">Selecione</option>
@@ -543,9 +604,59 @@
                                 <option value="nao">Não</option>
                             </select>
                         </label>
+                        <label class="etapa-field">
+                            <span>Ocorreu alteração de titularidade?</span>
+                            <select id="negociacaoAlteracaoTitularidade" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoAlteracaoTitularidadeDetalheWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Detalhe as alterações de titularidade</span>
+                            <textarea id="negociacaoAlteracaoTitularidadeDetalhe" class="filter-search" rows="3" placeholder="Informe titular anterior, novo titular e documentos de suporte"></textarea>
+                        </label>
+                        <label class="etapa-field etapa-field-full">
+                            <span>Informe as alterações de % do valor recebido por cada locador</span>
+                            <textarea id="negociacaoAlteracoesPercentualLocadores" class="filter-search" rows="3" placeholder="Ex.: Locador A: 60% para 55%; Locador B: 40% para 45%"></textarea>
+                        </label>
+                        <div id="negociacaoLocadoresSection" class="etapa-field etapa-field-full" hidden>
+                            <span>Distribuição percentual por locador (%)</span>
+                            <div id="negociacaoLocadoresLista" class="etapa-form-grid"></div>
+                            <small id="negociacaoLocadoresInfo" class="mini-label etapa-upload-info">O total dos percentuais deve ser 100%.</small>
+                        </div>
+                        <label class="etapa-field">
+                            <span>Ocorreu alteração dos dados bancários?</span>
+                            <select id="negociacaoAlteracaoDadosBancarios" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoAlteracaoDadosBancariosDetalheWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Detalhe os novos dados bancários</span>
+                            <textarea id="negociacaoAlteracaoDadosBancariosDetalhe" class="filter-search" rows="3" placeholder="Informe banco, agência, conta e comprovantes relacionados"></textarea>
+                        </label>
+                        <label class="etapa-field">
+                            <span>Houve alteração do contrato social do locador?</span>
+                            <select id="negociacaoAlteracaoContratoSocial" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoAlteracaoContratoSocialDetalheWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Detalhe a alteração do contrato social do locador</span>
+                            <textarea id="negociacaoAlteracaoContratoSocialDetalhe" class="filter-search" rows="3" placeholder="Descreva alteração societária, data e documentos correspondentes"></textarea>
+                        </label>
+                        <label id="negociacaoUploadContratoSocialWrap" class="etapa-field etapa-field-full" hidden>
+                            <span id="negociacaoUploadContratoSocialLabel">Upload do contrato social do locador</span>
+                            <input type="file" id="negociacaoUploadContratoSocial" class="filter-input" accept=".pdf,.doc,.docx,.zip" multiple>
+                            <small id="negociacaoUploadContratoSocialInfo" class="mini-label etapa-upload-info"></small>
+                        </label>
                         <label id="negociacaoClausulaExtraWrap" class="etapa-field etapa-field-full" hidden>
-                            <span>Transcrição da cláusula necessária</span>
-                            <textarea id="negociacaoClausulaExtraTexto" class="filter-search" rows="4" placeholder="Transcreva a cláusula a ser incluída no contrato"></textarea>
+                            <span>Informe os itens negociados</span>
+                            <textarea id="negociacaoClausulaExtraTexto" class="filter-search" rows="4" placeholder="Descreva os itens negociados a serem incluídos no contrato"></textarea>
                         </label>
                         <label class="etapa-field etapa-field-full">
                             <span>Upload dos anexos de responsabilidades acordados</span>
