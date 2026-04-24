@@ -358,30 +358,6 @@
                             <span>Área a ser contratada (m²)</span>
                             <input type="number" id="rtaAreaContratada" class="filter-input" min="0" step="0.01" placeholder="Ex.: 620.50">
                         </label>
-                        <label class="etapa-field">
-                            <span>Data de início da supressão ou acréscimo de área</span>
-                            <input type="date" id="rtaDataInicioSupressaoAcrescimo" class="filter-date">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Declaração de quitação da área devolvida</span>
-                            <select id="rtaQuitacaoAreaDevolvida" class="filter-select">
-                                <option value="">Selecione</option>
-                                <option value="sim">Sim</option>
-                                <option value="nao">Não</option>
-                            </select>
-                        </label>
-                        <label class="etapa-field">
-                            <span>Existe AR em andamento?</span>
-                            <select id="rtaTemArAndamento" class="filter-select">
-                                <option value="">Selecione</option>
-                                <option value="sim">Sim</option>
-                                <option value="nao">Não</option>
-                            </select>
-                        </label>
-                        <label id="rtaArDesistenciaWrap" class="etapa-field etapa-field-full" hidden>
-                            <span>Condições da desistência da AR em andamento</span>
-                            <textarea id="rtaArDesistenciaCondicoes" class="filter-search" rows="3" placeholder="Descreva as condições de desistência, partes envolvidas e prazos"></textarea>
-                        </label>
                     </div>
 
                     <div id="rtaBenfeitoriasSection" class="etapa-form-subsection" hidden>
@@ -460,6 +436,18 @@
                     <div id="laudoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para registrar os dados do laudo.</div>
 
                     <div class="etapa-form-grid">
+                        <label class="etapa-field">
+                            <span>Valor mínimo (R$)</span>
+                            <input type="text" id="laudoValorMinimo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Valor médio (R$)</span>
+                            <input type="text" id="laudoValorMedio" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Valor máximo (R$)</span>
+                            <input type="text" id="laudoValorMaximo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
+                        </label>
                         <label class="etapa-field etapa-field-full">
                             <span>Upload do laudo do imóvel</span>
                             <input type="file" id="laudoUploadArquivo" class="filter-input" accept=".pdf,.doc,.docx,.xlsx,.xls">
@@ -489,18 +477,6 @@
                             <label class="etapa-field">
                                 <span>CNPJ da empresa</span>
                                 <input type="text" id="laudoEmpresaCnpj" class="filter-input" placeholder="Somente números" maxlength="18">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Valor mínimo de locação/mês (R$)</span>
-                                <input type="number" id="laudoValorMinimo" class="filter-input" min="0" step="0.01">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Valor médio de locação/mês (R$)</span>
-                                <input type="number" id="laudoValorMedio" class="filter-input" min="0" step="0.01">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Valor máximo de locação/mês (R$)</span>
-                                <input type="number" id="laudoValorMaximo" class="filter-input" min="0" step="0.01">
                             </label>
                             <label class="etapa-field">
                                 <span>Laudo assinado?</span>
@@ -544,32 +520,47 @@
                             <input type="number" id="negociacaoVigenciaMeses" class="filter-input" min="1" step="1" placeholder="Ex.: 60">
                         </label>
                         <label class="etapa-field">
-                            <span>Data de início da vigência</span>
-                            <input type="date" id="negociacaoDataInicioVigencia" class="filter-date">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Ocorreu alteração da data de pagamento?</span>
-                            <select id="negociacaoAlterouDataPagamento" class="filter-select">
-                                <option value="">Selecione</option>
-                                <option value="sim">Sim</option>
-                                <option value="nao">Não</option>
-                            </select>
-                        </label>
-                        <label id="negociacaoNovaDataPagamentoWrap" class="etapa-field" hidden>
-                            <span>Informe a nova data de pagamento</span>
-                            <input type="date" id="negociacaoNovaDataPagamento" class="filter-date">
-                        </label>
-                        <label class="etapa-field">
                             <span>Existe carência?</span>
-                            <select id="negociacaoTemCarencia" class="filter-select">
-                                <option value="">Selecione</option>
-                                <option value="sim">Sim</option>
-                                <option value="nao">Não</option>
-                            </select>
+                            <span class="etapa-toggle-control">
+                                <input type="checkbox" id="negociacaoTemCarenciaToggle" class="etapa-toggle-input" aria-label="Habilitar quantidade de dias de carência">
+                                <span class="etapa-toggle-slider" aria-hidden="true"></span>
+                                <span class="etapa-toggle-text">Habilitar quantidade de dias de carência</span>
+                            </span>
                         </label>
                         <label id="negociacaoCarenciaDiasWrap" class="etapa-field" hidden>
                             <span>Quantidade de dias de carência</span>
                             <input type="number" id="negociacaoCarenciaDias" class="filter-input" min="1" step="1" placeholder="Ex.: 30">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data de início da vigência</span>
+                            <input type="date" id="negociacaoDataInicioVigencia" class="filter-date">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data final da vigência</span>
+                            <input type="date" id="negociacaoDataFinalVigencia" class="filter-date" readonly>
+                        </label>
+                        <label class="etapa-field">
+                            <span>Valor Total previsto</span>
+                            <input type="text" id="negociacaoValorTotalPrevisto" class="filter-input" readonly placeholder="Calculado automaticamente">
+                        </label>
+                        <div class="etapa-field etapa-field-full">
+                            <small class="mini-label etapa-upload-info">Cálculo automático: Data final da vigência = Data de início da vigência + Vigência (meses) - 1 dia. Valor Total previsto = Valor proposto de aluguel (R$/mês) x Vigência (meses).</small>
+                        </div>
+                        <label class="etapa-field">
+                            <span>Data de pagamento atual do contrato <small class="etapa-inline-hint">Data atual carregada do contrato (SICLG/SAP)</small></span>
+                            <input type="date" id="negociacaoDataPagamentoAtual" class="filter-date" readonly>
+                        </label>
+                        <label class="etapa-field">
+                            <span>Alterar data de pagamento?</span>
+                            <span class="etapa-toggle-control">
+                                <input type="checkbox" id="negociacaoAlterarDataPagamentoToggle" class="etapa-toggle-input" aria-label="Habilitar alteração da data de pagamento">
+                                <span class="etapa-toggle-slider" aria-hidden="true"></span>
+                                <span class="etapa-toggle-text">Habilitar alteração da data de pagamento</span>
+                            </span>
+                        </label>
+                        <label id="negociacaoNovaDataPagamentoWrap" class="etapa-field" hidden>
+                            <span>Informe a nova data de pagamento</span>
+                            <input type="date" id="negociacaoNovaDataPagamento" class="filter-date">
                         </label>
                         <label class="etapa-field">
                             <span>Índice de reajuste pactuado</span>
@@ -580,12 +571,70 @@
                             <input type="date" id="negociacaoDataProximoReajuste" class="filter-date">
                         </label>
                         <label class="etapa-field">
-                            <span>Prever multa por rescisão antecipada?</span>
+                            <span>Data de início da supressão ou acréscimo de área</span>
+                            <input type="date" id="negociacaoDataInicioSupressaoAcrescimo" class="filter-date">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Declaração de quitação da área devolvida</span>
+                            <select id="negociacaoQuitacaoAreaDevolvida" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label class="etapa-field">
+                            <span>Existe AR em andamento?</span>
+                            <select id="negociacaoTemArAndamento" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoArDesistenciaWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Condições da desistência da AR em andamento</span>
+                            <textarea id="negociacaoArDesistenciaCondicoes" class="filter-search" rows="3" placeholder="Descreva as condições de desistência, partes envolvidas e prazos"></textarea>
+                        </label>
+                        <label class="etapa-field">
+                            <span>Prever multa por rescisão antecipada no contrato?</span>
                             <select id="negociacaoPreverMultaRescisao" class="filter-select">
                                 <option value="">Selecione</option>
                                 <option value="sim">Sim</option>
                                 <option value="nao">Não</option>
                             </select>
+                        </label>
+                        <label id="negociacaoClausulaMultaRescisaoWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Descreva a cláusula de multa por rescisão antecipada.</span>
+                            <textarea id="negociacaoClausulaMultaRescisao" class="filter-search" rows="3" placeholder="Descreva a cláusula de multa por rescisão antecipada"></textarea>
+                        </label>
+                        <label id="negociacaoRevogacaoMultaRescisaoWrap" class="etapa-field" hidden>
+                            <span>Foi negociada a revogação dessa multa?</span>
+                            <select id="negociacaoRevogacaoMultaRescisao" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoJustificativaRevogacaoMultaWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Justificativa da revogação da multa</span>
+                            <textarea id="negociacaoJustificativaRevogacaoMulta" class="filter-search" rows="3" placeholder="Descreva a justificativa para revogação da multa"></textarea>
+                        </label>
+                        <label class="etapa-field etapa-field-full">
+                            <span>O valor proposto ficou acima do valor do Laudo de Avaliação do Imóvel?</span>
+                            <select id="negociacaoAluguelAcimaLaudo" class="filter-select">
+                                <option value="">Selecione</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </label>
+                        <label id="negociacaoAluguelAcimaLaudoJustificativaWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Justifique a negociação acima do laudo.</span>
+                            <textarea id="negociacaoAluguelAcimaLaudoJustificativa" class="filter-search" rows="3" placeholder="Informe motivo, excepcionalidade, impacto operacional e responsável pela decisão"></textarea>
+                        </label>
+                        <label id="negociacaoUploadAutorizacaoAcimaLaudoWrap" class="etapa-field etapa-field-full" hidden>
+                            <span>Anexar autorização para valor acima do laudo</span>
+                            <input type="file" id="negociacaoUploadAutorizacaoAcimaLaudo" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" multiple>
+                            <small class="mini-label etapa-upload-info">Anexe despacho, parecer ou aprovação formal.</small>
+                            <small id="negociacaoUploadAutorizacaoAcimaLaudoInfo" class="mini-label etapa-upload-info"></small>
                         </label>
                         <label class="etapa-field">
                             <span>Modalidade da contratação</span>
@@ -605,7 +654,7 @@
                             </select>
                         </label>
                         <label class="etapa-field">
-                            <span>Ocorreu alteração de titularidade?</span>
+                            <span>Houve alteração de titularidade dos locadores?</span>
                             <select id="negociacaoAlteracaoTitularidade" class="filter-select">
                                 <option value="">Selecione</option>
                                 <option value="sim">Sim</option>
@@ -613,20 +662,20 @@
                             </select>
                         </label>
                         <label id="negociacaoAlteracaoTitularidadeDetalheWrap" class="etapa-field etapa-field-full" hidden>
-                            <span>Detalhe as alterações de titularidade</span>
-                            <textarea id="negociacaoAlteracaoTitularidadeDetalhe" class="filter-search" rows="3" placeholder="Informe titular anterior, novo titular e documentos de suporte"></textarea>
+                            <span>Descreva as alterações de titularidade</span>
+                            <textarea id="negociacaoAlteracaoTitularidadeDetalhe" class="filter-search" rows="3" placeholder="Informe titular anterior, novo titular, documento de suporte e data de vigência da alteração"></textarea>
                         </label>
                         <label class="etapa-field etapa-field-full">
-                            <span>Informe as alterações de % do valor recebido por cada locador</span>
+                            <span>Descreva as alterações de percentual por locador</span>
                             <textarea id="negociacaoAlteracoesPercentualLocadores" class="filter-search" rows="3" placeholder="Ex.: Locador A: 60% para 55%; Locador B: 40% para 45%"></textarea>
                         </label>
                         <div id="negociacaoLocadoresSection" class="etapa-field etapa-field-full" hidden>
-                            <span>Distribuição percentual por locador (%)</span>
+                            <span>Distribuição percentual final por locador (%)</span>
                             <div id="negociacaoLocadoresLista" class="etapa-form-grid"></div>
                             <small id="negociacaoLocadoresInfo" class="mini-label etapa-upload-info">O total dos percentuais deve ser 100%.</small>
                         </div>
                         <label class="etapa-field">
-                            <span>Ocorreu alteração dos dados bancários?</span>
+                            <span>Houve alteração dos dados bancários para pagamento?</span>
                             <select id="negociacaoAlteracaoDadosBancarios" class="filter-select">
                                 <option value="">Selecione</option>
                                 <option value="sim">Sim</option>
@@ -634,11 +683,11 @@
                             </select>
                         </label>
                         <label id="negociacaoAlteracaoDadosBancariosDetalheWrap" class="etapa-field etapa-field-full" hidden>
-                            <span>Detalhe os novos dados bancários</span>
-                            <textarea id="negociacaoAlteracaoDadosBancariosDetalhe" class="filter-search" rows="3" placeholder="Informe banco, agência, conta e comprovantes relacionados"></textarea>
+                            <span>Descreva os novos dados bancários</span>
+                            <textarea id="negociacaoAlteracaoDadosBancariosDetalhe" class="filter-search" rows="3" placeholder="Informe banco, agência, conta, favorecido e documento comprobatório"></textarea>
                         </label>
                         <label class="etapa-field">
-                            <span>Houve alteração do contrato social do locador?</span>
+                            <span>Houve alteração do contrato social do locador (ou quadro societário)?</span>
                             <select id="negociacaoAlteracaoContratoSocial" class="filter-select">
                                 <option value="">Selecione</option>
                                 <option value="sim">Sim</option>
@@ -646,8 +695,8 @@
                             </select>
                         </label>
                         <label id="negociacaoAlteracaoContratoSocialDetalheWrap" class="etapa-field etapa-field-full" hidden>
-                            <span>Detalhe a alteração do contrato social do locador</span>
-                            <textarea id="negociacaoAlteracaoContratoSocialDetalhe" class="filter-search" rows="3" placeholder="Descreva alteração societária, data e documentos correspondentes"></textarea>
+                            <span>Descreva a alteração do contrato social</span>
+                            <textarea id="negociacaoAlteracaoContratoSocialDetalhe" class="filter-search" rows="3" placeholder="Informe natureza da alteração, data de registro e número do ato"></textarea>
                         </label>
                         <label id="negociacaoUploadContratoSocialWrap" class="etapa-field etapa-field-full" hidden>
                             <span id="negociacaoUploadContratoSocialLabel">Upload do contrato social do locador</span>
@@ -995,9 +1044,9 @@
                     <div class="info-section">
                         <div class="info-section-title">Resumo</div>
                         <div class="summary-row">
-                            <div class="summary-chip">Contrato: <strong id="detNumeroContrato"></strong></div>
-                            <div class="summary-chip">Status: <strong id="detContratoStatus"></strong></div>
-                            <div class="summary-chip">Fim: <strong id="detDataFim"></strong></div>
+                            <div class="summary-chip"><strong id="detNumeroContrato"></strong></div>
+                            <div class="summary-chip"><strong id="detContratoStatus"></strong></div>
+                            <div class="summary-chip"><strong id="detDataFim"></strong></div>
                         </div>
                     </div>
 
@@ -1253,66 +1302,13 @@
                     <div class="info-section">
                         <div class="info-section-title">Resumo</div>
                         <div class="summary-row">
-                            <div class="summary-chip">Endereço: <strong id="detEnderecoCompleto"></strong></div>
+                            <div class="summary-chip"><strong id="detEnderecoCompleto"></strong></div>
                         </div>
                     </div>
 
                     <div class="info-section">
-                        <div class="info-section-title">Detalhamento do Imóvel</div>
-                        <div class="detail-cards-grid">
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-endereco-imovel" data-drawer-title="Endereço">
-                                <strong>Endereço</strong>
-                                <span>Dados de localização e identificação do imóvel.</span>
-                            </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-caracteristicas-imovel" data-drawer-title="Características">
-                                <strong>Características</strong>
-                                <span>Tipologia, área e valor de referência.</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="imovelDrawerSources" class="drawer-sources" aria-hidden="true">
-                    <div class="info-section drawer-section" id="sec-endereco-imovel">
-                        <div class="info-section-title">
-                            Endereço <span class="origin-tag">SAP</span>
-                        </div>
-                        <div class="info-grid">
-                        <div class="info-item">
-                            <label>Código Postal</label>
-                            <span id="detCodPostal"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Local</label>
-                            <span id="detLocal"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Rua</label>
-                            <span id="detRua"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Bairro</label>
-                            <span id="detBairro"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Cidade</label>
-                            <span id="detCidade"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>Estado</label>
-                            <span id="detEstado"></span>
-                        </div>
-                        <div class="info-item">
-                            <label>CEP</label>
-                            <span id="detCep"></span>
-                        </div>
-                        </div>
-                    </div>
-
-                    <div class="info-section drawer-section" id="sec-caracteristicas-imovel">
-                        <div class="info-section-title">
-                            Características
-                        </div>
-                        <div class="info-grid">
+                        <div class="info-section-title">Características</div>
+                        <div class="info-grid info-grid-imovel-resumo">
                         <div class="info-item">
                             <label>Tipo de Edifício</label>
                             <span id="detTipoEdificio"></span>
@@ -1327,16 +1323,6 @@
                         </div>
                         </div>
                     </div>
-                    </div>
-
-                    <div id="imovelDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-                    <aside id="imovelDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="imovelDrawerTitle">
-                        <div class="details-drawer-header">
-                            <h3 id="imovelDrawerTitle">Detalhes</h3>
-                            <button type="button" id="imovelDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
-                        </div>
-                        <div id="imovelDrawerContent" class="details-drawer-content"></div>
-                    </aside>
                 </div>
 
                 <!-- Aba: 3. Locador -->
@@ -1344,8 +1330,8 @@
                     <div class="info-section">
                         <div class="info-section-title">Resumo</div>
                         <div class="summary-row">
-                            <div class="summary-chip">Locador: <strong id="detNomeLocador"></strong></div>
-                            <div class="summary-chip">Documento: <strong id="detLocadorDoc"></strong></div>
+                            <div class="summary-chip"><strong id="detNomeLocador"></strong></div>
+                            <div class="summary-chip"><strong id="detLocadorDoc"></strong></div>
                         </div>
                     </div>
                     <div class="info-section">
@@ -1801,9 +1787,9 @@
                 <div class="info-section">
                     <div class="info-section-title">Resumo do processo A-III</div>
                     <div class="summary-row">
-                        <div class="summary-chip">Código SIJUR: <strong id="formalDetCodigoSijur"></strong></div>
-                        <div class="summary-chip">Contrato SAP: <strong id="formalDetContratoSap"></strong></div>
-                        <div class="summary-chip">Contrato SICLG: <strong id="formalDetContratoSiclg"></strong></div>
+                        <div class="summary-chip"><strong id="formalDetCodigoSijur"></strong></div>
+                        <div class="summary-chip"><strong id="formalDetContratoSap"></strong></div>
+                        <div class="summary-chip"><strong id="formalDetContratoSiclg"></strong></div>
                     </div>
                 </div>
 

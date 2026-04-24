@@ -1734,8 +1734,69 @@ body {
     color: var(--color-gray-900);
 }
 
+.etapa-inline-hint {
+    margin-left: 0.35rem;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--color-gray-700);
+}
+
 .etapa-field-full {
     grid-column: 1 / -1;
+}
+
+.etapa-toggle-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.etapa-toggle-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.etapa-toggle-slider {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    border-radius: 999px;
+    background: #c7ced6;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.etapa-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.etapa-toggle-input:checked + .etapa-toggle-slider {
+    background: #2f6de0;
+}
+
+.etapa-toggle-input:checked + .etapa-toggle-slider::after {
+    transform: translateX(18px);
+}
+
+.etapa-toggle-input:focus-visible + .etapa-toggle-slider {
+    outline: 2px solid rgba(47, 109, 224, 0.45);
+    outline-offset: 2px;
+}
+
+.etapa-toggle-text {
+    color: #5f6b7a;
+    font-size: 0.82rem;
+    font-weight: 500;
 }
 
 .etapa-form-subsection {
@@ -2119,6 +2180,15 @@ body {
     gap: 0.875rem;
 }
 
+.detail-cards-grid-single {
+    grid-template-columns: 1fr;
+}
+
+.detail-cards-grid-single .detail-card-trigger {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
 .detail-card-trigger {
     display: flex;
     flex-direction: column;
@@ -2270,6 +2340,12 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.25rem;
+}
+
+@media (min-width: 1025px) {
+    .info-grid-imovel-resumo {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 .info-item {
