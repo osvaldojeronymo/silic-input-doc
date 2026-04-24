@@ -375,6 +375,10 @@ body {
     display: none;
 }
 
+[hidden] {
+    display: none !important;
+}
+
 .perfis-grid {
     margin-top: 0.5rem;
 }
