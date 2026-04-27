@@ -6,6 +6,8 @@ import { DndContext, DragOverlay, useDroppable, useDraggable } from '@dnd-kit/co
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { adaptedSchema } from './schemaAdapter';
 import type { FieldMeta, SectionDescriptor } from './types';
+import { FORM_SECTION_CONFIGS, SECTION_THEME_MAP, SectionCard } from './sectioning';
+import type { IconName, SectionConfig, SectionRuntimeState, SectionVariant, ThemeKey } from './sectioning';
 import 'react-quill/dist/quill.snow.css';
 import './form-renderer.css';
 
@@ -93,11 +95,76 @@ function ChipPreview({ field, value }: ChipProps) {
 
 interface SectionProps {
   section: SectionDescriptor;
+  sectionIndex: number;
+  sectionVariant: SectionVariant;
   formData: Record<string, unknown>;
   onChange: (partial: Record<string, unknown>) => void;
 }
 
-function SectionForm({ section, formData, onChange }: SectionProps) {
+const themeCycle: ThemeKey[] = ['contract', 'payment', 'conditions', 'registry', 'attachments'];
+
+const fallbackIconByTheme: Record<ThemeKey, IconName> = {
+  contract: 'calendar',
+  payment: 'currency',
+  conditions: 'document-check',
+  registry: 'user-switch',
+  attachments: 'paperclip'
+};
+
+function hasFieldValue(value: unknown): boolean {
+  return value !== undefined && value !== null && value !== '';
+}
+
+function resolveSectionConfig(section: SectionDescriptor, sectionIndex: number): SectionConfig {
+  const mappedConfig = FORM_SECTION_CONFIGS.find(
+    (item) => item.id === section.id || item.title === section.title
+  );
+
+  if (mappedConfig) {
+    return mappedConfig;
+  }
+
+  const fallbackTheme = themeCycle[sectionIndex % themeCycle.length];
+
+  return {
+    id: section.id,
+    key: section.id,
+    title: section.title,
+    badgeLabel: 'Secao de formulario',
+    themeKey: fallbackTheme,
+    icon: fallbackIconByTheme[fallbackTheme],
+    order: sectionIndex + 1,
+    anchorId: `secao-${section.id}`,
+    required: true,
+    collapsible: false,
+    defaultExpanded: true
+  };
+}
+
+function buildSectionState(section: SectionDescriptor, sectionData: Record<string, unknown>): SectionRuntimeState {
+  const requiredFields = Array.isArray(section.schema.required) ? section.schema.required.length : 0;
+  const validRequiredFields = Array.isArray(section.schema.required)
+    ? section.schema.required.filter((fieldId) => hasFieldValue(sectionData[fieldId])).length
+    : 0;
+  const filledFields = section.fieldIds.filter((fieldId) => hasFieldValue(sectionData[fieldId])).length;
+  const status = requiredFields > 0 && validRequiredFields === requiredFields ? 'complete' : 'default';
+
+  return {
+    status,
+    progress: {
+      totalFields: section.fieldIds.length,
+      filledFields,
+      requiredFields,
+      validRequiredFields
+    },
+    issues: [],
+    isExpanded: true,
+    isVisible: true,
+    isDirty: false
+  };
+}
+
+function SectionForm({ section, sectionIndex, sectionVariant, formData, onChange }: SectionProps) {
   const sectionData = useMemo(() => {
     return section.fieldIds.reduce<Record<string, unknown>>((acc, fieldId) => {
       acc[fieldId] = formData[fieldId];
@@ -105,9 +172,25 @@ function SectionForm({ section, formData, onChange }: SectionProps) {
     }, {});
   }, [formData, section.fieldIds]);
 
+  const sectionConfig = useMemo(
+    () => resolveSectionConfig(section, sectionIndex),
+    [section, sectionIndex]
+  );
+
+  const sectionState = useMemo(
+    () => buildSectionState(section, sectionData),
+    [section, sectionData]
+  );
+
+  const sectionTokens = SECTION_THEME_MAP[sectionConfig.themeKey];
+
   return (
-    <details className="section-card" open>
-      <summary>{section.title}</summary>
+    <SectionCard
+      config={sectionConfig}
+      state={sectionState}
+      tokens={sectionTokens}
+      variant={sectionVariant}
+    >
       <Form
         schema={section.schema}
         uiSchema={section.uiSchema}
@@ -119,7 +202,7 @@ function SectionForm({ section, formData, onChange }: SectionProps) {
       >
         <div className="hidden-submit" />
       </Form>
-    </details>
+    </SectionCard>
   );
 }
 
@@ -132,6 +215,7 @@ export function FormRendererApp() {
   const [dragMode, setDragMode] = useState(
     adaptedSchema.dragModes[0] ?? 'inserir_variavel'
   );
+  const [sectionVariant, setSectionVariant] = useState<SectionVariant>('soft-header');
 
   const quillRef = useRef<ReactQuill | null>(null);
   const { setNodeRef: setEditorDropRef, isOver } = useDroppable({
@@ -195,19 +279,42 @@ export function FormRendererApp() {
               preencher o texto-base do edital.
             </p>
           </div>
-          <div className="drag-mode-toggle">
-            <span>Modo de inserção:</span>
-            {adaptedSchema.dragModes.map((mode) => (
-              <label key={mode}>
+          <div className="renderer-controls">
+            <div className="drag-mode-toggle">
+              <span>Modo de inserção:</span>
+              {adaptedSchema.dragModes.map((mode) => (
+                <label key={mode}>
+                  <input
+                    type="radio"
+                    value={mode}
+                    checked={dragMode === mode}
+                    onChange={() => setDragMode(mode)}
+                  />
+                  {mode === 'inserir_valor' ? 'Valor mockado' : 'Variável [TOKEN]'}
+                </label>
+              ))}
+            </div>
+            <div className="section-variant-toggle">
+              <span>Visual das seções:</span>
+              <label>
                 <input
                   type="radio"
-                  value={mode}
-                  checked={dragMode === mode}
-                  onChange={() => setDragMode(mode)}
+                  value="soft-header"
+                  checked={sectionVariant === 'soft-header'}
+                  onChange={() => setSectionVariant('soft-header')}
                 />
-                {mode === 'inserir_valor' ? 'Valor mockado' : 'Variável [TOKEN]'}
+                Header colorido
               </label>
-            ))}
+              <label>
+                <input
+                  type="radio"
+                  value="left-border"
+                  checked={sectionVariant === 'left-border'}
+                  onChange={() => setSectionVariant('left-border')}
+                />
+                Barra lateral
+              </label>
+            </div>
           </div>
         </header>
 
@@ -215,10 +322,12 @@ export function FormRendererApp() {
           <section className="column column-preview">
             <h2>Coluna A · Formulário</h2>
             <div className="accordion-list">
-              {adaptedSchema.sections.map((section) => (
+              {adaptedSchema.sections.map((section, sectionIndex) => (
                 <SectionForm
                   key={section.id}
                   section={section}
+                  sectionIndex={sectionIndex}
+                  sectionVariant={sectionVariant}
                   formData={formData}
                   onChange={handleSectionChange}
                 />

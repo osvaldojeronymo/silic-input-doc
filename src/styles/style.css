@@ -2049,6 +2049,45 @@ body {
     margin: 0.45rem 0 0.8rem;
 }
 
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-regras-accordion {
+    border: 1px solid #dbe3ef;
+    border-radius: 10px;
+    background: #f8fbff;
+    margin: 0.15rem 0 0.9rem;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-regras-accordion > summary {
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #1f2f46;
+    padding: 0.65rem 0.75rem;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-regras-conteudo {
+    border-top: 1px solid #dbe3ef;
+    padding: 0.6rem 0.75rem 0.75rem;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-regras-conteudo ul {
+    margin: 0;
+    padding-left: 1rem;
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.81rem;
+    color: #334155;
+}
+
+.operacional-panel-view[data-operacional-panel="passos-jornada"] .etapa-regra-contextual {
+    margin: 0.65rem 0 0;
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    background: #eaf3ff;
+    color: #123a74;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
 .operacional-panel-view[data-operacional-panel="passos-jornada"] .filter-actions {
     margin-top: 0.85rem;
     padding-top: 0.85rem;
@@ -2058,6 +2097,68 @@ body {
 .operacional-panel-view[data-operacional-panel="passos-jornada"] .filter-actions .btn-clear {
     min-height: 44px;
     min-width: 130px;
+}
+
+/* Seções temáticas da aba Negociações */
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field,
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-form-subsection {
+    border-radius: 10px;
+    padding: 0.55rem 0.6rem;
+    border-left: 3px solid transparent;
+}
+
+/* Azul: dados do contrato */
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoValorPropostoAluguel),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoVigenciaMeses),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoTemCarenciaToggle),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoCarenciaDias),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoDataInicioVigencia),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoDataFinalVigencia),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoValorTotalPrevisto),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoIndiceReajuste),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoDataProximoReajuste),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoDataPagamentoAtual),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoAluguelAcimaLaudo),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoModalidade),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoTemClausulaExtra),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoPreverMultaRescisao),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoClausulaMultaRescisao),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoRevogacaoMultaRescisao),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoResultadoNegociacaoMulta),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoJustificativaRevogacaoMulta),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoClausulaExtraTexto) {
+    background: #eaf3ff;
+    border-left-color: #2f6fed;
+}
+
+/* Âmbar: condições contratuais */
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoTemAlteracoesContratuaisToggle),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoTemArAndamento),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoArDesistenciaCondicoes),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoAluguelAcimaLaudoJustificativa),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoAluguelAcimaLaudoJustificativa) {
+    background: #fff4e5;
+    border-left-color: #c98500;
+}
+
+/* Roxo: alterações cadastrais */
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 #negociacaoAlteracoesContratuaisSection,
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 #negociacaoAlteracoesContratuaisSection .etapa-field,
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoAlteracaoTitularidade),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoAlteracaoTitularidadeDetalhe),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoAlteracoesPercentualLocadores),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 #negociacaoLocadoresSection {
+    background: #f3ecff;
+    border-left-color: #7b4bc9;
+}
+
+/* Coral: anexos */
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoUploadAnexos),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoUploadMinuta),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoUploadAutorizacaoAcimaLaudo),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoUploadContratoSocial) {
+    background: #ffedea;
+    border-left-color: #e25d4f;
 }
 
 #avisoVencimentoBody .btn-table-action {

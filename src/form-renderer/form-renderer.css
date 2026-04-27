@@ -41,6 +41,31 @@
   border: 1px solid #e2e8f0;
 }
 
+.renderer-controls {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.section-variant-toggle {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 0.95rem;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.section-variant-toggle label {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  cursor: pointer;
+  color: #0f172a;
+}
+
 .drag-mode-toggle label {
   display: flex;
   gap: 0.25rem;
@@ -83,6 +108,203 @@
   overflow-y: auto;
   max-height: calc(100vh - 220px);
   padding-right: 0.5rem;
+}
+
+.section-ui-guide {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+  background: #ffffff;
+  padding: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.section-ui-guide header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.section-ui-guide header p {
+  margin: 0.35rem 0 0.8rem;
+  font-size: 0.88rem;
+}
+
+.section-ui-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.section-ui-variant-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+  padding: 0.7rem;
+  background: #f8fafc;
+}
+
+.section-ui-variant-panel h4 {
+  margin: 0 0 0.55rem;
+  font-size: 0.92rem;
+}
+
+.section-ui-variant-content {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0.6rem;
+}
+
+.section-ui-legend {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.65rem;
+  padding: 0.55rem;
+  align-self: start;
+}
+
+.section-ui-legend h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.8rem;
+}
+
+.section-ui-legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.legend-item {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 0.5rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.45rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.legend-item.is-active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.legend-title {
+  font-size: 0.78rem;
+  color: #0f172a;
+}
+
+.legend-progress {
+  font-size: 0.72rem;
+  color: #334155;
+}
+
+.section-ui-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.section-ui-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+  background: #ffffff;
+}
+
+.section-ui-soft-header .section-ui-header {
+  background: var(--section-bg-soft);
+}
+
+.section-ui-left-border {
+  border-left: 3px solid var(--section-border);
+}
+
+.section-ui-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid #e2e8f0;
+  border-top-left-radius: 0.7rem;
+  border-top-right-radius: 0.7rem;
+}
+
+.section-ui-title-wrap {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.36rem;
+  cursor: pointer;
+  color: var(--section-title);
+}
+
+.section-ui-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--section-dot);
+}
+
+.section-ui-icon {
+  display: inline-flex;
+}
+
+.section-ui-title {
+  font-size: 0.85rem;
+}
+
+.section-ui-badge {
+  font-size: 0.72rem;
+  background: var(--section-badge-bg);
+  color: var(--section-badge-text);
+  padding: 0.15rem 0.42rem;
+  border-radius: 999px;
+}
+
+.section-ui-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.42rem 0.62rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.section-ui-status,
+.section-ui-progress {
+  font-size: 0.72rem;
+  color: #334155;
+}
+
+.section-ui-body {
+  padding: 0.5rem 0.62rem;
+}
+
+.section-ui-body p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.section-ui-card.is-error {
+  border-color: #fecaca;
+}
+
+.section-ui-card.is-warning {
+  border-color: #fde68a;
+}
+
+.section-ui-card.is-complete {
+  border-color: #86efac;
 }
 
 .section-card {
@@ -197,6 +419,10 @@
 
 @media (max-width: 1280px) {
   .renderer-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .section-ui-variant-content {
     grid-template-columns: 1fr;
   }
 
