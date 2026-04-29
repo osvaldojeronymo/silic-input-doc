@@ -5052,11 +5052,41 @@ export class SistemaSILIC {
       }
     }, this.currentPagePainelFormal === 1);
 
-    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+    const maxBotoesVisiveis = 7;
+    let inicioPagina = Math.max(1, this.currentPagePainelFormal - Math.floor(maxBotoesVisiveis / 2));
+    let fimPagina = Math.min(totalPaginas, inicioPagina + maxBotoesVisiveis - 1);
+
+    if (fimPagina - inicioPagina < maxBotoesVisiveis - 1) {
+      inicioPagina = Math.max(1, fimPagina - maxBotoesVisiveis + 1);
+    }
+
+    if (inicioPagina > 1) {
+      criarBotao('1', () => {
+        this.currentPagePainelFormal = 1;
+        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+      });
+
+      if (inicioPagina > 2) {
+        criarBotao('...', () => undefined, true);
+      }
+    }
+
+    for (let pagina = inicioPagina; pagina <= fimPagina; pagina++) {
       criarBotao(String(pagina), () => {
         this.currentPagePainelFormal = pagina;
         this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
       }, false, pagina === this.currentPagePainelFormal);
+    }
+
+    if (fimPagina < totalPaginas) {
+      if (fimPagina < totalPaginas - 1) {
+        criarBotao('...', () => undefined, true);
+      }
+
+      criarBotao(String(totalPaginas), () => {
+        this.currentPagePainelFormal = totalPaginas;
+        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+      });
     }
 
     criarBotao('Próximo →', () => {
@@ -5096,11 +5126,41 @@ export class SistemaSILIC {
       }
     }, this.currentPagePainelAviso === 1);
 
-    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+    const maxBotoesVisiveis = 7;
+    let inicioPagina = Math.max(1, this.currentPagePainelAviso - Math.floor(maxBotoesVisiveis / 2));
+    let fimPagina = Math.min(totalPaginas, inicioPagina + maxBotoesVisiveis - 1);
+
+    if (fimPagina - inicioPagina < maxBotoesVisiveis - 1) {
+      inicioPagina = Math.max(1, fimPagina - maxBotoesVisiveis + 1);
+    }
+
+    if (inicioPagina > 1) {
+      criarBotao('1', () => {
+        this.currentPagePainelAviso = 1;
+        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+      });
+
+      if (inicioPagina > 2) {
+        criarBotao('...', () => undefined, true);
+      }
+    }
+
+    for (let pagina = inicioPagina; pagina <= fimPagina; pagina++) {
       criarBotao(String(pagina), () => {
         this.currentPagePainelAviso = pagina;
         this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
       }, false, pagina === this.currentPagePainelAviso);
+    }
+
+    if (fimPagina < totalPaginas) {
+      if (fimPagina < totalPaginas - 1) {
+        criarBotao('...', () => undefined, true);
+      }
+
+      criarBotao(String(totalPaginas), () => {
+        this.currentPagePainelAviso = totalPaginas;
+        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+      });
     }
 
     criarBotao('Próximo →', () => {
@@ -5140,11 +5200,41 @@ export class SistemaSILIC {
       }
     }, this.currentPagePainel === 1);
 
-    for (let pagina = 1; pagina <= totalPaginas; pagina++) {
+    const maxBotoesVisiveis = 7;
+    let inicioPagina = Math.max(1, this.currentPagePainel - Math.floor(maxBotoesVisiveis / 2));
+    let fimPagina = Math.min(totalPaginas, inicioPagina + maxBotoesVisiveis - 1);
+
+    if (fimPagina - inicioPagina < maxBotoesVisiveis - 1) {
+      inicioPagina = Math.max(1, fimPagina - maxBotoesVisiveis + 1);
+    }
+
+    if (inicioPagina > 1) {
+      criarBotao('1', () => {
+        this.currentPagePainel = 1;
+        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+      });
+
+      if (inicioPagina > 2) {
+        criarBotao('...', () => undefined, true);
+      }
+    }
+
+    for (let pagina = inicioPagina; pagina <= fimPagina; pagina++) {
       criarBotao(String(pagina), () => {
         this.currentPagePainel = pagina;
         this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
       }, false, pagina === this.currentPagePainel);
+    }
+
+    if (fimPagina < totalPaginas) {
+      if (fimPagina < totalPaginas - 1) {
+        criarBotao('...', () => undefined, true);
+      }
+
+      criarBotao(String(totalPaginas), () => {
+        this.currentPagePainel = totalPaginas;
+        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+      });
     }
 
     criarBotao('Próximo →', () => {
