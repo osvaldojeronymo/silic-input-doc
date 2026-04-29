@@ -2,27 +2,27 @@
 
 ## Objetivo
 
-Formalizar o encaminhamento do modulo de Controle de Locacao do SILIC 2.0 entre os atores de entrega:
+Formalizar o encaminhamento do módulo de Controle de Locação do SILIC 2.0 entre os atores de entrega:
 
 1. UX
 2. Analista de Requisitos
-3. Desenvolvedores (fabrica de software)
+3. Desenvolvedores (fábrica de software)
 
 ## Contexto
 
-O prototipo atual deve ser tratado como baixa fidelidade. A partir dele, sera produzido um prototipo de alta fidelidade no Figma, que servira de base para consolidacao de requisitos e posterior solicitacao de desenvolvimento.
+O protótipo atual deve ser tratado como baixa fidelidade. A partir dele, será produzido um protótipo de alta fidelidade no Figma, que servirá de base para consolidação de requisitos e posterior solicitação de desenvolvimento.
 
 ## Fluxo de encaminhamento aprovado
 
 1. Envio para UX:
-   - Entrada: documentacao funcional e de dados ja consolidada.
-   - Saida: prototipo de alta fidelidade no Figma.
+   - Entrada: documentação funcional e de dados já consolidada.
+   - Saída: protótipo de alta fidelidade no Figma.
 2. Envio para Analista de Requisitos:
-   - Entrada: Figma + documentacao atualizada.
-   - Saida: especificacao funcional aprovada e rastreavel.
+   - Entrada: Figma + documentação atualizada.
+   - Saída: especificação funcional aprovada e rastreável.
 3. Envio para Desenvolvedores:
    - Entrada: requisitos aprovados + Figma final + backlog priorizado.
-   - Saida: implementacao do modulo conforme escopo.
+   - Saída: implementação do módulo conforme escopo.
 
 ## Entregaveis ja preparados
 
@@ -33,9 +33,9 @@ O prototipo atual deve ser tratado como baixa fidelidade. A partir dele, sera pr
 - Checklist de envio: `docs/entregaveis/CHECKLIST_ENVIO.md`
 - Modelos de e-mail: `docs/entregaveis/MODELOS_EMAIL_ENCAMINHAMENTO.md`
 
-## Conteudo tecnico base da demanda
+## Conteúdo técnico base da demanda
 
-- Historia principal: `docs/HISTORIA_USUARIO_US001_CONTROLE_LOCACAO.md`
+- História principal: `docs/HISTORIA_USUARIO_US001_CONTROLE_LOCACAO.md`
 - Backlog de sub-historias: `docs/BACKLOG_US001_SUBHISTORIAS.md`
 - Dicionario de dados v1: `docs/DICIONARIO_DADOS_V1.md`
 - Estado atual do projeto: `docs/ESTADO_ATUAL_DO_PROJETO.md`
@@ -47,21 +47,21 @@ O prototipo atual deve ser tratado como baixa fidelidade. A partir dele, sera pr
 3. Inputs por perfil:
    - Gestor Operacional: `decisao_operacional`, `houve_acordo`, `incluir_no_siclg`
    - Gestor Formal: `radar_sucot`, `notas`
-4. Campos fora de escopo nao devem ser implementados:
+4. Campos fora de escopo não devem ser implementados:
    - `pago_ultimos_12_meses`
    - `ultimo_pagamento`
    - `fase_operacional`
    - `situacao_colegiado`
 
-## Decisao executiva solicitada
+## Decisão executiva solicitada
 
 Aprovar o fluxo de handoff e autorizar a continuidade nas etapas:
 
 1. UX (alta fidelidade no Figma)
-2. Analista de Requisitos (especificacao e validacao)
-3. Fabrica (implementacao do modulo)
+2. Analista de Requisitos (especificação e validação)
+3. Fábrica (implementação do módulo)
 
 ## Status
 
-- Documentacao estruturada e segregada por ator: concluido.
+- Documentação estruturada e segregada por ator: concluído.
 - Pronta para envio formal: sim.

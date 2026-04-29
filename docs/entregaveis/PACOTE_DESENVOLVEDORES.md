@@ -1,6 +1,6 @@
 # Pacote de Envio - Desenvolvedores
 
-Objetivo: permitir implementacao do modulo com contexto funcional, dados e prioridade de entrega.
+Objetivo: permitir implementação do módulo com contexto funcional, dados e prioridade de entrega.
 
 ## O que enviar para Desenvolvedores
 
@@ -12,18 +12,18 @@ Objetivo: permitir implementacao do modulo com contexto funcional, dados e prior
 6. `docs/INTEGRACAO_SAP.md`
 7. `docs/GUIA_DADOS.md`
 
-## Ordem recomendada de implementacao (MVP)
+## Ordem recomendada de implementação (MVP)
 
-1. US-001.1 Ingestao e normalizacao SAP/SICLG
-2. US-001.2 Motor de conciliacao
+1. US-001.1 Ingestão e normalização SAP/SICLG
+2. US-001.2 Motor de conciliação
 3. US-001.3 Tela A-I
 4. US-001.4 Workflow operacional
 5. US-001.5 Regra de prazo AR (legal 12-6 + operacional 12-7)
 6. US-001.6 Tela A-II
-7. US-001.7 Integracao DIJUR API
+7. US-001.7 Integração DIJUR API
 8. US-001.8 Tela A-III
 
-## Definicoes tecnicas minimas para iniciar
+## Definições técnicas mínimas para iniciar
 
 1. Modelo canônico:
    - `core_contrato`
@@ -44,9 +44,9 @@ Objetivo: permitir implementacao do modulo com contexto funcional, dados e prior
    - `updated_at`
    - `last_sync_at`
 
-## Criterios de pronto para kickoff tecnico
+## Critérios de pronto para kickoff técnico
 
 1. Figma aprovado e versionado.
 2. Requisitos assinados pelo Analista.
-3. Criterios de aceite em formato testavel.
-4. Dependencias externas identificadas (DIJUR API e dados SICLG).
+3. Critérios de aceite em formato testável.
+4. Dependências externas identificadas (DIJUR API e dados SICLG).

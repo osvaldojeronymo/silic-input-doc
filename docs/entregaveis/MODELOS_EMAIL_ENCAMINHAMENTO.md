@@ -4,18 +4,18 @@ Modelos prontos para uso no fluxo de handoff do SILIC 2.0.
 
 ## 1) Envio para UX
 
-Assunto: SILIC 2.0 - Handoff para Prototipo de Alta Fidelidade (Figma)
+Assunto: SILIC 2.0 - Handoff para Protótipo de Alta Fidelidade (Figma)
 
 Corpo:
 
 Prezados,
 
-Encaminho o pacote do modulo SILIC 2.0 para elaboracao do prototipo de alta fidelidade no Figma.
+Encaminho o pacote do módulo SILIC 2.0 para elaboração do protótipo de alta fidelidade no Figma.
 
 Objetivo desta etapa:
 
-- Transformar o prototipo atual de baixa fidelidade em prototipo de alta fidelidade.
-- Cobrir os modulos A-I, A-II, A-III e fluxos B-a..B-h.
+- Transformar o protótipo atual de baixa fidelidade em protótipo de alta fidelidade.
+- Cobrir os módulos A-I, A-II, A-III e fluxos B-a..B-h.
 - Respeitar regras de perfil e regra de prazo AR (janela legal 12-6 e janela operacional 12-7).
 
 Documentos anexos/referencias:
@@ -28,7 +28,7 @@ Documentos anexos/referencias:
 
 Entregavel esperado:
 
-- Link Figma com telas, estados e anotacoes de interacao para continuidade com Analista de Requisitos.
+- Link Figma com telas, estados e anotações de interação para continuidade com Analista de Requisitos.
 
 Prazo sugerido:
 
@@ -45,19 +45,19 @@ Atenciosamente,
 
 ## 2) Envio para Analista de Requisitos
 
-Assunto: SILIC 2.0 - Prototipo Figma + Documentacao para Consolidacao de Requisitos
+Assunto: SILIC 2.0 - Protótipo Figma + Documentação para Consolidação de Requisitos
 
 Corpo:
 
 Prezados,
 
-Encaminho o pacote consolidado do modulo SILIC 2.0 para formalizacao de requisitos e preparacao da demanda para desenvolvimento.
+Encaminho o pacote consolidado do módulo SILIC 2.0 para formalização de requisitos e preparação da demanda para desenvolvimento.
 
 Objetivo desta etapa:
 
-- Consolidar requisitos funcionais e nao funcionais.
-- Montar rastreabilidade entre historia, backlog, regras e telas Figma.
-- Formalizar escopo para repasse a fabrica de software.
+- Consolidar requisitos funcionais e não funcionais.
+- Montar rastreabilidade entre história, backlog, regras e telas Figma.
+- Formalizar escopo para repasse à fábrica de software.
 
 Documentos anexos/referencias:
 
@@ -70,7 +70,7 @@ Documentos anexos/referencias:
 
 Entregavel esperado:
 
-- Documento de requisitos aprovado e backlog tecnico priorizado para envio ao desenvolvimento.
+- Documento de requisitos aprovado e backlog técnico priorizado para envio ao desenvolvimento.
 
 Prazo sugerido:
 
@@ -85,19 +85,19 @@ Atenciosamente,
 
 ---
 
-## 3) Envio para Desenvolvedores (Fabrica)
+## 3) Envio para Desenvolvedores (Fábrica)
 
-Assunto: SILIC 2.0 - Solicitação de Desenvolvimento do Modulo de Controle de Locacao
+Assunto: SILIC 2.0 - Solicitação de Desenvolvimento do Módulo de Controle de Locação
 
 Corpo:
 
 Prezados,
 
-Encaminho a solicitacao formal de desenvolvimento do modulo SILIC 2.0, com base em prototipo de alta fidelidade e requisitos consolidados.
+Encaminho a solicitação formal de desenvolvimento do módulo SILIC 2.0, com base em protótipo de alta fidelidade e requisitos consolidados.
 
 Objetivo desta etapa:
 
-- Implementar o modulo conforme especificacoes funcionais e tecnicas.
+- Implementar o módulo conforme especificações funcionais e técnicas.
 - Iniciar pelo escopo MVP priorizado (US-001.1 a US-001.8).
 
 Documentos anexos/referencias:
@@ -115,11 +115,11 @@ Premissas criticas:
 - Chave de conciliacao: `contrato_sap`
 - Regra de prazo AR: janela legal 12-6 (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor 12-7
 - Inputs por perfil (Gestor Operacional e Gestor Formal)
-- Campos removidos nao devem ser implementados
+- Campos removidos não devem ser implementados
 
-Solicito confirmacao de recebimento e plano de execucao inicial.
+Solicito confirmação de recebimento e plano de execução inicial.
 
-Prazo sugerido para kickoff tecnico:
+Prazo sugerido para kickoff técnico:
 
 - [preencher data]
 

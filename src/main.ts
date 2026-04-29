@@ -2554,7 +2554,7 @@ export class SistemaSILIC {
 
   private montarPainelAvisoVencimento(rows: PainelVencimentosContrato[]): PainelAvisoVencimentoRow[] {
     const getDiasEmulados = (index: number): number => {
-      const diasPrimeiros10 = [420, 390, 360, 210, 180, 150, 90, 60, 30, -15];
+      const diasPrimeiros10 = [420, 360, 360, 240, 235, 230, 90, 60, 30, -15];
       if (index < diasPrimeiros10.length) return diasPrimeiros10[index];
 
       // Emulação controlada para 100 contratos no escopo do aviso (<= 14 meses).
@@ -2562,7 +2562,7 @@ export class SistemaSILIC {
       if (index < 20) return -15;
 
       // 20-99: 80% em janela de decisão, composição ponderada 60/30/15/15/10.
-      // Normalizado para 80 contratos: 37 (1 ano), 18 (6 meses), 9 (3 meses), 9 (2 meses), 7 (1 mês).
+      // Com os primeiros 10 contratos, o KPI fica em: +1 ano (1), 1 ano (32), 6 meses (19), 3 meses (10), 2 meses (9), 1 mês (8).
       if (index < 57) return 300; // 1 ano
       if (index < 75) return 120; // 6 meses
       if (index < 84) return 75;  // 3 meses
@@ -2587,10 +2587,10 @@ export class SistemaSILIC {
         'a_decidir',
         'a_decidir',
         'prorrogar',
+        'a_decidir',
         'prorrogar',
         'nao_prorrogar',
         'prorrogar',
-        'nao_prorrogar',
         'prorrogar',
         'nao_prorrogar',
         'nao_prorrogar'
@@ -2598,6 +2598,23 @@ export class SistemaSILIC {
       const decisaoProrrogarEmulada: 'a_decidir' | 'prorrogar' | 'nao_prorrogar' = index < 10
         ? decisaoPrimeiros10[index]
         : (index < 20 ? 'nao_prorrogar' : (index < 26 ? 'prorrogar' : 'nao_prorrogar'));
+      const decisaoAcaoRenovatoriaPadrao = this.derivarDecisaoAcaoRenovatoriaAviso(fimVigenciaDate);
+      const decisaoAcaoRenovatoriaPrimeiros10: Array<'a_decidir' | 'ingressar' | 'nao_ingressar' | null> = [
+        null,
+        null,
+        null,
+        'ingressar',
+        'a_decidir',
+        'a_decidir',
+        null,
+        null,
+        null,
+        null
+      ];
+      const decisaoAcaoRenovatoriaEmulada: 'a_decidir' | 'ingressar' | 'nao_ingressar' =
+        (index < 10 && decisaoAcaoRenovatoriaPrimeiros10[index])
+          ? decisaoAcaoRenovatoriaPrimeiros10[index] as 'a_decidir' | 'ingressar' | 'nao_ingressar'
+          : decisaoAcaoRenovatoriaPadrao;
 
       return {
         contratoId: row.contratoId,
@@ -2609,7 +2626,7 @@ export class SistemaSILIC {
         ultimoValorPagoSap: row.ultimoValorPagoSap,
         ultimoPagamentoSap: row.ultimoPgtoSap,
         decisaoProrrogar: decisaoProrrogarEmulada,
-        decisaoAcaoRenovatoria: this.derivarDecisaoAcaoRenovatoriaAviso(fimVigenciaDate),
+        decisaoAcaoRenovatoria: decisaoAcaoRenovatoriaEmulada,
         situacaoLaudoAvaliacao: row.modalidade === 'locacao' ? 'nao_solicitado' : 'nao_aplicavel',
         laudoPrazoEntregaDias: row.modalidade === 'locacao' ? 30 : undefined,
         laudoPrazoFormalInformado: false,
@@ -2623,6 +2640,43 @@ export class SistemaSILIC {
         ordemCasoTeste: index < 10 ? index + 1 : undefined
       };
     });
+
+    // Garante pelo menos 3 contratos dentro da faixa 8-7 meses para didática do KPI de risco.
+    const hojeBase = this.obterDataBase(new Date());
+    const offsetDiasFaixaAr87 = [240, 236, 232];
+    const contratosFaixaAr87 = candidatos.filter((item) => this.estaNaFaixaAlertaAr87(item));
+    if (contratosFaixaAr87.length < 3) {
+      const faltantes = 3 - contratosFaixaAr87.length;
+      const reserva = candidatos
+        .filter((item) => !this.estaNaFaixaAlertaAr87(item))
+        .slice(0, faltantes);
+
+      [...contratosFaixaAr87, ...reserva].slice(0, 3).forEach((item, idx) => {
+        const fimAjustado = new Date(hojeBase);
+        fimAjustado.setDate(fimAjustado.getDate() + offsetDiasFaixaAr87[idx]);
+        item.fimVigenciaDate = fimAjustado;
+        item.fimVigencia = this.formatDate(fimAjustado.toISOString()) || item.fimVigencia;
+        const limiteAr = this.calcularDataLimiteAjuizamentoAr(fimAjustado);
+        item.limiteLegalAr = this.formatDate(limiteAr.toISOString()) || item.limiteLegalAr;
+      });
+    }
+
+    // Garante um exemplo em cada categoria da composição do risco 8-7 meses.
+    const exemplosFaixaAr87 = candidatos
+      .filter((item) => this.estaNaFaixaAlertaAr87(item))
+      .sort((a, b) => (a.ordemCasoTeste || Number.MAX_SAFE_INTEGER) - (b.ordemCasoTeste || Number.MAX_SAFE_INTEGER));
+    if (exemplosFaixaAr87[0]) {
+      exemplosFaixaAr87[0].decisaoProrrogar = 'a_decidir';
+      exemplosFaixaAr87[0].decisaoAcaoRenovatoria = 'ingressar';
+    }
+    if (exemplosFaixaAr87[1]) {
+      exemplosFaixaAr87[1].decisaoProrrogar = 'prorrogar';
+      exemplosFaixaAr87[1].decisaoAcaoRenovatoria = 'a_decidir';
+    }
+    if (exemplosFaixaAr87[2]) {
+      exemplosFaixaAr87[2].decisaoProrrogar = 'a_decidir';
+      exemplosFaixaAr87[2].decisaoAcaoRenovatoria = 'a_decidir';
+    }
 
     return candidatos
       .filter((item) => this.estaNoEscopoAvisoVencimento(item))
@@ -4248,8 +4302,9 @@ export class SistemaSILIC {
       'Janela de vencimento: todas',
       rows.map((item) => this.classificarJanelaAviso(item)),
       {
-        ordem: ['1_ano', '6_meses', '3_meses', '2_meses', '1_mes', 'menor_1_mes', 'vencido'],
+        ordem: ['mais_1_ano', '1_ano', '6_meses', '3_meses', '2_meses', '1_mes', 'menor_1_mes', 'vencido'],
         labels: {
+          'mais_1_ano': '+1 ano',
           '1_ano': '1 ano',
           '6_meses': '6 meses',
           '3_meses': '3 meses',
@@ -4477,12 +4532,14 @@ export class SistemaSILIC {
     if (dias <= 60) return '2_meses';
     if (dias <= 90) return '3_meses';
     if (dias <= 180) return '6_meses';
+    if (dias > 365) return 'mais_1_ano';
     return '1_ano';
   }
 
   private obterRotuloJanelaAviso(item: PainelAvisoVencimentoRow): string {
     const janela = this.classificarJanelaAviso(item);
     const mapa: Record<string, string> = {
+      'mais_1_ano': '+1 ano',
       '1_ano': '1 ano',
       '6_meses': '6 meses',
       '3_meses': '3 meses',
@@ -4497,6 +4554,7 @@ export class SistemaSILIC {
   private obterClasseJanelaAviso(item: PainelAvisoVencimentoRow): string {
     const janela = this.classificarJanelaAviso(item);
     const mapa: Record<string, string> = {
+      'mais_1_ano': 'badge badge-info',
       '1_ano': 'badge badge-info',
       '6_meses': 'badge badge-info',
       '3_meses': 'badge badge-warning',
@@ -4516,7 +4574,7 @@ export class SistemaSILIC {
   }
 
   private ehJanelaDecisaoAviso(janela: string): boolean {
-    return janela === '1_ano' || janela === '6_meses' || janela === '3_meses' || janela === '2_meses' || janela === '1_mes';
+    return janela === 'mais_1_ano' || janela === '1_ano' || janela === '6_meses' || janela === '3_meses' || janela === '2_meses' || janela === '1_mes';
   }
 
   private aplicarEstadoComposicaoJanelaDecisao(): void {
@@ -4848,6 +4906,7 @@ export class SistemaSILIC {
 
       const baseJanelaDecisao = dados.filter((item) => item.decisaoProrrogar !== 'prorrogar' && this.classificarJanelaAviso(item) !== 'vencido');
       const totaisPorJanela = {
+        'mais_1_ano': 0,
         '1_ano': 0,
         '6_meses': 0,
         '3_meses': 0,
@@ -4857,7 +4916,8 @@ export class SistemaSILIC {
 
       baseJanelaDecisao.forEach((item) => {
         const janela = this.classificarJanelaAviso(item);
-        if (janela === '1_ano') totaisPorJanela['1_ano'] += 1;
+        if (janela === 'mais_1_ano') totaisPorJanela['mais_1_ano'] += 1;
+        else if (janela === '1_ano') totaisPorJanela['1_ano'] += 1;
         else if (janela === '6_meses') totaisPorJanela['6_meses'] += 1;
         else if (janela === '3_meses') totaisPorJanela['3_meses'] += 1;
         else if (janela === '2_meses') totaisPorJanela['2_meses'] += 1;
@@ -4870,15 +4930,16 @@ export class SistemaSILIC {
       const faixa127 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_12_7').length;
       const faixaMenor6 = dados.filter((item) => this.classificarFaixaSinalizacaoAviso(item) === 'faixa_menor_6').length;
       const baseFaixaAr87 = dados.filter((item) => this.estaNaFaixaAlertaAr87(item));
-      const pendenciaProrrogacaoAr87 = baseFaixaAr87.filter((item) => item.decisaoProrrogar === 'a_decidir').length;
-      const pendenciaArAr87 = baseFaixaAr87.filter((item) => item.decisaoAcaoRenovatoria === 'a_decidir').length;
+      const pendenciaProrrogacaoAr87 = baseFaixaAr87.filter((item) => item.decisaoProrrogar === 'a_decidir' && item.decisaoAcaoRenovatoria !== 'a_decidir').length;
+      const pendenciaArAr87 = baseFaixaAr87.filter((item) => item.decisaoProrrogar !== 'a_decidir' && item.decisaoAcaoRenovatoria === 'a_decidir').length;
       const alertaAr87 = baseFaixaAr87.filter((item) => this.estaEmRiscoAr87(item)).length;
+      const totalRiscoAr87 = pendenciaProrrogacaoAr87 + pendenciaArAr87 + alertaAr87;
       const dadosInsuficientes = dados.filter((item) => this.possuiDadosVigenciaInsuficientes(item)).length;
       resumo.innerHTML = `
-        <div class="aviso-regras-box">
-          <strong>Regras de negocio aplicadas neste painel</strong>
+        <details class="aviso-regras-box">
+          <summary>Regras de negocio aplicadas neste painel</summary>
           <ul>
-            <li>Classificacao por janela de vencimento (D+ e D-): Vencido (D+), Menor que 1 mes (D-1 a D-29), 1 mes (D-30), 2 meses (D-31 a D-60), 3 meses (D-61 a D-90), 6 meses (D-91 a D-180) e 1 ano (acima de D-180).</li>
+            <li>Classificacao por janela de vencimento (D+ e D-): Vencido (D+), Menor que 1 mes (D-1 a D-29), 1 mes (D-30), 2 meses (D-31 a D-60), 3 meses (D-61 a D-90), 6 meses (D-91 a D-180), 1 ano (D-181 a D-365) e +1 ano (acima de D-365).</li>
             <li>KPIs com fechamento: Registros no aviso = Com decisao de prorrogar + Janela de decisao + Vencidos em prazo indeterminado.</li>
             <li>Fluxo decisorio por prazo: prorrogacao e acao renovatoria podem ser decididas em momentos distintos, com monitoramento continuo das janelas 14-12, 12-7 e abaixo de 7 meses.</li>
             <li>Decisao de prorrogar: status "a decidir" somente entre 14 meses e 12 meses antes do fim da vigencia; com 12 meses ou menos a decisao deve ser "prorrogar" ou "nao prorrogar".</li>
@@ -4888,23 +4949,23 @@ export class SistemaSILIC {
             <li>SLA padrao do laudo: 30 dias apos solicitacao com documentacao completa e acesso liberado ao imovel.</li>
             <li>Em caso de complexidade elevada ou volume expressivo, o gestor registra prazo formal informado pela area responsavel.</li>
             <li>Novo laudo pode ser solicitado antes de 12 meses quando houver variacao de mercado na regiao que impacte a negociacao.</li>
-            <li>KPI "Janela de decisao": contratos sem decisao de prorrogar e nao vencidos, distribuidos entre 1 ano, 6 meses, 3 meses, 2 meses e 1 mes (inclui menor que 1 mes).</li>
+            <li>KPI "Janela de decisao": contratos sem decisao de prorrogar e nao vencidos, distribuidos entre +1 ano, 1 ano, 6 meses, 3 meses, 2 meses e 1 mes (inclui menor que 1 mes).</li>
             <li>Acao renovatoria: janela legal para ingresso entre 12 e 6 meses antes do fim da vigencia.</li>
             <li>Janela AR (12-7 meses): recorte operacional para decisao direta do gestor; entre 7 e 6 meses, manter escalonamento para Gestao Formal/Juridico.</li>
             <li>Prazo decadencial: contagem por ano e mes civil (Art. 132 do Codigo Civil), com limite final no marco de 6 meses retroativos.</li>
-            <li>Alerta automatico AR (8-7 meses): ${alertaAr87} contrato(s) com pendencia simultanea de prorrogacao e AR na faixa de atencao operacional.</li>
+            <li>Alerta automatico AR (8-7 meses): ${totalRiscoAr87} contrato(s) com pendencia de prorrogacao e/ou AR; ${alertaAr87} em risco real por dupla pendencia.</li>
             <li>Qualidade de dados: ${dadosInsuficientes} contrato(s) com dados insuficientes de vigencia para decisao (acoes bloqueadas ate saneamento).</li>
             <li>Decisao de prorrogar fica bloqueada quando existe protocolo formal, preservando o fluxo formal ja iniciado.</li>
             <li>Solicitacao de Ato Formal so aparece quando a decisao estiver em "Prorrogar" e ainda nao houver protocolo formal.</li>
           </ul>
-        </div>
+        </details>
       `;
 
       this.setElementText('avisoKpiTotal', String(total));
       this.setElementText('avisoKpiProrrogar', String(prorrogar));
       this.setElementText('avisoKpiCriticos', String(janelaDecisao));
       this.setElementText('avisoKpiVencidos', String(vencidos));
-      this.setElementText('avisoKpiRiscoAr87', String(alertaAr87));
+      this.setElementText('avisoKpiRiscoAr87', String(totalRiscoAr87));
       this.setElementText('avisoFaixa1412', String(faixa1412));
       this.setElementText('avisoFaixa126', String(faixa127));
       this.setElementText('avisoFaixaMenor6', String(faixaMenor6));
@@ -4924,6 +4985,7 @@ export class SistemaSILIC {
       const detalheJanelaDecisao = document.getElementById('avisoKpiCriticosDetalhe');
       if (detalheJanelaDecisao) {
         detalheJanelaDecisao.innerHTML = `
+          <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['mais_1_ano']}</span><span class="aviso-kpi-chip-label">+1 ano</span></span>
           <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['1_ano']}</span><span class="aviso-kpi-chip-label">1 ano</span></span>
           <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['6_meses']}</span><span class="aviso-kpi-chip-label">6 meses</span></span>
           <span class="aviso-kpi-chip"><span class="aviso-kpi-chip-value">${totaisPorJanela['3_meses']}</span><span class="aviso-kpi-chip-label">3 meses</span></span>
