@@ -786,9 +786,10 @@ body {
 
 /* Paginação */
 .pagination-container {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
+    column-gap: 0.75rem;
     margin-top: 2rem;
     padding: 1.5rem;
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
@@ -803,7 +804,8 @@ body {
     font-weight: 600;
     white-space: nowrap;
     flex: 0 0 auto;
-    margin-right: 0.75rem;
+    min-width: 170px;
+    margin-right: 0;
 }
 
 .pagination-info span {
@@ -815,8 +817,8 @@ body {
     display: flex;
     align-items: center;
     flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 0.75rem;
+    justify-content: space-between;
+    gap: 0.625rem;
     min-width: 0;
     flex: 1 1 auto;
 }
@@ -831,6 +833,8 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
+    flex: 0 0 150px;
+    width: 150px;
 }
 
 .items-per-page:hover {
@@ -847,13 +851,16 @@ body {
 .pagination-controls {
     display: flex;
     flex-wrap: nowrap;
-    justify-content: flex-start;
+    justify-content: flex-end;
+    flex: 1 1 auto;
+    min-width: 0;
     gap: 0.5rem;
     white-space: nowrap;
     overflow-x: auto;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     max-width: 100%;
+    margin-left: auto;
 }
 
 .pagination-controls button {
@@ -2853,6 +2860,7 @@ body {
         flex-direction: column;
         gap: 1rem;
         text-align: center;
+        display: flex;
     }
 
     .pagination-actions {
