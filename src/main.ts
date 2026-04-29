@@ -158,9 +158,12 @@ interface EtapaLaudoRegistro {
   uploadArquivos?: string[];
   dataElaboracao?: string;
   dataValidade?: string;
+  dataEmissao?: string;
   numeroDocumento?: string;
   empresaNome?: string;
   empresaCnpj?: string;
+  endereco?: string;
+  area?: number;
   valorMinimo?: number;
   valorMedio?: number;
   valorMaximo?: number;
@@ -187,6 +190,9 @@ interface NegociacaoLocadorPercentualEdit {
 interface EtapaNegociacaoRegistro {
   contextoContrato?: NegociacaoContextoTipo;
   valorPropostoAluguel?: number;
+  valorAcordadoPartes?: number;
+  dataInicioNegociacao?: string;
+  dataFimNegociacao?: string;
   vigenciaMeses?: number;
   dataInicioVigencia?: string;
   dataFinalVigencia?: string;
@@ -6174,9 +6180,12 @@ export class SistemaSILIC {
     const preencherFormulario = (registro?: EtapaLaudoRegistro): void => {
       (document.getElementById('laudoDataElaboracao') as HTMLInputElement | null)!.value = registro?.dataElaboracao || '';
       (document.getElementById('laudoDataValidade') as HTMLInputElement | null)!.value = registro?.dataValidade || '';
+      (document.getElementById('laudoDataEmissao') as HTMLInputElement | null)!.value = registro?.dataEmissao || '';
       (document.getElementById('laudoNumeroDocumento') as HTMLInputElement | null)!.value = registro?.numeroDocumento || '';
       (document.getElementById('laudoEmpresaNome') as HTMLInputElement | null)!.value = registro?.empresaNome || '';
       (document.getElementById('laudoEmpresaCnpj') as HTMLInputElement | null)!.value = registro?.empresaCnpj || '';
+      (document.getElementById('laudoEndereco') as HTMLInputElement | null)!.value = registro?.endereco || '';
+      (document.getElementById('laudoArea') as HTMLInputElement | null)!.value = registro?.area !== undefined ? String(registro.area) : '';
       this.formatarCampoMonetario('laudoValorMinimo', registro?.valorMinimo);
       this.formatarCampoMonetario('laudoValorMedio', registro?.valorMedio);
       this.formatarCampoMonetario('laudoValorMaximo', registro?.valorMaximo);
@@ -6229,6 +6238,7 @@ export class SistemaSILIC {
 
       const dataElaboracao = (document.getElementById('laudoDataElaboracao') as HTMLInputElement | null)?.value || '';
       const dataValidade = (document.getElementById('laudoDataValidade') as HTMLInputElement | null)?.value || '';
+      const dataEmissao = (document.getElementById('laudoDataEmissao') as HTMLInputElement | null)?.value || '';
       if (dataElaboracao && dataValidade && dataValidade < dataElaboracao) {
         this.showToast('A data de validade do laudo não pode ser anterior à data de elaboração.');
         return;
@@ -6238,9 +6248,12 @@ export class SistemaSILIC {
         uploadArquivos: uploadsPersistidos,
         dataElaboracao,
         dataValidade,
+        dataEmissao,
         numeroDocumento: (document.getElementById('laudoNumeroDocumento') as HTMLInputElement | null)?.value.trim() || '',
         empresaNome: (document.getElementById('laudoEmpresaNome') as HTMLInputElement | null)?.value.trim() || '',
         empresaCnpj: cnpj,
+        endereco: (document.getElementById('laudoEndereco') as HTMLInputElement | null)?.value.trim() || '',
+        area: this.lerNumeroInput('laudoArea'),
         valorMinimo: this.lerNumeroMonetarioInput('laudoValorMinimo'),
         valorMedio: this.lerNumeroMonetarioInput('laudoValorMedio'),
         valorMaximo: this.lerNumeroMonetarioInput('laudoValorMaximo'),
@@ -6683,6 +6696,9 @@ export class SistemaSILIC {
 
     const preencherFormulario = (registro?: EtapaNegociacaoRegistro): void => {
       (document.getElementById('negociacaoValorPropostoAluguel') as HTMLInputElement | null)!.value = registro?.valorPropostoAluguel !== undefined ? String(registro.valorPropostoAluguel) : '';
+      (document.getElementById('negociacaoValorAcordadoPartes') as HTMLInputElement | null)!.value = registro?.valorAcordadoPartes !== undefined ? String(registro.valorAcordadoPartes) : '';
+      (document.getElementById('negociacaoDataInicioNegociacao') as HTMLInputElement | null)!.value = registro?.dataInicioNegociacao || '';
+      (document.getElementById('negociacaoDataFimNegociacao') as HTMLInputElement | null)!.value = registro?.dataFimNegociacao || '';
       (document.getElementById('negociacaoVigenciaMeses') as HTMLInputElement | null)!.value = registro?.vigenciaMeses !== undefined ? String(registro.vigenciaMeses) : '';
       (document.getElementById('negociacaoDataInicioVigencia') as HTMLInputElement | null)!.value = registro?.dataInicioVigencia || '';
       if (dataFinalVigenciaInput) {
@@ -6837,6 +6853,8 @@ export class SistemaSILIC {
       const temArAndamento = (temArAndamentoSelect?.value || '') as 'sim' | 'nao' | '';
       const arDesistenciaCondicoes = (document.getElementById('negociacaoArDesistenciaCondicoes') as HTMLTextAreaElement | null)?.value.trim() || '';
       const novaDataPagamento = (document.getElementById('negociacaoNovaDataPagamento') as HTMLInputElement | null)?.value || '';
+      const dataInicioNegociacao = (document.getElementById('negociacaoDataInicioNegociacao') as HTMLInputElement | null)?.value || '';
+      const dataFimNegociacao = (document.getElementById('negociacaoDataFimNegociacao') as HTMLInputElement | null)?.value || '';
       const dataInicioVigencia = (document.getElementById('negociacaoDataInicioVigencia') as HTMLInputElement | null)?.value || '';
       const dataFinalVigencia = (document.getElementById('negociacaoDataFinalVigencia') as HTMLInputElement | null)?.value || '';
       const dataProximoReajuste = (document.getElementById('negociacaoDataProximoReajuste') as HTMLInputElement | null)?.value || '';
@@ -6950,6 +6968,11 @@ export class SistemaSILIC {
         return;
       }
 
+      if (dataInicioNegociacao && dataFimNegociacao && dataFimNegociacao < dataInicioNegociacao) {
+        this.showToast('A data fim da negociação não pode ser anterior à data de início da negociação.');
+        return;
+      }
+
       const locadoresPercentuais = validarPercentuaisLocadores();
       if (locadoresPercentuais === null) return;
 
@@ -6963,6 +6986,9 @@ export class SistemaSILIC {
       mapa[contratoId] = {
         contextoContrato: contextoAtual.tipo,
         valorPropostoAluguel: this.lerNumeroInput('negociacaoValorPropostoAluguel'),
+        valorAcordadoPartes: this.lerNumeroInput('negociacaoValorAcordadoPartes'),
+        dataInicioNegociacao,
+        dataFimNegociacao,
         vigenciaMeses: this.lerNumeroInput('negociacaoVigenciaMeses'),
         dataInicioVigencia,
         dataFinalVigencia,

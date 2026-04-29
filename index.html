@@ -429,6 +429,18 @@
                             <span>Valor máximo (R$)</span>
                             <input type="text" id="laudoValorMaximo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
                         </label>
+                        <label class="etapa-field">
+                            <span>Endereço</span>
+                            <input type="text" id="laudoEndereco" class="filter-input" placeholder="Endereço do imóvel avaliado">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Área</span>
+                            <input type="number" id="laudoArea" class="filter-input" min="0" step="0.01" placeholder="Ex.: 350.75">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data de emissão</span>
+                            <input type="date" id="laudoDataEmissao" class="filter-date">
+                        </label>
                         <label class="etapa-field etapa-field-full">
                             <span>Upload do laudo do imóvel</span>
                             <input type="file" id="laudoUploadArquivo" class="filter-input" accept=".pdf,.doc,.docx,.xlsx,.xls">
@@ -509,6 +521,18 @@
                         <label class="etapa-field">
                             <span>Valor proposto de aluguel (R$/mês)</span>
                             <input type="number" id="negociacaoValorPropostoAluguel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 18500.00">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Valor acordado entre as partes (R$/mês)</span>
+                            <input type="number" id="negociacaoValorAcordadoPartes" class="filter-input" min="0" step="0.01" placeholder="Ex.: 17900.00">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data de início da negociação</span>
+                            <input type="date" id="negociacaoDataInicioNegociacao" class="filter-date">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data fim da negociação</span>
+                            <input type="date" id="negociacaoDataFimNegociacao" class="filter-date">
                         </label>
                         <label class="etapa-field">
                             <span>Vigência do contrato a firmar (meses)</span>
