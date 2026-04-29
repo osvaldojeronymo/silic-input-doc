@@ -811,7 +811,14 @@ body {
 .pagination-actions {
     display: flex;
     align-items: center;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
     gap: 1.25rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
 }
 
 .items-per-page {
@@ -839,7 +846,10 @@ body {
 
 .pagination-controls {
     display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
     gap: 0.625rem;
+    white-space: nowrap;
 }
 
 .pagination-controls button {
@@ -853,6 +863,7 @@ body {
     font-weight: 600;
     font-size: 0.9375rem;
     min-width: 44px;
+    flex: 0 0 auto;
 }
 
 .pagination-controls button:hover:not(:disabled) {
@@ -2841,17 +2852,22 @@ body {
     }
 
     .pagination-actions {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: nowrap;
         width: 100%;
+        justify-content: flex-start;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .items-per-page {
-        width: 100%;
+        width: auto;
+        flex: 0 0 auto;
     }
 
     .pagination-controls {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
     }
 
     .pagination-controls button {

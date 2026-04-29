@@ -4352,7 +4352,6 @@ export class SistemaSILIC {
 
   private atualizarPainelVencimentos(dados: PainelVencimentosContrato[]): void {
     const tbody = document.getElementById('painelVencimentosBody') as HTMLTableSectionElement | null;
-    const resumo = document.getElementById('painelResumo');
     if (!tbody) return;
 
     tbody.innerHTML = '';
@@ -4390,13 +4389,6 @@ export class SistemaSILIC {
 
       tbody.appendChild(tr);
     });
-
-    if (resumo) {
-      const qtd = dados.length;
-      const pendentes = dados.filter((d) => d.conciliacaoStatus === 'pendente_conciliacao').length;
-      const d30 = dados.filter((d) => typeof d.diasParaVencimento === 'number' && d.diasParaVencimento <= 30).length;
-      resumo.textContent = `${qtd} contrato(s) no painel • ${pendentes} pendente(s) de conciliação • ${d30} em janela D-30`;
-    }
 
     this.atualizarPaginacaoPainelPortfolio(dados.length);
   }
