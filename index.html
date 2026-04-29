@@ -859,7 +859,13 @@
             </section>
 
             <section class="formal-panel-view executivo-neutro" data-formal-panel="aviso-vencimento" hidden>
-            <div class="mini-label" style="margin-bottom: 10px;">Resumo Executivo</div>
+            <div class="aviso-topo-header">
+                <div class="mini-label" style="margin-bottom: 0;">Resumo Executivo</div>
+                <div class="aviso-tema-switch" role="group" aria-label="Selecionar tema visual do painel">
+                    <button id="avisoTemaExecutivoBtn" class="aviso-tema-btn is-active" type="button" aria-pressed="true">Executivo neutro</button>
+                    <button id="avisoTemaOperacionalBtn" class="aviso-tema-btn" type="button" aria-pressed="false">Operacional alerta</button>
+                </div>
+            </div>
 
             <div class="aviso-kpi-grid aviso-kpi-grid-principal">
                 <article class="aviso-kpi-card aviso-kpi-total">

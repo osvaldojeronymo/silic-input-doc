@@ -265,6 +265,7 @@ interface ContratoBuscaUiState {
 export class SistemaSILIC {
   private static readonly FORMAL_STORAGE_KEY = 'silic.formal.edicoes.v1';
   private static readonly AVISO_STORAGE_KEY = 'silic.aviso.operacional.v1';
+  private static readonly AVISO_TEMA_STORAGE_KEY = 'silic.aviso.tema.visual.v1';
   private static readonly ETAPA_RTA_STORAGE_KEY = 'silic.operacional.etapa.rta.v1';
   private static readonly ETAPA_LAUDO_STORAGE_KEY = 'silic.operacional.etapa.laudo.v1';
   private static readonly ETAPA_NEGOCIACAO_STORAGE_KEY = 'silic.operacional.etapa.negociacao.v1';
@@ -295,6 +296,7 @@ export class SistemaSILIC {
   private avisoFaixaFiltroAtiva: '' | 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6' = '';
   private avisoFiltroRiscoAr87Ativo = false;
   private avisoStatusBadgeFiltroAtivo = '';
+  private avisoTemaVisual: 'executivo-neutro' | 'operacional-alerta' = 'executivo-neutro';
   private contratosEtapasBusca: ContratoBuscaResultado[] = [];
   private contratoBuscaProvider: ContratoBuscaProvider | null = null;
   private readonly contratoBuscaDebounceMs = 350;
@@ -3612,6 +3614,9 @@ export class SistemaSILIC {
       }
     });
 
+    this.addEventListenerSafe('avisoTemaExecutivoBtn', 'click', () => this.alterarTemaPainelAviso('executivo-neutro'));
+    this.addEventListenerSafe('avisoTemaOperacionalBtn', 'click', () => this.alterarTemaPainelAviso('operacional-alerta'));
+
     document.querySelectorAll<HTMLElement>('[data-aviso-faixa-filter]').forEach((card) => {
       const faixa = card.dataset.avisoFaixaFilter as '' | 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6';
       if (!faixa) return;
@@ -3666,6 +3671,56 @@ export class SistemaSILIC {
     this.atualizarEstadoVisualFiltroFaixaAviso();
     this.atualizarEstadoVisualFiltroRiscoAr87();
     this.atualizarRotuloFiltroAtivoAviso();
+    this.carregarTemaPainelAviso();
+    this.aplicarTemaVisualPainelAviso();
+  }
+
+  private carregarTemaPainelAviso(): void {
+    try {
+      const tema = localStorage.getItem(SistemaSILIC.AVISO_TEMA_STORAGE_KEY);
+      if (tema === 'operacional-alerta' || tema === 'executivo-neutro') {
+        this.avisoTemaVisual = tema;
+      }
+    } catch {
+      this.avisoTemaVisual = 'executivo-neutro';
+    }
+  }
+
+  private salvarTemaPainelAviso(): void {
+    try {
+      localStorage.setItem(SistemaSILIC.AVISO_TEMA_STORAGE_KEY, this.avisoTemaVisual);
+    } catch {
+      // Ignora indisponibilidade de localStorage.
+    }
+  }
+
+  private alterarTemaPainelAviso(tema: 'executivo-neutro' | 'operacional-alerta'): void {
+    if (this.avisoTemaVisual === tema) return;
+    this.avisoTemaVisual = tema;
+    this.aplicarTemaVisualPainelAviso();
+    this.salvarTemaPainelAviso();
+  }
+
+  private aplicarTemaVisualPainelAviso(): void {
+    const painel = document.querySelector<HTMLElement>('.formal-panel-view[data-formal-panel="aviso-vencimento"]');
+    if (painel) {
+      painel.classList.remove('executivo-neutro', 'operacional-alerta');
+      painel.classList.add(this.avisoTemaVisual);
+    }
+
+    const btnExecutivo = document.getElementById('avisoTemaExecutivoBtn');
+    const btnOperacional = document.getElementById('avisoTemaOperacionalBtn');
+    const executivoAtivo = this.avisoTemaVisual === 'executivo-neutro';
+
+    if (btnExecutivo) {
+      btnExecutivo.classList.toggle('is-active', executivoAtivo);
+      btnExecutivo.setAttribute('aria-pressed', String(executivoAtivo));
+    }
+
+    if (btnOperacional) {
+      btnOperacional.classList.toggle('is-active', !executivoAtivo);
+      btnOperacional.setAttribute('aria-pressed', String(!executivoAtivo));
+    }
   }
 
   private atualizarEstadoVisualFiltroFaixaAviso(): void {
