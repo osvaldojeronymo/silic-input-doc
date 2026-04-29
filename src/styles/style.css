@@ -2276,6 +2276,9 @@ body {
 
 /* Azul: dados do contrato */
 .operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoValorPropostoAluguel),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoValorAcordadoPartes),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoDataInicioNegociacao),
+.operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoDataFimNegociacao),
 .operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoVigenciaMeses),
 .operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoTemCarenciaToggle),
 .operacional-panel-view[data-operacional-panel="passos-jornada"] #fase61 .etapa-field:has(#negociacaoCarenciaDias),
