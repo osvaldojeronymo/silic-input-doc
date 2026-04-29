@@ -2216,17 +2216,18 @@ export class SistemaSILIC {
     // Se só tem 1 página, não mostra controles
     if (totalPaginas <= 1) return;
 
-    // Botão Anterior
-    const btnAnterior = document.createElement('button');
-    btnAnterior.innerHTML = '← Anterior';
-    btnAnterior.disabled = this.currentPageImoveis === 1;
-    btnAnterior.addEventListener('click', () => {
-      if (this.currentPageImoveis > 1) {
-        this.currentPageImoveis--;
-        this.atualizarTabelaImoveis();
-      }
-    });
-    paginationControls.appendChild(btnAnterior);
+    // Botão Anterior (oculto quando desabilitado)
+    if (this.currentPageImoveis > 1) {
+      const btnAnterior = document.createElement('button');
+      btnAnterior.innerHTML = '← Anterior';
+      btnAnterior.addEventListener('click', () => {
+        if (this.currentPageImoveis > 1) {
+          this.currentPageImoveis--;
+          this.atualizarTabelaImoveis();
+        }
+      });
+      paginationControls.appendChild(btnAnterior);
+    }
 
     // Números de página (máximo 5 páginas visíveis)
     const maxBotoesVisiveis = 5;
@@ -2289,17 +2290,18 @@ export class SistemaSILIC {
       paginationControls.appendChild(btnUltima);
     }
 
-    // Botão Próximo
-    const btnProximo = document.createElement('button');
-    btnProximo.innerHTML = 'Próximo →';
-    btnProximo.disabled = this.currentPageImoveis === totalPaginas;
-    btnProximo.addEventListener('click', () => {
-      if (this.currentPageImoveis < totalPaginas) {
-        this.currentPageImoveis++;
-        this.atualizarTabelaImoveis();
-      }
-    });
-    paginationControls.appendChild(btnProximo);
+    // Botão Próximo (oculto quando desabilitado)
+    if (this.currentPageImoveis < totalPaginas) {
+      const btnProximo = document.createElement('button');
+      btnProximo.innerHTML = 'Próximo →';
+      btnProximo.addEventListener('click', () => {
+        if (this.currentPageImoveis < totalPaginas) {
+          this.currentPageImoveis++;
+          this.atualizarTabelaImoveis();
+        }
+      });
+      paginationControls.appendChild(btnProximo);
+    }
   }
 
   private configurarItemsPorPagina(): void {
@@ -5045,12 +5047,14 @@ export class SistemaSILIC {
       controls.appendChild(button);
     };
 
-    criarBotao('← Anterior', () => {
-      if (this.currentPagePainelFormal > 1) {
-        this.currentPagePainelFormal--;
-        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
-      }
-    }, this.currentPagePainelFormal === 1);
+    if (this.currentPagePainelFormal > 1) {
+      criarBotao('← Anterior', () => {
+        if (this.currentPagePainelFormal > 1) {
+          this.currentPagePainelFormal--;
+          this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+        }
+      });
+    }
 
     const maxBotoesVisiveis = 7;
     let inicioPagina = Math.max(1, this.currentPagePainelFormal - Math.floor(maxBotoesVisiveis / 2));
@@ -5089,12 +5093,14 @@ export class SistemaSILIC {
       });
     }
 
-    criarBotao('Próximo →', () => {
-      if (this.currentPagePainelFormal < totalPaginas) {
-        this.currentPagePainelFormal++;
-        this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
-      }
-    }, this.currentPagePainelFormal === totalPaginas);
+    if (this.currentPagePainelFormal < totalPaginas) {
+      criarBotao('Próximo →', () => {
+        if (this.currentPagePainelFormal < totalPaginas) {
+          this.currentPagePainelFormal++;
+          this.atualizarPainelAcoesRenovatorias(this.painelAcoesRenovatoriasFiltrado);
+        }
+      });
+    }
   }
 
   private gerarBotoesPaginacaoPainelAviso(total: number): void {
@@ -5119,12 +5125,14 @@ export class SistemaSILIC {
       controls.appendChild(button);
     };
 
-    criarBotao('← Anterior', () => {
-      if (this.currentPagePainelAviso > 1) {
-        this.currentPagePainelAviso--;
-        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
-      }
-    }, this.currentPagePainelAviso === 1);
+    if (this.currentPagePainelAviso > 1) {
+      criarBotao('← Anterior', () => {
+        if (this.currentPagePainelAviso > 1) {
+          this.currentPagePainelAviso--;
+          this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+        }
+      });
+    }
 
     const maxBotoesVisiveis = 7;
     let inicioPagina = Math.max(1, this.currentPagePainelAviso - Math.floor(maxBotoesVisiveis / 2));
@@ -5163,12 +5171,14 @@ export class SistemaSILIC {
       });
     }
 
-    criarBotao('Próximo →', () => {
-      if (this.currentPagePainelAviso < totalPaginas) {
-        this.currentPagePainelAviso++;
-        this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
-      }
-    }, this.currentPagePainelAviso === totalPaginas);
+    if (this.currentPagePainelAviso < totalPaginas) {
+      criarBotao('Próximo →', () => {
+        if (this.currentPagePainelAviso < totalPaginas) {
+          this.currentPagePainelAviso++;
+          this.atualizarPainelAvisoVencimento(this.painelAvisoVencimentoFiltrado);
+        }
+      });
+    }
   }
 
   private gerarBotoesPaginacaoPainel(total: number): void {
@@ -5193,12 +5203,14 @@ export class SistemaSILIC {
       controls.appendChild(button);
     };
 
-    criarBotao('← Anterior', () => {
-      if (this.currentPagePainel > 1) {
-        this.currentPagePainel--;
-        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
-      }
-    }, this.currentPagePainel === 1);
+    if (this.currentPagePainel > 1) {
+      criarBotao('← Anterior', () => {
+        if (this.currentPagePainel > 1) {
+          this.currentPagePainel--;
+          this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+        }
+      });
+    }
 
     const maxBotoesVisiveis = 7;
     let inicioPagina = Math.max(1, this.currentPagePainel - Math.floor(maxBotoesVisiveis / 2));
@@ -5237,12 +5249,14 @@ export class SistemaSILIC {
       });
     }
 
-    criarBotao('Próximo →', () => {
-      if (this.currentPagePainel < totalPaginas) {
-        this.currentPagePainel++;
-        this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
-      }
-    }, this.currentPagePainel === totalPaginas);
+    if (this.currentPagePainel < totalPaginas) {
+      criarBotao('Próximo →', () => {
+        if (this.currentPagePainel < totalPaginas) {
+          this.currentPagePainel++;
+          this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+        }
+      });
+    }
   }
 
   private configurarNavegacaoRotas(): void {
