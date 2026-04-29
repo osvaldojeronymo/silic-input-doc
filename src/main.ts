@@ -969,6 +969,10 @@ export class SistemaSILIC {
     this.configurarCollapsibles();
     this.configurarSectionIndex();
     this.configurarDrawersDetalhes();
+    this.configurarDetalhamentoInlinePorTab('tab-contrato');
+    this.configurarDetalhamentoInlinePorTab('tab-locador');
+    this.configurarDetalhamentoInlinePorTab('tab-aditivos');
+    this.configurarDetalhamentoInlinePorTab('tab-alertas');
 
     // Inicializar aba de serviços com o imóvel atual
     this.inicializarAbaServicos(imovel);
@@ -2111,10 +2115,77 @@ export class SistemaSILIC {
         // Adiciona active ao clicado
         btn.classList.add('active');
         if (tabContents[index]) {
-          tabContents[index].classList.add('active');
+          const tabAtiva = tabContents[index] as HTMLElement;
+          tabAtiva.classList.add('active');
+          this.abrirDetalhamentoPadraoAoEntrarNaAba(tabAtiva);
         }
       });
     });
+  }
+
+  /**
+   * Configura detalhamento inline por card em uma aba, sem uso de drawer.
+   */
+  private configurarDetalhamentoInlinePorTab(tabId: string): void {
+    const tab = document.getElementById(tabId);
+    if (!tab) return;
+
+    const configAttr = `data-inline-detail-configured-${tabId}`;
+    if (tab.getAttribute(configAttr) === 'true') return;
+    tab.setAttribute(configAttr, 'true');
+
+    const triggers = Array.from(tab.querySelectorAll('.detail-card-trigger[data-inline-target]')) as HTMLButtonElement[];
+    if (!triggers.length) return;
+
+    const sectionsByTrigger = triggers
+      .map((trigger) => {
+        const targetId = trigger.dataset.inlineTarget;
+        if (!targetId) return null;
+        const section = document.getElementById(targetId) as HTMLElement | null;
+        if (!section) return null;
+        return { trigger, section };
+      })
+      .filter((item): item is { trigger: HTMLButtonElement; section: HTMLElement } => item !== null);
+
+    const mostrarSecao = (targetSection: HTMLElement, targetTrigger: HTMLButtonElement): void => {
+      sectionsByTrigger.forEach(({ trigger, section }) => {
+        const ativa = section === targetSection;
+        section.style.display = ativa ? '' : 'none';
+        trigger.classList.toggle('is-active', ativa);
+      });
+    };
+
+    // Inicia com os blocos retraídos; o conteúdo aparece apenas quando o usuário escolher um card.
+    sectionsByTrigger.forEach(({ section, trigger }) => {
+      section.style.display = 'none';
+      trigger.classList.remove('is-active');
+    });
+
+    sectionsByTrigger.forEach(({ trigger, section }) => {
+      trigger.addEventListener('click', () => {
+        const estaAtiva = trigger.classList.contains('is-active');
+        if (estaAtiva) {
+          section.style.display = 'none';
+          trigger.classList.remove('is-active');
+          return;
+        }
+        mostrarSecao(section, trigger);
+      });
+    });
+  }
+
+  /**
+   * Autoabre o detalhamento padrão ao entrar na aba quando configurado via data-auto-open-detail.
+   */
+  private abrirDetalhamentoPadraoAoEntrarNaAba(tabAtiva: HTMLElement): void {
+    if (tabAtiva.dataset.autoOpenDetail !== 'true') return;
+
+    const triggerPadrao = tabAtiva.querySelector('.detail-card-trigger[data-default-detail="true"]') as HTMLButtonElement | null;
+    const primeiroTrigger = tabAtiva.querySelector('.detail-card-trigger') as HTMLButtonElement | null;
+    const trigger = triggerPadrao || primeiroTrigger;
+
+    if (!trigger || trigger.classList.contains('is-active')) return;
+    trigger.click();
   }
 
   /**

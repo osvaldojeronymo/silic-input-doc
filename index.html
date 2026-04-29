@@ -118,7 +118,7 @@
 
                 <button class="stat-card perfil-card" data-route="/perfil/contratacao" type="button">
                     <div class="stat-number">Contratação</div>
-                    <div class="stat-label">Operacionalização da contratação de bens, serviços e obras, regidos pelo regime administrativo</div>
+                    <div class="stat-label">Operacionalização de contratação de bens, serviços e obras.</div>
                 </button>
 
                 <button class="stat-card perfil-card" data-route="/perfil/formal" type="button">
@@ -770,7 +770,7 @@
                 <h3 class="section-subtitle">Jornada do Gestor Contratação</h3>
                 <button class="btn-clear" data-route="/" type="button">Voltar para home</button>
             </div>
-            <div class="mini-label">Estrutura base da página criada. Filtros e tabela entram na Sprint 3.</div>
+            <div class="mini-label">Estrutura base da página criada. Filtros e tabela entram na próxima Sprint.</div>
         </section>
 
         <section id="perfilFormalPage" class="table-section route-hidden">
@@ -1080,58 +1080,25 @@
                         <div class="summary-row">
                             <div class="summary-chip"><strong id="detNumeroContrato"></strong></div>
                             <div class="summary-chip"><strong id="detContratoStatus"></strong></div>
-                            <div class="summary-chip"><strong id="detDataFim"></strong></div>
-                        </div>
-                    </div>
-
-                    <!-- Bloco de referência (Unidade) -->
-                    <div class="info-section">
-                        <div class="info-section-title">Unidade <span class="origin-tag">SAP</span></div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Parceiro de Negócios</label>
-                                <span id="detParceiro"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Endereço</label>
-                                <span id="detEnderecoContrato"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Número</label>
-                                <span id="detNumeroEndereco"></span>
-                            </div>
                         </div>
                     </div>
 
                     <div class="info-section">
                         <div class="info-section-title">Detalhamento de Dados Gerais</div>
                         <div class="detail-cards-grid">
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-identificacao" data-drawer-title="Identificação">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-identificacao">
                                 <strong>Identificação</strong>
                                 <span>Número, denominação e tipo do contrato.</span>
                             </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-vigencia" data-drawer-title="Vigência">
-                                <strong>Vigência</strong>
-                                <span>Datas principais e marco de rescisão.</span>
-                            </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-gestao" data-drawer-title="Gestão e Publicação">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-gestao">
                                 <strong>Gestão e Publicação</strong>
                                 <span>Dados processuais, responsáveis e publicações.</span>
-                            </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-valores" data-drawer-title="Valores">
-                                <strong>Valores</strong>
-                                <span>Valores-base, atualização e prorrogação.</span>
-                            </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-compliance" data-drawer-title="Compliance e Riscos">
-                                <strong>Compliance e Riscos</strong>
-                                <span>Indicadores socioambientais e de conformidade.</span>
                             </button>
                         </div>
                     </div>
 
-                    <div id="contratoDrawerSources" class="drawer-sources" aria-hidden="true">
                     <!-- Identificação (SAP/SICLG) -->
-                    <div class="info-section drawer-section" id="sec-identificacao">
+                    <div class="info-section" id="sec-identificacao" style="display:none;">
                         <div class="info-section-title">
                             Identificação <span class="origin-tag">SAP/SICLG</span>
                         </div>
@@ -1147,29 +1114,8 @@
                         </div>
                     </div>
 
-                    <!-- Vigência (SAP/SICLG) -->
-                    <div class="info-section drawer-section" id="sec-vigencia">
-                        <div class="info-section-title">
-                            Vigência <span class="origin-tag">SAP/SICLG</span>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Data de Início</label>
-                                <span id="detDataInicio"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Data de Término</label>
-                                <span id="detDataFim"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Rescisão em</label>
-                                <span id="detRescisaoEm"></span>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Gestão e Publicação (SICLG) -->
-                    <div class="info-section drawer-section" id="sec-gestao">
+                    <div class="info-section" id="sec-gestao" style="display:none;">
                         <div class="info-section-title">
                             Gestão e Publicação <span class="origin-tag">SICLG</span>
                         </div>
@@ -1245,89 +1191,6 @@
                         </div>
                     </div>
 
-                    <!-- Valores (SICLG) -->
-                    <div class="info-section drawer-section" id="sec-valores">
-                        <div class="info-section-title">
-                            Valores <span class="origin-tag">SICLG</span>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Valor original</label>
-                                <span id="detValorOriginal"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Valor global atualizado</label>
-                                <span id="detValorGlobalAtual"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Valor vigência atual</label>
-                                <span id="detValorVigenciaAtual"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Valor global aditivado</label>
-                                <span id="detValorGlobalAditivado"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Prorrogável</label>
-                                <span id="detProrrogavel"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Tipo garantida</label>
-                                <span id="detTipoGarantida"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Compliance e Riscos (SICLG) -->
-                    <div class="info-section drawer-section" id="sec-compliance">
-                        <div class="info-section-title">
-                            Compliance e Riscos <span class="origin-tag">SICLG</span>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <label>Risco social</label>
-                                <span id="detRiscoSocial"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Risco ambiental</label>
-                                <span id="detRiscoAmbiental"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Risco climático</label>
-                                <span id="detRiscoClimatico"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Código conduta assinado</label>
-                                <span id="detCodigoCondutaAssinado"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Partes relacionadas</label>
-                                <span id="detPartesRelacionadas"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Fornecedor terceiro relevante</label>
-                                <span id="detFornecedorTerceiroRelevante"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Fornecedor condenado por crime ambiental</label>
-                                <span id="detFornecedorCondenadoCrimeAmbiental"></span>
-                            </div>
-                            <div class="info-item">
-                                <label>Fornecedor sujeito a licenciamento ambiental</label>
-                                <span id="detFornecedorSujeitoLicenciamentoAmbiental"></span>
-                            </div>
-                        </div>
-                    </div>
-                    </div>
-
-                    <div id="contratoDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-                    <aside id="contratoDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="contratoDrawerTitle">
-                        <div class="details-drawer-header">
-                            <h3 id="contratoDrawerTitle">Detalhes</h3>
-                            <button type="button" id="contratoDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
-                        </div>
-                        <div id="contratoDrawerContent" class="details-drawer-content"></div>
-                    </aside>
                 </div>
 
 
@@ -1371,23 +1234,22 @@
                     <div class="info-section">
                         <div class="info-section-title">Detalhamento do Locador</div>
                         <div class="detail-cards-grid">
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-identificacao-locador" data-drawer-title="Identificação">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-identificacao-locador">
                                 <strong>Identificação</strong>
                                 <span>Dados cadastrais e vínculo com o contrato.</span>
                             </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-contato-locador" data-drawer-title="Contato">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-contato-locador">
                                 <strong>Contato</strong>
                                 <span>Endereço, e-mail e telefones de contato.</span>
                             </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-participacao-pagamento" data-drawer-title="Dados Bancários e Relacionamento">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-participacao-pagamento">
                                 <strong>Dados Bancários</strong>
                                 <span>Participação, forma de pagamento e histórico.</span>
                             </button>
                         </div>
                     </div>
 
-                    <div id="locadorDrawerSources" class="drawer-sources" aria-hidden="true">
-                    <div class="info-section drawer-section" id="sec-identificacao-locador">
+                    <div class="info-section" id="sec-identificacao-locador" style="display:none;">
                         <div class="info-section-title">
                             Identificação <span class="origin-tag">SAP</span>
                         </div>
@@ -1419,7 +1281,7 @@
                         </div>
                     </div>
 
-                    <div class="info-section drawer-section" id="sec-contato-locador">
+                    <div class="info-section" id="sec-contato-locador" style="display:none;">
                         <div class="info-section-title">
                             Contato
                         </div>
@@ -1463,7 +1325,7 @@
                         </div>
                     </div>
 
-                    <div class="info-section drawer-section" id="sec-participacao-pagamento">
+                    <div class="info-section" id="sec-participacao-pagamento" style="display:none;">
                         <div class="info-section-title">
                             Dados Bancários e Relacionamento
                         </div>
@@ -1507,16 +1369,6 @@
                             <div class="mini-label" id="resumoEncargosAtraso" style="margin-top:8px"></div>
                         </div>
                     </div>
-                    </div>
-
-                    <div id="locadorDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-                    <aside id="locadorDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="locadorDrawerTitle">
-                        <div class="details-drawer-header">
-                            <h3 id="locadorDrawerTitle">Detalhes</h3>
-                            <button type="button" id="locadorDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
-                        </div>
-                        <div id="locadorDrawerContent" class="details-drawer-content"></div>
-                    </aside>
                 </div>
 
                 <!-- Aba: 4. Financeiro -->
@@ -1524,23 +1376,22 @@
                     <div class="info-section">
                         <div class="info-section-title">Detalhamento Financeiro</div>
                         <div class="detail-cards-grid">
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-financeiro-base" data-drawer-title="Valor Atual e Base Contratual">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-financeiro-base">
                                 <strong>Base Contratual</strong>
                                 <span>Valores de referência e vigência original.</span>
                             </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-financeiro-aditivos" data-drawer-title="Histórico de Reajustes (Aditivos)">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-financeiro-aditivos">
                                 <strong>Aditivos</strong>
                                 <span>Evolução de reajustes e alterações de valores.</span>
                             </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-financeiro-projecao" data-drawer-title="Projeção até o Fim da Vigência">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-financeiro-projecao">
                                 <strong>Projeção</strong>
                                 <span>Consolidação de saldo e execução financeira.</span>
                             </button>
                         </div>
                     </div>
 
-                    <div id="aditivosDrawerSources" class="drawer-sources" aria-hidden="true">
-                    <div class="info-section drawer-section" id="sec-financeiro-base">
+                    <div class="info-section" id="sec-financeiro-base" style="display:none;">
                         <div class="info-section-title">Valor Atual e Base Contratual</div>
                         <div class="info-grid">
                             <div class="info-item">
@@ -1566,7 +1417,7 @@
                         </div>
                     </div>
 
-                    <div class="info-section drawer-section" id="sec-financeiro-aditivos">
+                    <div class="info-section" id="sec-financeiro-aditivos" style="display:none;">
                         <div class="info-section-title">Histórico de Reajustes (Aditivos)</div>
                         <div class="table-wrapper">
                             <table class="imoveis-table" id="tabelaTermosAditivos">
@@ -1591,7 +1442,7 @@
                         </div>
                     </div>
 
-                    <div class="info-section drawer-section" id="sec-financeiro-projecao">
+                    <div class="info-section" id="sec-financeiro-projecao" style="display:none;">
                         <div class="info-section-title">Projeção até o Fim da Vigência</div>
                         <div class="info-grid">
                             <div class="info-item"><label>A — Valor Original</label><span id="resA"></span></div>
@@ -1605,16 +1456,6 @@
                             <div class="info-item"><label>I — Saldo Disponível (E−G)</label><span id="resI"></span></div>
                         </div>
                     </div>
-                    </div>
-
-                    <div id="aditivosDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-                    <aside id="aditivosDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="aditivosDrawerTitle">
-                        <div class="details-drawer-header">
-                            <h3 id="aditivosDrawerTitle">Detalhes</h3>
-                            <button type="button" id="aditivosDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
-                        </div>
-                        <div id="aditivosDrawerContent" class="details-drawer-content"></div>
-                    </aside>
                 </div>
 
                 <!-- Aba: Alertas -->
@@ -1622,19 +1463,18 @@
                     <div class="info-section">
                         <div class="info-section-title">Detalhamento de Alertas</div>
                         <div class="detail-cards-grid">
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-alertas-compliance" data-drawer-title="Compliance e Riscos">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-alertas-compliance">
                                 <strong>Compliance e Riscos</strong>
                                 <span>Controles preventivos e indicadores de risco.</span>
                             </button>
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-alertas-contrato" data-drawer-title="Alertas do Contrato">
+                            <button type="button" class="detail-card-trigger" data-inline-target="sec-alertas-contrato">
                                 <strong>Alertas do Contrato</strong>
                                 <span>Eventos críticos de vigência, conformidade e reajustes.</span>
                             </button>
                         </div>
                     </div>
 
-                    <div id="alertasDrawerSources" class="drawer-sources" aria-hidden="true">
-                    <div class="info-section drawer-section" id="sec-alertas-compliance">
+                    <div class="info-section" id="sec-alertas-compliance" style="display:none;">
                         <div class="info-section-title">Compliance e Riscos</div>
                         <div class="info-grid">
                             <div class="info-item">
@@ -1660,67 +1500,27 @@
                         </div>
                     </div>
 
-                    <div class="info-section drawer-section" id="sec-alertas-contrato">
+                    <div class="info-section" id="sec-alertas-contrato" style="display:none;">
                         <div class="info-section-title">Alertas do Contrato</div>
                         <div class="mini-label" style="margin-bottom:8px;">Gestão transversal de vencimentos, conformidade e reajustes</div>
                         <div id="listaAlertasContrato" class="list-cards"></div>
                     </div>
-                    </div>
-
-                    <div id="alertasDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-                    <aside id="alertasDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="alertasDrawerTitle">
-                        <div class="details-drawer-header">
-                            <h3 id="alertasDrawerTitle">Detalhes</h3>
-                            <button type="button" id="alertasDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
-                        </div>
-                        <div id="alertasDrawerContent" class="details-drawer-content"></div>
-                    </aside>
                 </div>
 
                 <!-- Aba: Timeline -->
                 <div id="tab-timeline" class="tab-content">
-                    <div class="info-section">
-                        <div class="info-section-title">Detalhamento da Timeline</div>
-                        <div class="detail-cards-grid">
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-timeline-contrato" data-drawer-title="Linha do Tempo do Contrato">
-                                <strong>Linha do Tempo</strong>
-                                <span>Marcos da assinatura até o encerramento previsto.</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="timelineDrawerSources" class="drawer-sources" aria-hidden="true">
-                    <div class="info-section drawer-section" id="sec-timeline-contrato">
+                    <div class="info-section" id="sec-timeline-contrato">
                         <div class="info-section-title">Linha do Tempo do Contrato</div>
                         <div class="mini-label" style="margin-bottom:8px;">Principais marcos da vigência e evolução contratual</div>
                         <div id="timelineContrato" class="list-cards"></div>
                     </div>
-                    </div>
-
-                    <div id="timelineDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-                    <aside id="timelineDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="timelineDrawerTitle">
-                        <div class="details-drawer-header">
-                            <h3 id="timelineDrawerTitle">Detalhes</h3>
-                            <button type="button" id="timelineDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
-                        </div>
-                        <div id="timelineDrawerContent" class="details-drawer-content"></div>
-                    </aside>
                 </div>
 
                 <!-- Aba: 7. Serviços Vinculados -->
                 <div id="tab-servicos" class="tab-content">
-                    <div class="info-section">
-                        <div class="info-section-title">Detalhamento de Serviços</div>
-                        <div class="detail-cards-grid">
-                            <button type="button" class="detail-card-trigger" data-drawer-target="sec-servicos-operacao" data-drawer-title="Serviços Vinculados">
-                                <strong>Serviços Vinculados</strong>
-                                <span>Configuração, cenário e solicitação operacional.</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="servicosDrawerSources" class="drawer-sources" aria-hidden="true">
-                    <div class="info-section drawer-section" id="sec-servicos-operacao">
+                    <div class="info-section" id="sec-servicos-operacao">
+                        <div class="info-section-title">Serviços Vinculados</div>
+                        <div class="mini-label" style="margin-bottom:8px;">Configuração, cenário e solicitação operacional.</div>
                                         <style>
                         .card-grid .card{background:#fff;color:#24292f;transition:box-shadow .15s,border-color .15s,background .15s,color .15s}
                         .card-grid .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);border-color:#9da7b1}
@@ -1793,16 +1593,6 @@
                         </div>
                     </div>
                     </div>
-                    </div>
-
-                    <div id="servicosDrawerBackdrop" class="details-drawer-backdrop" aria-hidden="true"></div>
-                    <aside id="servicosDrawer" class="details-drawer" aria-hidden="true" role="dialog" aria-modal="false" aria-labelledby="servicosDrawerTitle">
-                        <div class="details-drawer-header">
-                            <h3 id="servicosDrawerTitle">Detalhes</h3>
-                            <button type="button" id="servicosDrawerClose" class="details-drawer-close" aria-label="Fechar detalhes">×</button>
-                        </div>
-                        <div id="servicosDrawerContent" class="details-drawer-content"></div>
-                    </aside>
                 </div>
 
                 
