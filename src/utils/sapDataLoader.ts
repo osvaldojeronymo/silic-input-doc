@@ -100,14 +100,25 @@ interface DadosSAP {
  * Classe para gerenciar importação de dados do SAP
  */
 export class SAPDataLoader {
-  // Em desenvolvimento, Vite serve arquivos de public/ com o base path
   private static readonly API_URL = 'http://localhost:3333/api';
+  private static readonly PUBLIC_DATA_PATH = '/silic-input-doc/dados-sap.json';
   
   /**
    * Obtém o caminho correto baseado no ambiente
    */
   private static obterCaminho(endpoint: string): string {
     return `${this.API_URL}/${endpoint}`;
+  }
+
+  private static obterCaminhoPublico(): string {
+    return this.PUBLIC_DATA_PATH;
+  }
+
+  private static deveUsarApiLocal(): boolean {
+    if (typeof window === 'undefined') return false;
+
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1';
   }
 
   /**
@@ -229,25 +240,36 @@ export class SAPDataLoader {
    */
   static async carregarDados(): Promise<DadosSAP | null> {
     try {
-      // Carregar imóveis e locadores da API
-      const imoveisResp = await fetch(this.obterCaminho('imoveis'));
-      const locadoresResp = await fetch(this.obterCaminho('locadores'));
-      if (!imoveisResp.ok || !locadoresResp.ok) {
-        console.warn('⚠️ Não foi possível carregar dados da API.');
+      if (this.deveUsarApiLocal()) {
+        const imoveisResp = await fetch(this.obterCaminho('imoveis'));
+        const locadoresResp = await fetch(this.obterCaminho('locadores'));
+
+        if (!imoveisResp.ok || !locadoresResp.ok) {
+          console.warn('⚠️ Não foi possível carregar dados da API local. Aplicando fallback estático.');
+        } else {
+          const imoveis = await imoveisResp.json();
+          const locadores = await locadoresResp.json();
+          const metadados = {
+            dataImportacao: new Date().toISOString(),
+            fonte: 'API SQLite',
+            totalImoveis: imoveis.length,
+            totalLocadores: locadores.length
+          };
+
+          return { imoveis, locadores, metadados };
+        }
+      }
+
+      const response = await fetch(this.obterCaminhoPublico());
+      if (!response.ok) {
+        console.warn('⚠️ Não foi possível carregar dados estáticos do SAP.');
         return null;
       }
-      const imoveis = await imoveisResp.json();
-      const locadores = await locadoresResp.json();
-      // Mock metadados
-      const metadados = {
-        dataImportacao: new Date().toISOString(),
-        fonte: 'API SQLite',
-        totalImoveis: imoveis.length,
-        totalLocadores: locadores.length
-      };
-      return { imoveis, locadores, metadados };
+
+      const dadosBrutos: DadosSAPBruto = await response.json();
+      return this.mapearDadosSAP(dadosBrutos);
     } catch (error) {
-      console.error('❌ Erro ao carregar dados da API:', error);
+      console.error('❌ Erro ao carregar dados do SAP:', error);
       return null;
     }
   }
@@ -257,7 +279,10 @@ export class SAPDataLoader {
    */
   static async temDadosDisponiveis(): Promise<boolean> {
     try {
-      const response = await fetch(this.obterCaminho('imoveis'), { method: 'HEAD' });
+      const response = await fetch(
+        this.deveUsarApiLocal() ? this.obterCaminho('imoveis') : this.obterCaminhoPublico(),
+        { method: 'HEAD' }
+      );
       return response.ok;
     } catch {
       return false;
