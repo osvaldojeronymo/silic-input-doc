@@ -127,36 +127,89 @@
         <section id="portfolioSection" class="table-section">
             <div class="section-header">
                 <h3 class="section-subtitle">Portfólio</h3>
+                <button id="painelToggleFiltrosBtn" class="collapse-toggle" type="button" aria-expanded="false" aria-controls="painelFiltrosBody">Mostrar filtros</button>
             </div>
 
-            <div class="filters-container">
-                <div class="filter-group">
-                    <select id="painelUfFiltro" class="filter-select">
-                        <option value="">Todas as UFs</option>
-                        <option value="SP">SP</option>
-                        <option value="RJ">RJ</option>
-                        <option value="DF">DF</option>
-                        <option value="BA">BA</option>
-                        <option value="CE">CE</option>
-                        <option value="MG">MG</option>
-                        <option value="AM">AM</option>
-                        <option value="PR">PR</option>
-                        <option value="PE">PE</option>
-                        <option value="GO">GO</option>
-                    </select>
+            <div class="mini-label" id="painelFiltroAtivoLabel" style="margin-bottom: 8px; display: none;"></div>
 
-                    <input type="date" id="painelAteFiltro" class="filter-date" placeholder="Vencimento até">
+            <div id="painelFiltrosBody" class="filters-container" hidden>
+                <div class="portfolio-filter-layout">
+                    <section class="portfolio-filter-section" aria-label="Filtros de identificação e situação">
+                        <div class="portfolio-filter-section-title">Identificação e Situação</div>
+                        <div class="portfolio-filter-grid portfolio-filter-grid-identificacao">
+                            <label class="filter-field">
+                                <span class="filter-field-label">Contrato (SAP)</span>
+                                <input type="text" id="painelContratoSapFiltro" class="filter-search" placeholder="Informe o contrato SAP">
+                            </label>
 
-                    <select id="painelStatusFiltro" class="filter-select">
-                        <option value="">Todos os status de conciliação</option>
-                        <option value="conciliado">Conciliado</option>
-                        <option value="pendente_conciliacao">Pendente de conciliação</option>
-                    </select>
+                            <label class="filter-field">
+                                <span class="filter-field-label">Contrato (SICLG)</span>
+                                <input type="text" id="painelContratoSiclgFiltro" class="filter-search" placeholder="Informe o contrato SICLG">
+                            </label>
+
+                            <label class="filter-field filter-field-span-2">
+                                <span class="filter-field-label">Locador</span>
+                                <input type="text" id="painelLocadorFiltro" class="filter-search" placeholder="Informe o nome do locador">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">CPF/CNPJ</span>
+                                <input type="text" id="painelCpfCnpjFiltro" class="filter-search" inputmode="numeric" placeholder="Digite CPF ou CNPJ">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Situação</span>
+                                <select id="painelStatusFiltro" class="filter-select">
+                                    <option value="">Todas as situações</option>
+                                </select>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="portfolio-filter-section" aria-label="Filtros de vigência">
+                        <div class="portfolio-filter-section-title">Vigência</div>
+                        <div class="portfolio-filter-grid portfolio-filter-grid-faixa">
+                            <label class="filter-field">
+                                <span class="filter-field-label">Vigência de</span>
+                                <input type="date" id="painelVigenciaDeFiltro" class="filter-date" aria-label="Vigência de">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Vigência até</span>
+                                <input type="date" id="painelVigenciaAteFiltro" class="filter-date" aria-label="Vigência até">
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="portfolio-filter-section" aria-label="Filtros de pagamento">
+                        <div class="portfolio-filter-section-title">Pagamento</div>
+                        <div class="portfolio-filter-grid portfolio-filter-grid-pagamento">
+                            <label class="filter-field">
+                                <span class="filter-field-label">Data Últ. Pgto de</span>
+                                <input type="date" id="painelUltimoPgtoDeFiltro" class="filter-date" aria-label="Data Último Pagamento de">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Data Últ. Pgto até</span>
+                                <input type="date" id="painelUltimoPgtoAteFiltro" class="filter-date" aria-label="Data Último Pagamento até">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Últ. Valor Pago de</span>
+                                <input type="text" id="painelUltimoValorDeFiltro" class="filter-input" inputmode="numeric" placeholder="R$ 0,00">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Últ. Valor Pago até</span>
+                                <input type="text" id="painelUltimoValorAteFiltro" class="filter-input" inputmode="numeric" placeholder="R$ 0,00">
+                            </label>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="filter-actions">
-                    <button id="painelLimparBtn" class="btn-clear">Limpar</button>
-                    <button id="painelBuscarBtn" class="btn-primary">Aplicar filtros</button>
+                    <button id="painelLimparBtn" class="btn-clear" type="button">Limpar</button>
+                    <button id="painelBuscarBtn" class="btn-primary" type="button">Aplicar filtros</button>
                 </div>
             </div>
 
@@ -164,19 +217,14 @@
                 <table class="imoveis-table">
                     <thead>
                         <tr>
-                            <th>Contrato SAP</th>
-                            <th>Contrato SICLG</th>
-                            <th>UF</th>
+                            <th>Contrato (SAP)</th>
+                            <th>Contrato (SICLG)</th>
                             <th>Locador</th>
-                            <th>Vigência SAP</th>
-                            <th>Vigência SICLG</th>
-                            <th>Situação SICLG</th>
-                            <th>Últ. Pgto SAP</th>
-                            <th>Últ. Valor Pago SAP</th>
-                            <th>Decisão Operacional</th>
-                            <th>Fase</th>
-                            <th>Situação Processo AR</th>
-                            <th>Conciliação</th>
+                            <th>CPF/CNPJ</th>
+                            <th>Vigência</th>
+                            <th>Situação</th>
+                            <th>Data Últ. Pgto</th>
+                            <th>Últ. Valor Pago</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -186,7 +234,7 @@
 
             <div class="pagination-container">
                 <div class="pagination-info">
-                    <span id="painelPaginationStart">0</span> a <span id="painelPaginationEnd">0</span> de <span id="painelPaginationTotal">0</span>
+                    Mostrando <span id="painelPaginationStart">0</span> a <span id="painelPaginationEnd">0</span> de <span id="painelPaginationTotal">0</span> registros
                 </div>
                 <div class="pagination-actions">
                     <select id="painelItensPorPaginaSelect" class="items-per-page">
@@ -854,7 +902,7 @@
                             <th>Contrato SICLG</th>
                             <th>Protocolo Formal (SICLG)</th>
                             <th>Unidade</th>
-                            <th>Vigência (SICLG)</th>
+                            <th>Vigência</th>
                             <th>Situação (SICLG)</th>
                             <th>Número do Processo (SICLG)</th>
                             <th>Situação SIJUR</th>
@@ -885,10 +933,6 @@
             <section class="formal-panel-view executivo-neutro" data-formal-panel="aviso-vencimento" hidden>
             <div class="aviso-topo-header">
                 <div class="mini-label" style="margin-bottom: 0;">Resumo Executivo</div>
-                <div class="aviso-tema-switch" role="group" aria-label="Selecionar tema visual do painel">
-                    <button id="avisoTemaExecutivoBtn" class="aviso-tema-btn is-active" type="button" aria-pressed="true">Executivo neutro</button>
-                    <button id="avisoTemaOperacionalBtn" class="aviso-tema-btn" type="button" aria-pressed="false">Operacional alerta</button>
-                </div>
             </div>
 
             <div class="aviso-kpi-grid aviso-kpi-grid-principal">
@@ -1646,7 +1690,7 @@
                                 <span id="formalDetUnidade"></span>
                             </div>
                             <div class="info-item">
-                                <label>Vigência (SICLG)</label>
+                                <label>Vigência</label>
                                 <span id="formalDetVigencia"></span>
                             </div>
                             <div class="info-item">

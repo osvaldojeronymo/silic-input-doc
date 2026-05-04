@@ -14,6 +14,7 @@ export interface Imovel {
   estado: string;
   tipo: 'residencial' | 'comercial' | 'terreno' | 'industrial';
   status: 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao';
+  conciliacaoDemo?: 'conciliado' | 'pendente_conciliacao';
   area?: number;
   valor?: number;
   descricao?: string;

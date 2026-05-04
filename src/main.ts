@@ -3,7 +3,6 @@ import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
 import { DIJURDataLoader, type DijurRegistro } from './utils/dijurDataLoader.js';
 import { labelCategoria, labelAcao, labelModalidade } from './labels.js';
-import * as XLSX from 'xlsx';
 import './styles/style.css';
 
 interface Fase1OperacionalRow {
@@ -271,7 +270,6 @@ interface ContratoBuscaUiState {
 export class SistemaSILIC {
   private static readonly FORMAL_STORAGE_KEY = 'silic.formal.edicoes.v1';
   private static readonly AVISO_STORAGE_KEY = 'silic.aviso.operacional.v1';
-  private static readonly AVISO_TEMA_STORAGE_KEY = 'silic.aviso.tema.visual.v1';
   private static readonly ETAPA_RTA_STORAGE_KEY = 'silic.operacional.etapa.rta.v1';
   private static readonly ETAPA_LAUDO_STORAGE_KEY = 'silic.operacional.etapa.laudo.v1';
   private static readonly ETAPA_NEGOCIACAO_STORAGE_KEY = 'silic.operacional.etapa.negociacao.v1';
@@ -302,7 +300,6 @@ export class SistemaSILIC {
   private avisoFaixaFiltroAtiva: '' | 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6' = '';
   private avisoFiltroRiscoAr87Ativo = false;
   private avisoStatusBadgeFiltroAtivo = '';
-  private avisoTemaVisual: 'executivo-neutro' | 'operacional-alerta' = 'executivo-neutro';
   private contratosEtapasBusca: ContratoBuscaResultado[] = [];
   private contratoBuscaProvider: ContratoBuscaProvider | null = null;
   private readonly contratoBuscaDebounceMs = 350;
@@ -333,6 +330,7 @@ export class SistemaSILIC {
   private favoritosFase62: Set<string> = new Set();
   private fase61PrazoSelecionado: string | null = null;
   private fase62PrazoSelecionado: string | null = null;
+  private xlsxModulePromise: Promise<typeof import('xlsx')> | null = null;
   private currentView: VisualizationMode = 'table';
 
   constructor() {
@@ -528,15 +526,80 @@ export class SistemaSILIC {
       }
     ];
 
-    this.imoveisOriginais = this.gerarImoveisDemo(200);
+    this.imoveisOriginais = this.ordenarImoveisPortfolio(this.gerarImoveisDemo(200));
     this.imoveis = [...this.imoveisOriginais];
+  }
+
+  private ordenarImoveisPortfolio(imoveis: Imovel[]): Imovel[] {
+    const prioridadeStatus: Record<Imovel['status'], number> = {
+      ativo: 0,
+      prospeccao: 1,
+      mobilizacao: 2,
+      desmobilizacao: 3
+    };
+
+    return [...imoveis].sort((left, right) => {
+      const prioridadeLeft = prioridadeStatus[left.status] ?? Number.MAX_SAFE_INTEGER;
+      const prioridadeRight = prioridadeStatus[right.status] ?? Number.MAX_SAFE_INTEGER;
+
+      if (prioridadeLeft !== prioridadeRight) {
+        return prioridadeLeft - prioridadeRight;
+      }
+
+      const fimLeft = this.parseDate(left.fimValidade);
+      const fimRight = this.parseDate(right.fimValidade);
+
+      if (fimLeft && fimRight && fimLeft.getTime() !== fimRight.getTime()) {
+        return fimLeft.getTime() - fimRight.getTime();
+      }
+
+      if (fimLeft && !fimRight) return -1;
+      if (!fimLeft && fimRight) return 1;
+
+      return left.codigo.localeCompare(right.codigo, 'pt-BR');
+    });
+  }
+
+  private gerarNumeroInstrumentoSiclgDemo(index: number, ano: string): string {
+    const sequencial = String(index + 1).padStart(5, '0');
+    return `${sequencial}/${ano}`;
+  }
+
+  private gerarConciliacaoStatusDemo(status: Imovel['status'], index: number): 'conciliado' | 'pendente_conciliacao' {
+    const janela = index % 20;
+
+    if (status === 'ativo') {
+      return janela < 15 ? 'conciliado' : 'pendente_conciliacao';
+    }
+
+    if (status === 'prospeccao') {
+      return janela < 11 ? 'conciliado' : 'pendente_conciliacao';
+    }
+
+    if (status === 'mobilizacao') {
+      return janela < 10 ? 'conciliado' : 'pendente_conciliacao';
+    }
+
+    return janela < 8 ? 'conciliado' : 'pendente_conciliacao';
+  }
+
+  private obterConciliacaoStatusImovel(imovel: Imovel): 'conciliado' | 'pendente_conciliacao' {
+    if (imovel.conciliacaoDemo) {
+      return imovel.conciliacaoDemo;
+    }
+
+    return imovel.numeroInstrumento ? 'conciliado' : 'pendente_conciliacao';
   }
 
   private gerarImoveisDemo(qtd: number): Imovel[] {
     const cidades = ['São Paulo','Rio de Janeiro','Brasília','Salvador','Fortaleza','Belo Horizonte','Manaus','Curitiba','Recife','Goiânia'];
     const bairros = ['Centro','Jardim','Vila Nova','Boa Vista','Industrial','Comercial'];
     const utilizacoes = ['Próprio','Terceiro'];
-    const statusList: Imovel['status'][] = ['ativo','prospeccao','mobilizacao','desmobilizacao'];
+    const limitesStatus = {
+      ativo: Math.round(qtd * 0.7),
+      prospeccao: Math.round(qtd * 0.15),
+      mobilizacao: Math.round(qtd * 0.1)
+    };
 
     const out: Imovel[] = [];
     for (let i = 0; i < qtd; i++) {
@@ -550,12 +613,23 @@ export class SistemaSILIC {
       const mes = String(1 + Math.floor(Math.random() * 12)).padStart(2,'0');
       const ano = String(2026 + Math.floor(Math.random() * 4));
       const fimValidade = `${dia}/${mes}/${ano}`;
+      const numeroInstrumento = this.gerarNumeroInstrumentoSiclgDemo(i, ano);
+      const status: Imovel['status'] = i < limitesStatus.ativo
+        ? 'ativo'
+        : i < limitesStatus.ativo + limitesStatus.prospeccao
+          ? 'prospeccao'
+          : i < limitesStatus.ativo + limitesStatus.prospeccao + limitesStatus.mobilizacao
+            ? 'mobilizacao'
+            : 'desmobilizacao';
+      const conciliacaoDemo = this.gerarConciliacaoStatusDemo(status, i);
 
       const imovel: Imovel = {
         id: `imo-${i+1}`,
         codigo,
         denominacao: `Contrato ${codigo} - Unidade ${cidade}`,
         tipoContrato: 'Contrato de Locação - Imóveis',
+        numeroInstrumento,
+        conciliacaoDemo,
         utilizacaoPrincipal: utilizacoes[i % utilizacoes.length],
         fimValidade,
         endereco: `Rua Exemplo ${i+1}`,
@@ -564,7 +638,7 @@ export class SistemaSILIC {
         cep: `${String(10000 + i).padStart(5,'0')}-${String(100 + i).padStart(3,'0')}`,
         estado,
         tipo: 'comercial',
-        status: statusList[i % statusList.length],
+        status,
         area,
         valor,
         descricao: 'Imóvel gerado para demonstração.',
@@ -608,7 +682,6 @@ export class SistemaSILIC {
     }
     return out;
   }
-
   /**
    * Gera cenários variados de participação de locadores
    */
@@ -2430,17 +2503,16 @@ export class SistemaSILIC {
       return tb - ta;
     })[0];
 
-    const vigenciaSap = imovel.fimValidade || imovel.contratoFimValidade || '-';
-    const vigenciaSiclg = imovel.vigenciaFinal || '-';
+    const vigenciaBase = imovel.fimValidade || imovel.contratoFimValidade || imovel.vigenciaFinal || '-';
+    const vigenciaSap = vigenciaBase;
+    const vigenciaSiclg = vigenciaBase;
     const vencimentoReferencia = this.calcularVencimentoReferencia(vigenciaSap, vigenciaSiclg);
     const dataRef = this.parseDate(vencimentoReferencia);
     const diasParaVencimento = dataRef
       ? Math.ceil((dataRef.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
       : null;
 
-    const conciliacaoStatus: 'conciliado' | 'pendente_conciliacao' = imovel.numeroInstrumento
-      ? 'conciliado'
-      : 'pendente_conciliacao';
+    const conciliacaoStatus = this.obterConciliacaoStatusImovel(imovel);
 
     const fase = this.classificarFaseVencimento(diasParaVencimento, imovel);
     const decisaoOperacional = this.classificarDecisaoOperacional(diasParaVencimento, conciliacaoStatus);
@@ -2581,6 +2653,10 @@ export class SistemaSILIC {
       return 510;
     };
 
+    // Geração dos candidatos do painel, com ajuste de status conforme regra 95% Ativo, 5% Em Desmobilização
+    let countAtivo = 0;
+    let countDesmobilizacao = 0;
+    const totalCandidatos = rows.length;
     const candidatos: PainelAvisoVencimentoRow[] = rows.map((row, index): PainelAvisoVencimentoRow => {
       const fimVigenciaOriginal = row.vigenciaSiclg !== '-' ? row.vigenciaSiclg : row.vigenciaSap;
       const diasEmulados = getDiasEmulados(index);
@@ -2624,11 +2700,23 @@ export class SistemaSILIC {
           ? decisaoAcaoRenovatoriaPrimeiros10[index] as 'a_decidir' | 'ingressar' | 'nao_ingressar'
           : decisaoAcaoRenovatoriaPadrao;
 
+      // Garantir status conforme regra: 95% Ativo, 5% Em Desmobilização
+      let statusAjustado = 'Ativo';
+      // 5% do total, arredondado para cima, será 'Em Desmobilização'
+      const maxDesmobilizacao = Math.ceil(totalCandidatos * 0.05);
+      if (countDesmobilizacao < maxDesmobilizacao && Math.random() < 0.05) {
+        statusAjustado = 'Em Desmobilização';
+        countDesmobilizacao++;
+      } else {
+        statusAjustado = 'Ativo';
+        countAtivo++;
+      }
+
       return {
         contratoId: row.contratoId,
         contratoSap: row.numeroContratoSap,
         contratoSiclg: row.numeroContratoSiclg,
-        situacaoSiclg: row.situacaoSiclg,
+        situacaoSiclg: statusAjustado,
         modalidade: row.modalidade,
         descricao: row.descricaoSiclg !== '-' ? row.descricaoSiclg : row.descricaoSap,
         ultimoValorPagoSap: row.ultimoValorPagoSap,
@@ -3573,8 +3661,43 @@ export class SistemaSILIC {
   }
 
   private configurarPainelVencimentos(): void {
+    this.addEventListenerSafe('painelToggleFiltrosBtn', 'click', () => this.alternarFiltrosPainelVencimentos());
     this.addEventListenerSafe('painelBuscarBtn', 'click', () => this.aplicarFiltrosPainelVencimentos());
     this.addEventListenerSafe('painelLimparBtn', 'click', () => this.limparFiltrosPainelVencimentos());
+
+    this.aplicarMascaraDocumentoPainelVencimentos();
+    this.aplicarMascaraMonetariaInput('painelUltimoValorDeFiltro');
+    this.aplicarMascaraMonetariaInput('painelUltimoValorAteFiltro');
+    this.atualizarOpcoesSituacaoPainelVencimentos();
+
+    [
+      'painelContratoSapFiltro',
+      'painelContratoSiclgFiltro',
+      'painelLocadorFiltro',
+      'painelCpfCnpjFiltro',
+      'painelVigenciaDeFiltro',
+      'painelVigenciaAteFiltro',
+      'painelStatusFiltro',
+      'painelUltimoPgtoDeFiltro',
+      'painelUltimoPgtoAteFiltro',
+      'painelUltimoValorDeFiltro',
+      'painelUltimoValorAteFiltro'
+    ].forEach((id) => {
+      const element = document.getElementById(id);
+      if (!element) return;
+
+      element.addEventListener('change', () => this.aplicarFiltrosPainelVencimentos());
+      element.addEventListener('keydown', (event: Event) => {
+        const keyboardEvent = event as KeyboardEvent;
+        if (keyboardEvent.key === 'Enter') {
+          keyboardEvent.preventDefault();
+          this.aplicarFiltrosPainelVencimentos();
+        }
+      });
+    });
+
+    this.atualizarRotuloFiltrosPainelVencimentos();
+    this.sincronizarToggleFiltrosPainelVencimentos(false);
   }
 
   private configurarPainelAcoesRenovatorias(): void {
@@ -3619,9 +3742,6 @@ export class SistemaSILIC {
         btn.textContent = 'Mostrar filtros';
       }
     });
-
-    this.addEventListenerSafe('avisoTemaExecutivoBtn', 'click', () => this.alterarTemaPainelAviso('executivo-neutro'));
-    this.addEventListenerSafe('avisoTemaOperacionalBtn', 'click', () => this.alterarTemaPainelAviso('operacional-alerta'));
 
     document.querySelectorAll<HTMLElement>('[data-aviso-faixa-filter]').forEach((card) => {
       const faixa = card.dataset.avisoFaixaFilter as '' | 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6';
@@ -3677,56 +3797,6 @@ export class SistemaSILIC {
     this.atualizarEstadoVisualFiltroFaixaAviso();
     this.atualizarEstadoVisualFiltroRiscoAr87();
     this.atualizarRotuloFiltroAtivoAviso();
-    this.carregarTemaPainelAviso();
-    this.aplicarTemaVisualPainelAviso();
-  }
-
-  private carregarTemaPainelAviso(): void {
-    try {
-      const tema = localStorage.getItem(SistemaSILIC.AVISO_TEMA_STORAGE_KEY);
-      if (tema === 'operacional-alerta' || tema === 'executivo-neutro') {
-        this.avisoTemaVisual = tema;
-      }
-    } catch {
-      this.avisoTemaVisual = 'executivo-neutro';
-    }
-  }
-
-  private salvarTemaPainelAviso(): void {
-    try {
-      localStorage.setItem(SistemaSILIC.AVISO_TEMA_STORAGE_KEY, this.avisoTemaVisual);
-    } catch {
-      // Ignora indisponibilidade de localStorage.
-    }
-  }
-
-  private alterarTemaPainelAviso(tema: 'executivo-neutro' | 'operacional-alerta'): void {
-    if (this.avisoTemaVisual === tema) return;
-    this.avisoTemaVisual = tema;
-    this.aplicarTemaVisualPainelAviso();
-    this.salvarTemaPainelAviso();
-  }
-
-  private aplicarTemaVisualPainelAviso(): void {
-    const painel = document.querySelector<HTMLElement>('.formal-panel-view[data-formal-panel="aviso-vencimento"]');
-    if (painel) {
-      painel.classList.remove('executivo-neutro', 'operacional-alerta');
-      painel.classList.add(this.avisoTemaVisual);
-    }
-
-    const btnExecutivo = document.getElementById('avisoTemaExecutivoBtn');
-    const btnOperacional = document.getElementById('avisoTemaOperacionalBtn');
-    const executivoAtivo = this.avisoTemaVisual === 'executivo-neutro';
-
-    if (btnExecutivo) {
-      btnExecutivo.classList.toggle('is-active', executivoAtivo);
-      btnExecutivo.setAttribute('aria-pressed', String(executivoAtivo));
-    }
-
-    if (btnOperacional) {
-      btnOperacional.classList.toggle('is-active', !executivoAtivo);
-      btnOperacional.setAttribute('aria-pressed', String(!executivoAtivo));
-    }
   }
 
   private atualizarEstadoVisualFiltroFaixaAviso(): void {
@@ -3945,7 +4015,7 @@ export class SistemaSILIC {
       'Contrato SICLG',
       'Protocolo Formal (SICLG)',
       'Unidade',
-      'Vigencia (SICLG)',
+      'Vigencia',
       'Situacao SICLG',
       'Numero do Processo (SICLG)',
       'Situacao SIJUR',
@@ -3967,14 +4037,22 @@ export class SistemaSILIC {
     this.baixarArquivo(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }), `painel-acoes-renovatorias-${this.obterDataArquivo()}.csv`);
   }
 
-  private exportarPainelFormalExcel(): void {
+  private async carregarXLSX(): Promise<typeof import('xlsx')> {
+    if (!this.xlsxModulePromise) {
+      this.xlsxModulePromise = import('xlsx');
+    }
+
+    return this.xlsxModulePromise;
+  }
+
+  private async exportarPainelFormalExcel(): Promise<void> {
     const rows = this.painelAcoesRenovatoriasFiltrado.map((item) => ({
       'Código SIJUR': item.codigoSijur,
       'Contrato SAP': item.contratoSap,
       'Contrato SICLG': item.contratoSiclg,
       'Protocolo Formal (SICLG)': item.protocoloFormalSiclg,
       'Unidade': item.unidade,
-      'Vigência (SICLG)': item.vigenciaSiclg,
+      'Vigência': item.vigenciaSiclg,
       'Situação SICLG': item.situacaoSiclg,
       'Número do Processo (SICLG)': item.numeroProcessoSiclg,
       'Situação SIJUR': item.situacaoSijur,
@@ -3988,6 +4066,7 @@ export class SistemaSILIC {
       'Origem dos dados': item.origemDados
     }));
 
+    const XLSX = await this.carregarXLSX();
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'AcoesRenovatorias');
@@ -4022,7 +4101,7 @@ export class SistemaSILIC {
     this.baixarArquivo(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }), `painel-aviso-vencimento-${this.obterDataArquivo()}.csv`);
   }
 
-  private exportarPainelAvisoExcel(): void {
+  private async exportarPainelAvisoExcel(): Promise<void> {
     const rows = this.painelAvisoVencimentoFiltrado.map((item) => ({
       'Contrato SAP': item.contratoSap,
       'Contrato SICLG': item.contratoSiclg,
@@ -4042,6 +4121,7 @@ export class SistemaSILIC {
       'Último pagamento SAP': item.ultimoPagamentoSap
     }));
 
+    const XLSX = await this.carregarXLSX();
     const worksheet = XLSX.utils.json_to_sheet(rows);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'AvisoVencimento');
@@ -4145,40 +4225,229 @@ export class SistemaSILIC {
   }
 
   private aplicarFiltrosPainelVencimentos(): void {
-    const uf = (document.getElementById('painelUfFiltro') as HTMLSelectElement | null)?.value || '';
-    const ate = (document.getElementById('painelAteFiltro') as HTMLInputElement | null)?.value || '';
+    const contratoSap = ((document.getElementById('painelContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const contratoSiclg = ((document.getElementById('painelContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const locador = ((document.getElementById('painelLocadorFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const cpfCnpj = this.normalizarDocumentoFiltroPainelVencimentos((document.getElementById('painelCpfCnpjFiltro') as HTMLInputElement | null)?.value || '');
+    const vigenciaDe = (document.getElementById('painelVigenciaDeFiltro') as HTMLInputElement | null)?.value || '';
+    const vigenciaAte = (document.getElementById('painelVigenciaAteFiltro') as HTMLInputElement | null)?.value || '';
     const status = (document.getElementById('painelStatusFiltro') as HTMLSelectElement | null)?.value || '';
+    const ultimoPgtoDe = (document.getElementById('painelUltimoPgtoDeFiltro') as HTMLInputElement | null)?.value || '';
+    const ultimoPgtoAte = (document.getElementById('painelUltimoPgtoAteFiltro') as HTMLInputElement | null)?.value || '';
+    const ultimoValorDe = this.parseValorFiltroPainelVencimentos((document.getElementById('painelUltimoValorDeFiltro') as HTMLInputElement | null)?.value || '');
+    const ultimoValorAte = this.parseValorFiltroPainelVencimentos((document.getElementById('painelUltimoValorAteFiltro') as HTMLInputElement | null)?.value || '');
 
-    const ateDate = ate ? new Date(ate) : null;
+    const vigenciaDeDate = vigenciaDe ? this.parseDate(vigenciaDe) : null;
+    const vigenciaAteDate = vigenciaAte ? this.parseDate(vigenciaAte) : null;
+    const ultimoPgtoDeDate = ultimoPgtoDe ? this.parseDate(ultimoPgtoDe) : null;
+    const ultimoPgtoAteDate = ultimoPgtoAte ? this.parseDate(ultimoPgtoAte) : null;
 
     this.painelVencimentosFiltrado = this.painelVencimentos.filter((item) => {
-      if (uf && item.uf !== uf) return false;
-      if (status && item.conciliacaoStatus !== status) return false;
+      if (contratoSap && !item.numeroContratoSap.toLowerCase().includes(contratoSap)) return false;
+      if (contratoSiclg && !item.numeroContratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
+      if (locador && !item.locadorSap.toLowerCase().includes(locador)) return false;
+      if (cpfCnpj && !this.normalizarDocumentoFiltroPainelVencimentos(item.cnpjCpfLocadorSiclg).includes(cpfCnpj)) return false;
+      if (status && item.situacaoSiclg !== status) return false;
 
-      if (ateDate) {
-        const v = this.parseDate(item.vencimentoReferencia);
-        if (!v) return false;
-        if (v > ateDate) return false;
+      const vigenciaDate = this.parseDate(item.vigenciaSap);
+      if (vigenciaDeDate) {
+        if (!vigenciaDate || vigenciaDate < vigenciaDeDate) return false;
       }
+
+      if (vigenciaAteDate) {
+        if (!vigenciaDate || vigenciaDate > vigenciaAteDate) return false;
+      }
+
+      const ultimoPgtoDate = this.parseDate(item.ultimoPgtoSap);
+      if (ultimoPgtoDeDate) {
+        if (!ultimoPgtoDate || ultimoPgtoDate < ultimoPgtoDeDate) return false;
+      }
+
+      if (ultimoPgtoAteDate) {
+        if (!ultimoPgtoDate || ultimoPgtoDate > ultimoPgtoAteDate) return false;
+      }
+
+      if (ultimoValorDe !== null && item.ultimoValorPagoSap < ultimoValorDe) return false;
+      if (ultimoValorAte !== null && item.ultimoValorPagoSap > ultimoValorAte) return false;
 
       return true;
     });
 
     this.currentPagePainel = 1;
+    this.atualizarRotuloFiltrosPainelVencimentos();
+    this.sincronizarToggleFiltrosPainelVencimentos(false);
 
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
   }
 
   private limparFiltrosPainelVencimentos(): void {
-    const uf = document.getElementById('painelUfFiltro') as HTMLSelectElement | null;
-    const ate = document.getElementById('painelAteFiltro') as HTMLInputElement | null;
-    const status = document.getElementById('painelStatusFiltro') as HTMLSelectElement | null;
-    if (uf) uf.value = '';
-    if (ate) ate.value = '';
-    if (status) status.value = '';
+    [
+      'painelContratoSapFiltro',
+      'painelContratoSiclgFiltro',
+      'painelLocadorFiltro',
+      'painelCpfCnpjFiltro',
+      'painelVigenciaDeFiltro',
+      'painelVigenciaAteFiltro',
+      'painelStatusFiltro',
+      'painelUltimoPgtoDeFiltro',
+      'painelUltimoPgtoAteFiltro',
+      'painelUltimoValorDeFiltro',
+      'painelUltimoValorAteFiltro'
+    ].forEach((id) => {
+      const element = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
+      if (element) {
+        element.value = '';
+      }
+    });
+
     this.painelVencimentosFiltrado = [...this.painelVencimentos];
     this.currentPagePainel = 1;
+    this.atualizarRotuloFiltrosPainelVencimentos();
+    this.sincronizarToggleFiltrosPainelVencimentos(false);
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
+  }
+
+  private alternarFiltrosPainelVencimentos(): void {
+    const body = document.getElementById('painelFiltrosBody');
+    const expandido = body?.hasAttribute('hidden') ?? true;
+    this.sincronizarToggleFiltrosPainelVencimentos(expandido);
+  }
+
+  private sincronizarToggleFiltrosPainelVencimentos(expandido: boolean): void {
+    const body = document.getElementById('painelFiltrosBody');
+    const button = document.getElementById('painelToggleFiltrosBtn');
+    if (!body || !button) return;
+
+    body.hidden = !expandido;
+    button.setAttribute('aria-expanded', String(expandido));
+    button.textContent = expandido ? 'Ocultar filtros' : 'Mostrar filtros';
+  }
+
+  private atualizarRotuloFiltrosPainelVencimentos(): void {
+    const label = document.getElementById('painelFiltroAtivoLabel');
+    if (!label) return;
+
+    const contratoSap = ((document.getElementById('painelContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim();
+    const contratoSiclg = ((document.getElementById('painelContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim();
+    const locador = ((document.getElementById('painelLocadorFiltro') as HTMLInputElement | null)?.value || '').trim();
+    const cpfCnpj = ((document.getElementById('painelCpfCnpjFiltro') as HTMLInputElement | null)?.value || '').trim();
+    const vigenciaDe = (document.getElementById('painelVigenciaDeFiltro') as HTMLInputElement | null)?.value || '';
+    const vigenciaAte = (document.getElementById('painelVigenciaAteFiltro') as HTMLInputElement | null)?.value || '';
+    const status = (document.getElementById('painelStatusFiltro') as HTMLSelectElement | null)?.value || '';
+    const ultimoPgtoDe = (document.getElementById('painelUltimoPgtoDeFiltro') as HTMLInputElement | null)?.value || '';
+    const ultimoPgtoAte = (document.getElementById('painelUltimoPgtoAteFiltro') as HTMLInputElement | null)?.value || '';
+    const ultimoValorDe = ((document.getElementById('painelUltimoValorDeFiltro') as HTMLInputElement | null)?.value || '').trim();
+    const ultimoValorAte = ((document.getElementById('painelUltimoValorAteFiltro') as HTMLInputElement | null)?.value || '').trim();
+    const filtrosAtivos: string[] = [];
+
+    if (contratoSap) {
+      filtrosAtivos.push(`Contrato (SAP): ${contratoSap}`);
+    }
+
+    if (contratoSiclg) {
+      filtrosAtivos.push(`Contrato (SICLG): ${contratoSiclg}`);
+    }
+
+    if (locador) {
+      filtrosAtivos.push(`Locador: ${locador}`);
+    }
+
+    if (cpfCnpj) {
+      filtrosAtivos.push(`CPF/CNPJ: ${cpfCnpj}`);
+    }
+
+    if (vigenciaDe || vigenciaAte) {
+      filtrosAtivos.push(`Vigência: ${vigenciaDe ? this.formatDate(vigenciaDe) : '...'} a ${vigenciaAte ? this.formatDate(vigenciaAte) : '...'}`);
+    }
+
+    if (status) {
+      filtrosAtivos.push(`Situação: ${status}`);
+    }
+
+    if (ultimoPgtoDe || ultimoPgtoAte) {
+      filtrosAtivos.push(`Data Últ. Pgto: ${ultimoPgtoDe ? this.formatDate(ultimoPgtoDe) : '...'} a ${ultimoPgtoAte ? this.formatDate(ultimoPgtoAte) : '...'}`);
+    }
+
+    if (ultimoValorDe || ultimoValorAte) {
+      filtrosAtivos.push(`Últ. Valor Pago: ${ultimoValorDe || '...'} a ${ultimoValorAte || '...'}`);
+    }
+
+    if (!filtrosAtivos.length) {
+      label.textContent = '';
+      label.style.display = 'none';
+      return;
+    }
+
+    label.textContent = `Filtros ativos: ${filtrosAtivos.join(' | ')}`;
+    label.style.display = 'block';
+  }
+
+  private aplicarMascaraDocumentoPainelVencimentos(): void {
+    const input = document.getElementById('painelCpfCnpjFiltro') as HTMLInputElement | null;
+    if (!input || input.dataset.maskBound === 'true') return;
+
+    const formatarDocumento = (): void => {
+      const digits = input.value.replace(/\D/g, '').slice(0, 14);
+
+      if (!digits) {
+        input.value = '';
+        return;
+      }
+
+      if (digits.length <= 11) {
+        let masked = digits;
+        masked = masked.replace(/(\d{3})(\d)/, '$1.$2');
+        masked = masked.replace(/(\d{3})(\d)/, '$1.$2');
+        masked = masked.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        input.value = masked;
+        return;
+      }
+
+      input.value = Utils.formatDocument(digits);
+    };
+
+    input.dataset.maskBound = 'true';
+    input.addEventListener('input', formatarDocumento);
+    input.addEventListener('blur', formatarDocumento);
+  }
+
+  private atualizarOpcoesSituacaoPainelVencimentos(): void {
+    const select = document.getElementById('painelStatusFiltro') as HTMLSelectElement | null;
+    if (!select) return;
+
+    const valorAtual = select.value;
+    const opcoes = Array.from(new Set(this.painelVencimentos.map((item) => item.situacaoSiclg).filter(Boolean)));
+    const ordemPreferencial = ['Ativo', 'Em Prospecção', 'Em Mobilização', 'Em Desmobilização', 'Desativado'];
+    const ordenadas = [
+      ...ordemPreferencial.filter((situacao) => opcoes.includes(situacao)),
+      ...opcoes.filter((situacao) => !ordemPreferencial.includes(situacao)).sort((left, right) => left.localeCompare(right, 'pt-BR'))
+    ];
+
+    select.innerHTML = '';
+    select.append(new Option('Todas as situações', ''));
+    ordenadas.forEach((situacao) => select.append(new Option(situacao, situacao)));
+
+    if (valorAtual && ordenadas.includes(valorAtual)) {
+      select.value = valorAtual;
+    }
+  }
+
+  private normalizarDocumentoFiltroPainelVencimentos(value: string): string {
+    return value.replace(/\D/g, '');
+  }
+
+  private parseValorFiltroPainelVencimentos(value: string): number | null {
+    const normalized = value.trim();
+    if (!normalized) return null;
+
+    const numeric = normalized
+      .replace(/\s/g, '')
+      .replace(/R\$/gi, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    const parsed = Number(numeric);
+    return Number.isFinite(parsed) ? parsed : null;
   }
 
   private aplicarFiltrosPainelAcoesRenovatorias(): void {
@@ -4480,23 +4749,16 @@ export class SistemaSILIC {
 
     dadosPaginados.forEach((item) => {
       const tr = document.createElement('tr');
-      const conciliacaoLabel = item.conciliacaoStatus === 'conciliado' ? 'Conciliado' : 'Pendente';
-      const badgeClass = item.conciliacaoStatus === 'conciliado' ? 'badge badge-ativo' : 'badge badge-desmobilizacao';
 
       tr.innerHTML = `
         <td>${item.numeroContratoSap}</td>
         <td>${item.numeroContratoSiclg}</td>
-        <td>${item.uf}</td>
         <td>${item.locadorSap}</td>
+        <td>${item.cnpjCpfLocadorSiclg}</td>
         <td>${item.vigenciaSap}</td>
-        <td>${item.vigenciaSiclg}</td>
         <td>${item.situacaoSiclg}</td>
         <td>${item.ultimoPgtoSap}</td>
         <td>${this.formatCurrency(item.ultimoValorPagoSap)}</td>
-        <td>${item.decisaoOperacional}</td>
-        <td>${item.fase}</td>
-        <td>${item.situacaoProcessoAr}</td>
-        <td><span class="${badgeClass}">${conciliacaoLabel}</span></td>
         <td><button class="btn-table-action" data-id="${item.contratoId}">Detalhar</button></td>
       `;
 
@@ -7971,16 +8233,14 @@ export class SistemaSILIC {
     this.restaurarFiltrosFaseSessao('62');
   }
 
+
   private salvarFiltrosFaseSessao(fase: '2' | '3' | '4' | '5' | '7' | '61' | '62'): void {
     const ids = this.getIdsFiltroFase(fase);
     const payload: Record<string, string> = {};
-
-    ids.forEach((id) => {
+    for (const id of ids) {
       const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
-      if (!el) return;
-      payload[id] = el.value || '';
-    });
-
+      if (el) payload[id] = el.value || '';
+    }
     const key = `silic-filtros-fase${fase}`;
     try {
       sessionStorage.setItem(key, JSON.stringify(payload));
@@ -7992,26 +8252,23 @@ export class SistemaSILIC {
   private restaurarFiltrosFaseSessao(fase: '2' | '3' | '4' | '5' | '7' | '61' | '62'): void {
     const key = `silic-filtros-fase${fase}`;
     let parsed: Record<string, string> | null = null;
-
     try {
       const raw = sessionStorage.getItem(key);
       if (!raw) return;
       const maybe = JSON.parse(raw);
-      if (typeof maybe === 'object' && maybe !== null) {
+      if (maybe && typeof maybe === 'object') {
         parsed = maybe as Record<string, string>;
       }
     } catch {
       return;
     }
-
     if (!parsed) return;
-    this.getIdsFiltroFase(fase).forEach((id) => {
+    for (const id of this.getIdsFiltroFase(fase)) {
       const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
-      if (!el) return;
-      if (Object.prototype.hasOwnProperty.call(parsed, id)) {
+      if (el && Object.prototype.hasOwnProperty.call(parsed, id)) {
         el.value = parsed[id] || '';
       }
-    });
+    }
   }
 
   private getIdsFiltroFase(fase: '2' | '3' | '4' | '5' | '7' | '61' | '62'): string[] {
@@ -8085,93 +8342,165 @@ export class SistemaSILIC {
     ];
   }
 
-  private getStatusBadgeClass(status: string): string {
-    const normalized = status.toLowerCase();
-    if (normalized.includes('conclu') || normalized.includes('respondido') || normalized.includes('aprov')) return 'badge-ok';
-    if (normalized.includes('refor') || normalized.includes('crítico')) return 'badge-danger';
-    if (normalized.includes('aguard') || normalized.includes('pend') || normalized.includes('encerrar') || normalized.includes('avaliar')) return 'badge-warning';
-    if (normalized.includes('andamento') || normalized.includes('renovável')) return 'badge-info';
-    if (normalized.includes('iniciar')) return 'badge-warning';
-    return 'badge-neutral';
-  }
-
-  private getPrazoBadgeClass(situacaoPrazo: string): string {
-    const normalized = situacaoPrazo.toLowerCase();
-    if (normalized.includes('crítico')) return 'badge-danger';
-    if (normalized.includes('atenção')) return 'badge-warning';
-    if (normalized.includes('prazo')) return 'badge-ok';
-    return 'badge-neutral';
-  }
-
-  private getBooleanBadgeClass(value: string): string {
-    const normalized = value.toLowerCase();
-    if (normalized === 'sim') return 'badge-ok';
-    if (normalized === 'não' || normalized === 'nao') return 'badge-neutral';
-    return 'badge-neutral';
-  }
-
-  private lerDataFiltro(inputId: string): Date | null {
-    const value = (document.getElementById(inputId) as HTMLInputElement | null)?.value || '';
-    return value ? new Date(value) : null;
-  }
-
-  private dateWithinRange(value: Date | null, start: Date | null, end: Date | null): boolean {
-    if (!start && !end) return true;
-    if (!value) return false;
-    if (start && value < start) return false;
-    if (end && value > end) return false;
-    return true;
-  }
-
-  private ordenarPorCriticidadePrazo<T extends { situacaoPrazo: string }>(rows: T[]): T[] {
-    const peso = (situacao: string): number => {
-      const normalized = situacao.toLowerCase();
-      if (normalized.includes('crítico')) return 0;
-      if (normalized.includes('atenção')) return 1;
-      if (normalized.includes('prazo')) return 2;
-      return 3;
-    };
-
-    return [...rows].sort((a, b) => peso(a.situacaoPrazo) - peso(b.situacaoPrazo));
-  }
-
   private configurarChipsPrazoFases(): void {
-    const chips = Array.from(document.querySelectorAll('.kpi-chip')) as HTMLButtonElement[];
+    this.configurarChipsPrazoFase('61');
+    this.configurarChipsPrazoFase('62');
+  }
+
+  private configurarChipsPrazoFase(fase: '61' | '62'): void {
+    const chips = this.obterChipsPrazoFase(fase);
     chips.forEach((chip) => {
+      if (chip.dataset.prazoChipBound === 'true') return;
+      chip.dataset.prazoChipBound = 'true';
       chip.addEventListener('click', () => {
-        const fase = chip.dataset.fase;
-        const prazo = chip.dataset.prazoFilter || '';
-        if (!fase || !prazo) return;
+        const valor = this.obterValorChipPrazo(chip);
+        if (!valor) return;
+
+        const selecionadoAtual = fase === '61' ? this.fase61PrazoSelecionado : this.fase62PrazoSelecionado;
+        const proximoValor = selecionadoAtual === valor ? null : valor;
 
         if (fase === '61') {
-          this.fase61PrazoSelecionado = this.fase61PrazoSelecionado === prazo ? null : prazo;
-          this.salvarSelecaoPrazoChip('61', this.fase61PrazoSelecionado);
+          this.fase61PrazoSelecionado = proximoValor;
+          this.salvarSelecaoPrazoChip('61', proximoValor);
           this.atualizarEstadoChipsPrazo('61');
           this.aplicarFiltrosFase61Operacional();
           return;
         }
 
-        if (fase === '62') {
-          this.fase62PrazoSelecionado = this.fase62PrazoSelecionado === prazo ? null : prazo;
-          this.salvarSelecaoPrazoChip('62', this.fase62PrazoSelecionado);
-          this.atualizarEstadoChipsPrazo('62');
-          this.aplicarFiltrosFase62Operacional();
-        }
+        this.fase62PrazoSelecionado = proximoValor;
+        this.salvarSelecaoPrazoChip('62', proximoValor);
+        this.atualizarEstadoChipsPrazo('62');
+        this.aplicarFiltrosFase62Operacional();
       });
     });
 
-    this.atualizarEstadoChipsPrazo('61');
-    this.atualizarEstadoChipsPrazo('62');
+    this.atualizarEstadoChipsPrazo(fase);
+  }
+
+  private obterChipsPrazoFase(fase: '61' | '62'): HTMLElement[] {
+    const pane = document.getElementById(`fase${fase}`);
+    if (!pane) return [];
+
+    const candidates = Array.from(pane.querySelectorAll<HTMLElement>('.chip[data-prazo-chip], .chip[data-situacao-prazo], [data-prazo-chip], [data-situacao-prazo]'));
+    return candidates.filter((chip) => this.obterValorChipPrazo(chip) !== null);
+  }
+
+  private obterValorChipPrazo(chip: HTMLElement): string | null {
+    const raw = chip.dataset.prazoChip
+      || chip.dataset.situacaoPrazo
+      || chip.getAttribute('data-prazo-chip')
+      || chip.getAttribute('data-situacao-prazo');
+
+    const value = (raw || '').trim();
+    if (value === 'Crítico' || value === 'Atenção' || value === 'No prazo') {
+      return value;
+    }
+
+    return null;
   }
 
   private atualizarEstadoChipsPrazo(fase: '61' | '62'): void {
-    const selected = fase === '61' ? this.fase61PrazoSelecionado : this.fase62PrazoSelecionado;
-    const chips = Array.from(document.querySelectorAll(`.kpi-chip[data-fase="${fase}"]`)) as HTMLButtonElement[];
-    chips.forEach((chip) => {
-      const prazo = chip.dataset.prazoFilter || '';
-      chip.classList.toggle('active', Boolean(selected && prazo === selected));
+    const selecionado = fase === '61' ? this.fase61PrazoSelecionado : this.fase62PrazoSelecionado;
+    this.obterChipsPrazoFase(fase).forEach((chip) => {
+      const ativo = this.obterValorChipPrazo(chip) === selecionado;
+      chip.classList.toggle('selected', ativo);
+      chip.setAttribute('aria-pressed', String(ativo));
     });
   }
+
+  private lerDataFiltro(elementId: string): Date | null {
+    const value = (document.getElementById(elementId) as HTMLInputElement | null)?.value || '';
+    if (!value) return null;
+
+    const parsed = this.parseDate(value);
+    return parsed ? this.obterDataBase(parsed) : null;
+  }
+
+  private dateWithinRange(value: Date | null, start: Date | null, end: Date | null): boolean {
+    if (!start && !end) return true;
+    if (!value) return false;
+
+    const base = this.obterDataBase(value);
+    if (start && base.getTime() < start.getTime()) return false;
+    if (end && base.getTime() > end.getTime()) return false;
+    return true;
+  }
+
+  private ordenarPorCriticidadePrazo<T extends { situacaoPrazo: string }>(rows: T[]): T[] {
+    const order: Record<string, number> = {
+      'Crítico': 0,
+      'Atenção': 1,
+      'No prazo': 2
+    };
+
+    return [...rows].sort((left, right) => {
+      const leftOrder = order[left.situacaoPrazo] ?? 99;
+      const rightOrder = order[right.situacaoPrazo] ?? 99;
+      if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+      return left.situacaoPrazo.localeCompare(right.situacaoPrazo, 'pt-BR');
+    });
+  }
+
+  private getStatusBadgeClass(value: string): string {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return 'badge-neutral';
+
+    if (
+      normalized.includes('não')
+      || normalized.includes('nao')
+      || normalized.includes('crítico')
+      || normalized.includes('critico')
+      || normalized.includes('refor')
+      || normalized.includes('cancel')
+      || normalized.includes('pendente')
+    ) {
+      return 'badge-danger';
+    }
+
+    if (
+      normalized.includes('aguard')
+      || normalized.includes('andamento')
+      || normalized.includes('análise')
+      || normalized.includes('analise')
+      || normalized.includes('avaliar')
+      || normalized.includes('atenção')
+      || normalized.includes('atencao')
+      || normalized.includes('iniciar')
+    ) {
+      return 'badge-warning';
+    }
+
+    if (
+      normalized.includes('respondido')
+      || normalized.includes('prorrogar')
+      || normalized.includes('renovável')
+      || normalized.includes('renovavel')
+      || normalized.includes('conclu')
+      || normalized.includes('ativo')
+      || normalized.includes('sim')
+    ) {
+      return 'badge-ok';
+    }
+
+    return 'badge-info';
+  }
+
+  private getBooleanBadgeClass(value: string): string {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'sim' || normalized === 'true') return 'badge-ok';
+    if (normalized === 'não' || normalized === 'nao' || normalized === 'false') return 'badge-neutral';
+    return 'badge-info';
+  }
+
+  private getPrazoBadgeClass(value: string): string {
+    if (value === 'Crítico') return 'badge-danger';
+    if (value === 'Atenção') return 'badge-warning';
+    if (value === 'No prazo') return 'badge-ok';
+    return 'badge-neutral';
+  }
+
+
+
 
   private atualizarKpisPrazoFase61(rows: Fase61OperacionalRow[]): void {
     const resumo = this.calcularResumoPrazo(rows.map((row) => row.situacaoPrazo));
@@ -8336,6 +8665,8 @@ export class SistemaSILIC {
       return true;
     });
 
+    this.imoveis = this.ordenarImoveisPortfolio(this.imoveis);
+
     this.currentPageImoveis = 1;
     this.atualizarTabelaImoveis();
     this.atualizarDashboard();
@@ -8360,7 +8691,7 @@ export class SistemaSILIC {
     if (filtroDataFim) filtroDataFim.value = '';
 
     // Restaurar todos os imóveis
-    this.imoveis = [...this.imoveisOriginais];
+    this.imoveis = this.ordenarImoveisPortfolio(this.imoveisOriginais);
     this.currentPageImoveis = 1;
     this.atualizarTabelaImoveis();
     this.atualizarDashboard();
@@ -8383,12 +8714,13 @@ export class SistemaSILIC {
   }
 
   private calcularEstatisticas(): DashboardStats {
+    const lista = this.imoveisOriginais && this.imoveisOriginais.length > 0 ? this.imoveisOriginais : this.imoveis;
     return {
-      totalImoveis: this.imoveis.length,
-      imoveisAtivos: this.imoveis.filter(i => i.status === 'ativo').length,
-      imoveisProspeccao: this.imoveis.filter(i => i.status === 'prospeccao').length,
-      imoveisMobilizacao: this.imoveis.filter(i => i.status === 'mobilizacao').length,
-      imoveisDesmobilizacao: this.imoveis.filter(i => i.status === 'desmobilizacao').length,
+      totalImoveis: lista.length,
+      imoveisAtivos: lista.filter(i => i.status === 'ativo').length,
+      imoveisProspeccao: lista.filter(i => i.status === 'prospeccao').length,
+      imoveisMobilizacao: lista.filter(i => i.status === 'mobilizacao').length,
+      imoveisDesmobilizacao: lista.filter(i => i.status === 'desmobilizacao').length,
       totalLocadores: this.locadores.length
     };
   }
@@ -8428,11 +8760,11 @@ export class SistemaSILIC {
     const m = id.match(/^imo-(\d+)$/);
     if (!m) return null;
     const n = parseInt(m[1], 10);
+
     if (Number.isNaN(n)) return null;
     return n - 1; // índice zero-based usado na geração
   }
 }
-
 // Removido bloco de protótipo temporário
 
 // Função para voltar ao portal SILIC

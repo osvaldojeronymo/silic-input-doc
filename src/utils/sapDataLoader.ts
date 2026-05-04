@@ -101,14 +101,13 @@ interface DadosSAP {
  */
 export class SAPDataLoader {
   // Em desenvolvimento, Vite serve arquivos de public/ com o base path
-  private static readonly DATA_PATH = '/silic-input-doc/dados-sap.json';
+  private static readonly API_URL = 'http://localhost:3333/api';
   
   /**
    * Obtém o caminho correto baseado no ambiente
    */
-  private static obterCaminho(): string {
-    // Retorna o caminho com o base path do Vite
-    return this.DATA_PATH;
+  private static obterCaminho(endpoint: string): string {
+    return `${this.API_URL}/${endpoint}`;
   }
 
   /**
@@ -168,11 +167,17 @@ export class SAPDataLoader {
       
       // Mapear status
       let status: 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao' = 'ativo';
-      const statusEdificio = im.edificio.status.toLowerCase();
-      if (statusEdificio.includes('prospecção')) status = 'prospeccao';
-      else if (statusEdificio.includes('mobilização') && !statusEdificio.includes('des')) status = 'mobilizacao';
-      else if (statusEdificio.includes('desmobilização')) status = 'desmobilizacao';
-      else if (statusEdificio.includes('ativo')) status = 'ativo';
+      // Forçar mapeamento robusto para qualquer fonte
+      let statusRaw = im.edificio.status || '';
+      statusRaw = statusRaw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      if (statusRaw.includes('prospeccao')) status = 'prospeccao';
+      else if (statusRaw.includes('mobilizacao') && !statusRaw.includes('des')) status = 'mobilizacao';
+      else if (statusRaw.includes('desmobilizacao')) status = 'desmobilizacao';
+      else if (statusRaw.includes('ativo')) status = 'ativo';
+      else if (statusRaw.includes('prospec')) status = 'prospeccao';
+      else if (statusRaw.includes('mobiliz')) status = 'mobilizacao';
+      else if (statusRaw.includes('desmobiliz')) status = 'desmobilizacao';
+      else status = 'ativo'; // fallback
       
       return {
         id: im.id,
@@ -224,34 +229,25 @@ export class SAPDataLoader {
    */
   static async carregarDados(): Promise<DadosSAP | null> {
     try {
-      const caminho = this.obterCaminho();
-      console.log('🔄 Carregando dados do SAP...');
-      console.log(`   📁 Caminho: ${caminho}`);
-      
-      const response = await fetch(caminho);
-      
-      if (!response.ok) {
-        console.warn('⚠️ Arquivo de dados SAP não encontrado. Usando dados demo.');
-        console.warn(`   Status: ${response.status} ${response.statusText}`);
+      // Carregar imóveis e locadores da API
+      const imoveisResp = await fetch(this.obterCaminho('imoveis'));
+      const locadoresResp = await fetch(this.obterCaminho('locadores'));
+      if (!imoveisResp.ok || !locadoresResp.ok) {
+        console.warn('⚠️ Não foi possível carregar dados da API.');
         return null;
       }
-
-      const dadosBrutos: DadosSAPBruto = await response.json();
-      
-      // Mapear dados para estrutura da aplicação
-      const dados = this.mapearDadosSAP(dadosBrutos);
-      
-      console.log('✅ Dados do SAP carregados com sucesso!');
-      console.log(`   📊 ${dados.metadados.totalImoveis} imóveis`);
-      console.log(`   👥 ${dados.metadados.totalLocadores} locadores`);
-      console.log(`   📅 Geração: ${new Date(dados.metadados.dataImportacao).toLocaleString('pt-BR')}`);
-      console.log(`   🏷️ Fonte: ${dados.metadados.fonte}`);
-      
-      return dados;
-      
+      const imoveis = await imoveisResp.json();
+      const locadores = await locadoresResp.json();
+      // Mock metadados
+      const metadados = {
+        dataImportacao: new Date().toISOString(),
+        fonte: 'API SQLite',
+        totalImoveis: imoveis.length,
+        totalLocadores: locadores.length
+      };
+      return { imoveis, locadores, metadados };
     } catch (error) {
-      console.error('❌ Erro ao carregar dados do SAP:', error);
-      console.error('   Detalhes:', error);
+      console.error('❌ Erro ao carregar dados da API:', error);
       return null;
     }
   }
@@ -261,7 +257,7 @@ export class SAPDataLoader {
    */
   static async temDadosDisponiveis(): Promise<boolean> {
     try {
-      const response = await fetch(this.DATA_PATH, { method: 'HEAD' });
+      const response = await fetch(this.obterCaminho('imoveis'), { method: 'HEAD' });
       return response.ok;
     } catch {
       return false;

@@ -314,10 +314,11 @@ class GeradorDadosSAP:
         # Datas do contrato
         inicio_contrato = self.gerar_data('01/01/1990', '31/12/2020')
         
-        # Definir status e datas baseadas nele
+        # Definir status e datas baseadas nele (ajustado para 80% Ativo, 10% Em Prospecção, 5% Em Mobilização, 5% Em Desmobilização)
+        status_opcoes_ajustado = ['Ativo', 'Em Prospecção', 'Em Mobilização', 'Em Desmobilização']
         status = random.choices(
-            self.status_opcoes,
-            weights=[60, 5, 10, 15, 10],  # 60% Ativo, 10% Desativado, etc.
+            status_opcoes_ajustado,
+            weights=[80, 10, 5, 5],
             k=1
         )[0]
         
