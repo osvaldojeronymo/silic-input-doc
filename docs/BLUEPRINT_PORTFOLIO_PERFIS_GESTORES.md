@@ -67,17 +67,28 @@ Estados:
 
 ### 3.2 Tela B - Jornada do Gestor Operacional
 
-Objetivo: concentrar a operacao em fases com filtros e tabela por contexto.
+Objetivo: concentrar a operacao em paineis de trabalho com filtros e formularios por contexto.
 
 Estrutura fixa:
 
 1. Header da jornada (nome do perfil, resumo KPI)
-2. Abas de fase
-3. Bloco de filtros da fase selecionada
-4. Tabela da fase selecionada
+2. Abas principais (`Informacoes do imovel` e `Aviso de Vencimento`)
+3. Subtabs de `Informacoes do imovel` (`RTA`, `Laudo de avaliacao`, `Negociacao`)
+4. Bloco de filtros e formulario da subtab selecionada
 5. Acoes de linha (lupa e, quando aplicavel, favorito)
 
-Abas:
+Abas principais:
+
+1. `Informacoes do imovel`
+2. `Aviso de Vencimento`
+
+Subtabs de `Informacoes do imovel`:
+
+1. `RTA`
+2. `Laudo de avaliacao`
+3. `Negociacao`
+
+Fases de referencia do processo:
 
 1. Fase 1 - Aviso de Vencimento
 2. Fase 2 - Decisao de Prorrogacao

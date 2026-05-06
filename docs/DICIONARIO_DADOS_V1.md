@@ -8,36 +8,58 @@ Documento base para integracao e uso de dados no dominio de locacao, considerand
 
 ## 1) Convencoes
 
-- Chave central de negocio: `contrato_sap`
+- Chave central de negocio: `imovel_sap`
 - Chave tecnica interna: `contrato_uid` (UUID)
 - Datas: `YYYY-MM-DD`
 - Data/hora: `YYYY-MM-DDTHH:mm:ssZ`
 - Documento fiscal normalizado: apenas digitos
 - Origem de dado por campo: sempre explicita
 
+### 1.1 Convencao de identificadores SAP x SICLG
+
+- `Imovel (SAP)`: identifica o cadastro do imovel/edificio no SAP. Pode existir desde a prospeccao.
+- `Contrato (SICLG)`: identifica o instrumento contratual no SICLG. So existe quando houver instrumento formalizado.
+- `Processo (SICLG)`: identifica o processo administrativo no SICLG. Existe quando houver tramitacao administrativa associada.
+
+Regra geral:
+
+- imovel pode existir sem contrato
+- contrato nao deve existir sem imovel
+- processo pode existir conforme o rito administrativo, mas nao substitui o identificador do imovel
+
 ## 2) Entidades canonicas (core)
 
 ### 2.1 `core_contrato`
 
-| Campo                  | Tipo         | Origem    | Obrigatorio | Uso principal                 |
-| ---------------------- | ------------ | --------- | ----------- | ----------------------------- |
-| contrato_uid           | string(uuid) | CALCULADO | Sim         | Todas as telas                |
-| contrato_sap           | string       | SAP/SICLG | Sim         | Chave de conciliacao          |
-| contrato_siclg         | string       | SICLG     | Nao         | A-I, A-II, B-b..B-h           |
-| processo_siclg         | string       | SICLG     | Nao         | A-III, B-f, B-g               |
-| descricao_contrato_sap | string       | SAP       | Sim         | A-I, B-c, B-d, B-e, B-h       |
-| descricao_objeto_siclg | string       | SICLG     | Nao         | A-I, A-III                    |
-| tipo_contrato_sap      | string       | SAP       | Nao         | A-I                           |
-| tipo_instrumento_siclg | string       | SICLG     | Nao         | A-I, B-g                      |
-| inicio_vigencia_sap    | date         | SAP       | Sim         | A-I, B-b, B-c, B-d, B-h       |
-| fim_vigencia_sap       | date         | SAP       | Sim         | A-II, B-a..B-h                |
-| inicio_vigencia_siclg  | date         | SICLG     | Nao         | A-I, B-b, B-h                 |
-| fim_vigencia_siclg     | date         | SICLG     | Nao         | A-II, B-b, B-h                |
-| situacao_siclg         | string       | SICLG     | Nao         | A-I, A-II, A-III, B-g         |
-| modalidade_siclg       | string       | SICLG     | Nao         | B-f                           |
-| unidade                | string       | SAP/SICLG | Nao         | A-II, A-III, B-a..B-h         |
-| uf                     | string(2)    | SAP       | Nao         | A-II, B-b, B-c, B-d, B-e, B-h |
-| endereco_sap           | string       | SAP       | Nao         | A-II                          |
+| Campo                  | Label de negocio            | Tipo         | Origem    | Obrigatorio | Uso principal                 | Observacao funcional                                |
+| ---------------------- | --------------------------- | ------------ | --------- | ----------- | ----------------------------- | --------------------------------------------------- |
+| contrato_uid           | Chave interna               | string(uuid) | CALCULADO | Sim         | Todas as telas                | Identificador tecnico interno                       |
+| imovel_sap             | Imovel (SAP)                | string       | SAP       | Sim         | A-I, A-II, A-III, B-a..B-h    | Identificador do cadastro do imovel/edificio no SAP |
+| contrato_siclg         | Contrato (SICLG)            | string       | SICLG     | Nao         | A-I, A-II, B-b..B-h           | Identificador do instrumento contratual no SICLG    |
+| processo_siclg         | Processo (SICLG)            | string       | SICLG     | Nao         | A-III, B-f, B-g               | Identificador do processo administrativo no SICLG   |
+| descricao_imovel_sap   | Descricao do imovel (SAP)   | string       | SAP       | Sim         | A-I, B-c, B-d, B-e, B-h       | Nome/descricao do cadastro do imovel no SAP         |
+| descricao_objeto_siclg | Objeto (SICLG)              | string       | SICLG     | Nao         | A-I, A-III                    | Descricao do objeto vinculada ao SICLG              |
+| tipo_cadastro_sap      | Tipo do cadastro (SAP)      | string       | SAP       | Nao         | A-I                           | Natureza do cadastro do imovel no SAP               |
+| tipo_instrumento_siclg | Tipo de instrumento (SICLG) | string       | SICLG     | Nao         | A-I, B-g                      | Natureza do instrumento contratual                  |
+| inicio_vigencia_sap    | Inicio de vigencia (SAP)    | date         | SAP       | Sim         | A-I, B-b, B-c, B-d, B-h       | Inicio de vigencia do cadastro/ocupacao no SAP      |
+| fim_vigencia_sap       | Fim de vigencia (SAP)       | date         | SAP       | Sim         | A-II, B-a..B-h                | Fim de vigencia do cadastro/ocupacao no SAP         |
+| inicio_vigencia_siclg  | Inicio de vigencia (SICLG)  | date         | SICLG     | Nao         | A-I, B-b, B-h                 | Inicio de vigencia do instrumento no SICLG          |
+| fim_vigencia_siclg     | Fim de vigencia (SICLG)     | date         | SICLG     | Nao         | A-II, B-b, B-h                | Fim de vigencia do instrumento no SICLG             |
+| situacao_siclg         | Situacao (SICLG)            | string       | SICLG     | Nao         | A-I, A-II, A-III, B-g         | Situacao do instrumento/processo no SICLG           |
+| modalidade_siclg       | Modalidade (SICLG)          | string       | SICLG     | Nao         | B-f                           | Modalidade do instrumento/processo                  |
+| unidade                | Unidade                     | string       | SAP/SICLG | Nao         | A-II, A-III, B-a..B-h         | Unidade gestora/responsavel                         |
+| uf                     | UF                          | string(2)    | SAP       | Nao         | A-II, B-b, B-c, B-d, B-e, B-h | UF do imovel                                        |
+| endereco_sap           | Endereco (SAP)              | string       | SAP       | Nao         | A-II                          | Endereco do imovel no SAP                           |
+
+### 2.1.1 Regras por status
+
+| Status do imovel  | Imovel (SAP) | Contrato (SICLG) | Processo (SICLG) | Regra de preenchimento                                                                                      |
+| ----------------- | ------------ | ---------------- | ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| Em Prospeccao     | Sim          | Nao              | Opcional         | Ja existe cadastro do imovel no SAP; ainda nao existe instrumento contratual                                |
+| Em Mobilizacao    | Sim          | Opcional         | Sim              | Cadastro SAP obrigatorio; processo administrativo ja pode existir; contrato depende do marco formal adotado |
+| Ativo             | Sim          | Sim              | Sim/Opcional     | Imovel e contrato devem existir; processo existe quando houver tramitacao administrativa vinculada          |
+| Em Desmobilizacao | Sim          | Sim              | Sim/Opcional     | Identificadores permanecem para controle operacional e encerramento                                         |
+| Desativado        | Sim          | Historico        | Historico        | Registros podem permanecer apenas para consulta e auditoria                                                 |
 
 ### 2.2 `core_fornecedor`
 

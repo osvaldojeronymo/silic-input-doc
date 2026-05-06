@@ -42,7 +42,7 @@ O protótipo atual deve ser tratado como baixa fidelidade. A partir dele, será 
 
 ## Regras criticas que devem ser preservadas
 
-1. Chave de conciliacao: `contrato_sap`.
+1. Chave de conciliacao: `imovel_sap`.
 2. Regra de prazo AR: janela legal 12-6 (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor 12-7.
 3. Inputs por perfil:
    - Gestor Operacional: `decisao_operacional`, `houve_acordo`, `incluir_no_siclg`

@@ -15,8 +15,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "deploy": "npm run build && gh-pages -d dist",
-    "convert:excel": ".venv/bin/python scripts/converter-excel-para-json.py",
-    "gerar:dados": ".venv/bin/python scripts/gerar-dados-mockados.py"
+    "convert:excel": "if [ -x .venv/bin/python ]; then .venv/bin/python scripts/converter-excel-para-json.py; else python3 scripts/converter-excel-para-json.py; fi",
+    "gerar:dados": "if [ -x .venv/bin/python ]; then .venv/bin/python scripts/gerar-dados-mockados.py; else python3 scripts/gerar-dados-mockados.py; fi",
+    "gerar:mock:dijur": "if [ -x .venv/bin/python ]; then .venv/bin/python scripts/gerar-dados-mockados.py --somente-dijur --input-sap public/dados-sap.json; else python3 scripts/gerar-dados-mockados.py --somente-dijur --input-sap public/dados-sap.json; fi"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",

@@ -31,7 +31,7 @@ Objetivo: consolidar requisitos funcionais e não funcionais para abertura forma
 
 ## Regras de negócio que devem constar explicitamente
 
-1. Chave principal de conciliacao: `contrato_sap`.
+1. Chave principal de conciliacao: `imovel_sap`.
 2. Regra de prazo AR: janela legal 12-6 (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor 12-7.
 3. Inputs por perfil:
    - Gestor Operacional

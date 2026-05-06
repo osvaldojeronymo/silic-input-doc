@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Gerador de dados mockados realistas para o protótipo SILIC
-Gera 100 imóveis com dados completos baseados na estrutura SAP
+Gerador de dados mockados realistas para o protótipo SILIC.
+Gera massa SAP e mock DIJUR canônico baseado em imovel_sap.
 """
 
+import argparse
 import json
 import random
 from datetime import datetime, timedelta
@@ -438,31 +439,118 @@ class GeradorDadosSAP:
             }
         }
 
+    def gerar_dados_dijur(self, dados_sap: Dict, cobertura: float = 0.72) -> Dict:
+        """Gera um mock DIJUR amplo e consistente com a massa SAP."""
+        imoveis = dados_sap.get('imoveis', [])
+        locadores = {locador['id']: locador for locador in dados_sap.get('locadores', [])}
+
+        if not imoveis:
+            return {'registros': []}
+
+        quantidade = max(12, int(len(imoveis) * cobertura))
+        quantidade = min(quantidade, len(imoveis))
+        amostra = random.sample(imoveis, quantidade)
+
+        situacoes_sijur = [
+            'Distribuído',
+            'Em análise',
+            'Aguardando subsídios',
+            'Manifestação emitida',
+            'Concluído'
+        ]
+        situacoes_cefor = [
+            'Aguardando instrução',
+            'Em acompanhamento',
+            'Encaminhado para regularização',
+            'Finalizado'
+        ]
+
+        registros = []
+        ano_corrente = datetime.now().year
+
+        for indice, imovel in enumerate(sorted(amostra, key=lambda item: item['edificio']['codigo']), start=1):
+            codigo_imovel = str(imovel['edificio']['codigo'])
+            locador = locadores.get(imovel.get('locadorId', ''))
+            nome_locador = locador['nome'] if locador else 'Locador não identificado'
+
+            data_entrada = datetime.now() - timedelta(days=random.randint(5, 540))
+            last_sync = data_entrada + timedelta(days=random.randint(0, 20), hours=random.randint(1, 12))
+
+            registros.append({
+                'imovel_sap': codigo_imovel,
+                'codigo_sijur': f"SIJUR-{ano_corrente}-{indice:05d}",
+                'numero_processo_dijur': f"08001.{indice:06d}/{ano_corrente}-{random.randint(10, 99)}",
+                'situacao_sijur': random.choice(situacoes_sijur),
+                'situacao_cefor': random.choice(situacoes_cefor),
+                'data_entrada_dijur': data_entrada.replace(microsecond=0).isoformat() + 'Z',
+                'partes_dijur': f"CAIXA ECONÔMICA FEDERAL x {nome_locador}",
+                'last_sync_at': last_sync.replace(microsecond=0).isoformat() + 'Z'
+            })
+
+        return {'registros': registros}
+
+
+def carregar_dados_sap_existentes(caminho_arquivo: str) -> Dict:
+    with open(caminho_arquivo, 'r', encoding='utf-8') as arquivo:
+        return json.load(arquivo)
+
+
+def salvar_json(caminho_arquivo: str, dados: Dict) -> None:
+    with open(caminho_arquivo, 'w', encoding='utf-8') as arquivo:
+        json.dump(dados, arquivo, ensure_ascii=False, indent=2)
+
+
+def criar_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description='Gera mocks SAP e DIJUR para o protótipo SILIC.')
+    parser.add_argument('--imoveis', type=int, default=100, help='Quantidade de imóveis para a massa SAP mockada.')
+    parser.add_argument('--cobertura-dijur', type=float, default=0.72, help='Proporção da massa SAP com registro DIJUR.')
+    parser.add_argument('--somente-dijur', action='store_true', help='Gera apenas public/dados-dijur.json a partir de um dados-sap.json existente.')
+    parser.add_argument('--input-sap', default=None, help='Caminho do JSON SAP usado quando --somente-dijur for informado.')
+    return parser
+
 def main():
+    parser = criar_parser()
+    args = parser.parse_args()
+
     print("=" * 70)
     print("🏢 GERADOR DE DADOS MOCKADOS - SILIC 2.0")
     print("=" * 70)
     print()
-    
+
     gerador = GeradorDadosSAP()
-    dados = gerador.gerar_dados_completos(100)
-    
-    # Salvar JSON (usar path absoluto a partir do diretório do script)
     import os
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(script_dir, '..', 'public', 'dados-sap.json')
-    print(f"\n💾 Salvando dados em: {output_path}")
-    
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(dados, f, ensure_ascii=False, indent=2)
+    output_sap_path = os.path.join(script_dir, '..', 'public', 'dados-sap.json')
+    output_dijur_path = os.path.join(script_dir, '..', 'public', 'dados-dijur.json')
+
+    if args.somente_dijur:
+        input_sap_path = args.input_sap or output_sap_path
+        print(f"📂 Carregando base SAP existente: {input_sap_path}")
+        dados = carregar_dados_sap_existentes(input_sap_path)
+    else:
+        dados = gerador.gerar_dados_completos(args.imoveis)
+        print(f"\n💾 Salvando dados SAP em: {output_sap_path}")
+        salvar_json(output_sap_path, dados)
+
+    dados_dijur = gerador.gerar_dados_dijur(dados, args.cobertura_dijur)
+    print(f"💾 Salvando dados DIJUR em: {output_dijur_path}")
+    salvar_json(output_dijur_path, dados_dijur)
     
     print("\n" + "=" * 70)
     print("✅ GERAÇÃO CONCLUÍDA COM SUCESSO!")
     print("=" * 70)
     print(f"\n📊 Resumo:")
+    print(f"   • Registros DIJUR gerados: {len(dados_dijur['registros'])}")
+    print(f"   • Arquivo DIJUR: {output_dijur_path}")
+
+    if args.somente_dijur:
+        print(f"   • Base SAP utilizada: {args.input_sap or output_sap_path}")
+        print("\n" + "=" * 70)
+        return
+
     print(f"   • Imóveis gerados: {dados['metadados']['totalImoveis']}")
     print(f"   • Locadores gerados: {dados['metadados']['totalLocadores']}")
-    print(f"   • Arquivo: {output_path}")
+    print(f"   • Arquivo SAP: {output_sap_path}")
     print(f"\n🎯 Status dos imóveis:")
     
     status_count = {}

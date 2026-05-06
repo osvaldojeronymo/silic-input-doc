@@ -15,6 +15,33 @@ npm run dev
 
 Pronto! Acesse http://localhost:3000/show-input-doc/
 
+## 🔄 Regenerar Dados Padronizados
+
+### Regenerar `dados-sap.json` e `dados-dijur.json` juntos
+
+```bash
+npm run gerar:dados
+```
+
+Esse comando recria a massa SAP mockada em `public/dados-sap.json` e também gera `public/dados-dijur.json` no formato canônico com `imovel_sap`.
+
+### Regenerar apenas `dados-dijur.json`
+
+```bash
+npm run gerar:mock:dijur
+```
+
+Esse comando reutiliza `public/dados-sap.json` como base e atualiza apenas `public/dados-dijur.json`.
+
+### Regenerar a partir de Excel SAP real
+
+```bash
+./import-sap.sh
+npm run gerar:mock:dijur
+```
+
+Fluxo recomendado quando `dados-sap.json` vem de importação real e o mock DIJUR precisa ficar compatível com a mesma base de imóveis.
+
 ---
 
 ## 📝 Passo a Passo Detalhado
@@ -85,6 +112,9 @@ ls -lh public/rel-SAP.xlsx
 ```bash
 ls -lh public/dados-sap.json
 # Deve mostrar o arquivo JSON
+
+ls -lh public/dados-dijur.json
+# Deve mostrar o arquivo JSON da DIJUR
 ```
 
 ### Ver Conteúdo do JSON
@@ -103,6 +133,14 @@ with open('public/dados-sap.json') as f:
     dados = json.load(f)
     print(f'Imóveis: {len(dados[\"imoveis\"])}')
     print(f'Locadores: {len(dados[\"locadores\"])}')
+"
+
+python3 -c "
+import json
+with open('public/dados-dijur.json') as f:
+  dados = json.load(f)
+  print(f'Registros DIJUR: {len(dados[\"registros\"])}')
+  print(f'Exemplo de chave: {dados[\"registros\"][0][\"imovel_sap\"] if dados[\"registros\"] else \"sem registros\"}')
 "
 ```
 
@@ -186,6 +224,12 @@ with open('public/dados-sap.json') as f:
 ```bash
 # Ver logs da última importação
 python3 scripts/import-sap-data.py
+
+# Regenerar massa mockada completa (SAP + DIJUR)
+npm run gerar:dados
+
+# Regenerar apenas o mock DIJUR
+npm run gerar:mock:dijur
 
 # Build para produção
 npm run build

@@ -36,16 +36,16 @@ para tomar decisoes no prazo, reduzir inconsistencias e manter rastreabilidade p
 
 ## Regras de negocio obrigatorias
 
-1. Chave de conciliacao principal: `contrato_sap`.
-2. Campos removidos por decisao de negocio (nao usar):
+1. Chave de conciliacao principal: `imovel_sap`.
+1. Campos removidos por decisao de negocio (nao usar):
    - `pago_ultimos_12_meses`
    - `ultimo_pagamento`
    - `fase_operacional`
    - `situacao_colegiado`
-3. `decisao_operacional`, `houve_acordo`, `incluir_no_siclg` sao inputs do perfil `Gestor Operacional`.
-4. `radar_sucot` e `notas` sao inputs do perfil `Gestor Formal`.
-5. `codigo_sijur` e `situacao_sijur/cefor` sao fornecidos por `DIJUR_API`.
-6. Regra de prazo AR: janela legal de ingresso entre 12 e 6 meses (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor entre 12 e 7 meses.
+1. `decisao_operacional`, `houve_acordo`, `incluir_no_siclg` sao inputs do perfil `Gestor Operacional`.
+1. `radar_sucot` e `notas` sao inputs do perfil `Gestor Formal`.
+1. `codigo_sijur` e `situacao_sijur/cefor` sao fornecidos por `DIJUR_API`.
+1. Regra de prazo AR: janela legal de ingresso entre 12 e 6 meses (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor entre 12 e 7 meses.
 
 ## Criterios de aceite (Given/When/Then)
 
@@ -107,6 +107,6 @@ para tomar decisoes no prazo, reduzir inconsistencias e manter rastreabilidade p
 
 ## Riscos e observacoes
 
-- Qualidade de conciliacao depende da consistencia de `contrato_sap` nas fontes.
+- Qualidade de conciliacao depende da consistencia de `imovel_sap` nas fontes.
 - Integracao DIJUR deve ter politica de retentativa e carimbo de ultima sincronizacao.
 - Campos de input manual exigem governanca de perfil para evitar inconsistencias operacionais.

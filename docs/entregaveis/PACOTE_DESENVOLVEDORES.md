@@ -11,6 +11,7 @@ Objetivo: permitir implementação do módulo com contexto funcional, dados e pr
 5. `docs/ESTADO_ATUAL_DO_PROJETO.md`
 6. `docs/INTEGRACAO_SAP.md`
 7. `docs/GUIA_DADOS.md`
+8. `docs/entregaveis/HANDOFF_ANGULAR_PROTOTIPO.md`
 
 ## Ordem recomendada de implementação (MVP)
 

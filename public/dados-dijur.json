@@ -1,0 +1,724 @@
+{
+  "registros": [
+    {
+      "imovel_sap": "20000001",
+      "codigo_sijur": "SIJUR-2026-00001",
+      "numero_processo_dijur": "08001.000001/2026-75",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2024-12-28T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x RICARDO SANTOS BARBOSA",
+      "last_sync_at": "2025-01-01T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000004",
+      "codigo_sijur": "SIJUR-2026-00002",
+      "numero_processo_dijur": "08001.000002/2026-37",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2024-12-22T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x RICARDO SANTOS BARBOSA",
+      "last_sync_at": "2025-01-06T22:12:46Z"
+    },
+    {
+      "imovel_sap": "20000005",
+      "codigo_sijur": "SIJUR-2026-00003",
+      "numero_processo_dijur": "08001.000003/2026-22",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-12-31T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x JOÃO OLIVEIRA SOUZA",
+      "last_sync_at": "2026-01-06T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000006",
+      "codigo_sijur": "SIJUR-2026-00004",
+      "numero_processo_dijur": "08001.000004/2026-38",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-07-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FREI CANECA SHOPPING E CONVENTION CENTER LTDA",
+      "last_sync_at": "2025-07-22T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000008",
+      "codigo_sijur": "SIJUR-2026-00005",
+      "numero_processo_dijur": "08001.000005/2026-22",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-06-17T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x BEATRIZ HELENA ALVES",
+      "last_sync_at": "2025-07-01T18:12:46Z"
+    },
+    {
+      "imovel_sap": "20000009",
+      "codigo_sijur": "SIJUR-2026-00006",
+      "numero_processo_dijur": "08001.000006/2026-22",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-10-18T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x MARIA SILVA SANTOS",
+      "last_sync_at": "2025-11-03T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000012",
+      "codigo_sijur": "SIJUR-2026-00007",
+      "numero_processo_dijur": "08001.000007/2026-32",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-09-13T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x RICARDO SANTOS BARBOSA",
+      "last_sync_at": "2025-09-26T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000013",
+      "codigo_sijur": "SIJUR-2026-00008",
+      "numero_processo_dijur": "08001.000008/2026-56",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2026-02-15T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GERALDINA TOLEDO DE VASCONCELOS",
+      "last_sync_at": "2026-03-07T20:12:46Z"
+    },
+    {
+      "imovel_sap": "20000015",
+      "codigo_sijur": "SIJUR-2026-00009",
+      "numero_processo_dijur": "08001.000009/2026-43",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-04-13T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FREI CANECA SHOPPING E CONVENTION CENTER LTDA",
+      "last_sync_at": "2025-05-01T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000016",
+      "codigo_sijur": "SIJUR-2026-00010",
+      "numero_processo_dijur": "08001.000010/2026-93",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2025-12-22T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x JOÃO OLIVEIRA SOUZA",
+      "last_sync_at": "2026-01-11T17:12:46Z"
+    },
+    {
+      "imovel_sap": "20000017",
+      "codigo_sijur": "SIJUR-2026-00011",
+      "numero_processo_dijur": "08001.000011/2026-41",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-06-13T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-06-24T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000018",
+      "codigo_sijur": "SIJUR-2026-00012",
+      "numero_processo_dijur": "08001.000012/2026-77",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-07-10T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-07-18T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000019",
+      "codigo_sijur": "SIJUR-2026-00013",
+      "numero_processo_dijur": "08001.000013/2026-45",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2025-08-21T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-09-10T15:12:46Z"
+    },
+    {
+      "imovel_sap": "20000020",
+      "codigo_sijur": "SIJUR-2026-00014",
+      "numero_processo_dijur": "08001.000014/2026-72",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2024-11-11T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x PEDRO HENRIQUE LIMA",
+      "last_sync_at": "2024-11-28T17:12:46Z"
+    },
+    {
+      "imovel_sap": "20000021",
+      "codigo_sijur": "SIJUR-2026-00015",
+      "numero_processo_dijur": "08001.000015/2026-46",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2024-12-31T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-01-10T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000023",
+      "codigo_sijur": "SIJUR-2026-00016",
+      "numero_processo_dijur": "08001.000016/2026-86",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2026-02-11T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x CLAUDIA MARIA OLIVEIRA",
+      "last_sync_at": "2026-02-23T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000024",
+      "codigo_sijur": "SIJUR-2026-00017",
+      "numero_processo_dijur": "08001.000017/2026-77",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2024-11-23T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FREI CANECA SHOPPING E CONVENTION CENTER LTDA",
+      "last_sync_at": "2024-12-06T15:12:46Z"
+    },
+    {
+      "imovel_sap": "20000025",
+      "codigo_sijur": "SIJUR-2026-00018",
+      "numero_processo_dijur": "08001.000018/2026-88",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-09-26T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x PATRICIA GOMES MARTINS",
+      "last_sync_at": "2025-10-03T20:12:46Z"
+    },
+    {
+      "imovel_sap": "20000026",
+      "codigo_sijur": "SIJUR-2026-00019",
+      "numero_processo_dijur": "08001.000019/2026-35",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-03-08T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x SHOPPING PÁTIO SALVADOR LTDA",
+      "last_sync_at": "2025-03-15T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000027",
+      "codigo_sijur": "SIJUR-2026-00020",
+      "numero_processo_dijur": "08001.000020/2026-62",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2026-04-18T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x IMOBILIÁRIA E LOCAÇÕES LTDA",
+      "last_sync_at": "2026-04-29T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000030",
+      "codigo_sijur": "SIJUR-2026-00021",
+      "numero_processo_dijur": "08001.000021/2026-84",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-01-20T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x PATRICIA GOMES MARTINS",
+      "last_sync_at": "2025-02-09T00:12:46Z"
+    },
+    {
+      "imovel_sap": "20000032",
+      "codigo_sijur": "SIJUR-2026-00022",
+      "numero_processo_dijur": "08001.000022/2026-65",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-09-22T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x LUIZA FERNANDA COSTA",
+      "last_sync_at": "2025-10-09T22:12:46Z"
+    },
+    {
+      "imovel_sap": "20000033",
+      "codigo_sijur": "SIJUR-2026-00023",
+      "numero_processo_dijur": "08001.000023/2026-89",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-01-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x ADMINISTRADORA DE BENS IMÓVEIS LTDA",
+      "last_sync_at": "2025-02-01T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000034",
+      "codigo_sijur": "SIJUR-2026-00024",
+      "numero_processo_dijur": "08001.000024/2026-40",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2025-11-26T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x LUIZA FERNANDA COSTA",
+      "last_sync_at": "2025-11-30T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000035",
+      "codigo_sijur": "SIJUR-2026-00025",
+      "numero_processo_dijur": "08001.000025/2026-32",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-06-23T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x BEATRIZ HELENA ALVES",
+      "last_sync_at": "2025-06-26T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000036",
+      "codigo_sijur": "SIJUR-2026-00026",
+      "numero_processo_dijur": "08001.000026/2026-28",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2025-09-27T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FERNANDA RODRIGUES ALMEIDA",
+      "last_sync_at": "2025-10-17T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000040",
+      "codigo_sijur": "SIJUR-2026-00027",
+      "numero_processo_dijur": "08001.000027/2026-65",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-08-23T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x ADMINISTRADORA DE BENS IMÓVEIS LTDA",
+      "last_sync_at": "2025-08-31T15:12:46Z"
+    },
+    {
+      "imovel_sap": "20000041",
+      "codigo_sijur": "SIJUR-2026-00028",
+      "numero_processo_dijur": "08001.000028/2026-38",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2026-02-01T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x PATRICIA GOMES MARTINS",
+      "last_sync_at": "2026-02-14T17:12:46Z"
+    },
+    {
+      "imovel_sap": "20000042",
+      "codigo_sijur": "SIJUR-2026-00029",
+      "numero_processo_dijur": "08001.000029/2026-10",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-10-09T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-10-29T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000043",
+      "codigo_sijur": "SIJUR-2026-00030",
+      "numero_processo_dijur": "08001.000030/2026-73",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-03-30T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x BEATRIZ HELENA ALVES",
+      "last_sync_at": "2025-04-05T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000044",
+      "codigo_sijur": "SIJUR-2026-00031",
+      "numero_processo_dijur": "08001.000031/2026-69",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-08-19T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x IMOBILIÁRIA E LOCAÇÕES LTDA",
+      "last_sync_at": "2025-09-04T02:12:46Z"
+    },
+    {
+      "imovel_sap": "20000045",
+      "codigo_sijur": "SIJUR-2026-00032",
+      "numero_processo_dijur": "08001.000032/2026-16",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-06-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x PATRICIA GOMES MARTINS",
+      "last_sync_at": "2025-06-14T15:12:46Z"
+    },
+    {
+      "imovel_sap": "20000046",
+      "codigo_sijur": "SIJUR-2026-00033",
+      "numero_processo_dijur": "08001.000033/2026-85",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2024-12-05T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x LUIZA FERNANDA COSTA",
+      "last_sync_at": "2024-12-20T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000052",
+      "codigo_sijur": "SIJUR-2026-00034",
+      "numero_processo_dijur": "08001.000034/2026-37",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2024-12-23T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x BEATRIZ HELENA ALVES",
+      "last_sync_at": "2025-01-03T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000053",
+      "codigo_sijur": "SIJUR-2026-00035",
+      "numero_processo_dijur": "08001.000035/2026-98",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-03-30T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FERNANDA RODRIGUES ALMEIDA",
+      "last_sync_at": "2025-03-31T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000054",
+      "codigo_sijur": "SIJUR-2026-00036",
+      "numero_processo_dijur": "08001.000036/2026-63",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-01-20T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x SHOPPING PÁTIO SALVADOR LTDA",
+      "last_sync_at": "2025-01-22T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000055",
+      "codigo_sijur": "SIJUR-2026-00037",
+      "numero_processo_dijur": "08001.000037/2026-71",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2024-11-24T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x JOÃO OLIVEIRA SOUZA",
+      "last_sync_at": "2024-11-24T18:12:46Z"
+    },
+    {
+      "imovel_sap": "20000056",
+      "codigo_sijur": "SIJUR-2026-00038",
+      "numero_processo_dijur": "08001.000038/2026-76",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-08-28T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x SHOPPING PÁTIO SALVADOR LTDA",
+      "last_sync_at": "2025-09-03T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000057",
+      "codigo_sijur": "SIJUR-2026-00039",
+      "numero_processo_dijur": "08001.000039/2026-54",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2024-12-13T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x CARLOS EDUARDO FERREIRA",
+      "last_sync_at": "2024-12-25T00:12:46Z"
+    },
+    {
+      "imovel_sap": "20000058",
+      "codigo_sijur": "SIJUR-2026-00040",
+      "numero_processo_dijur": "08001.000040/2026-37",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-12-02T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x CLAUDIA MARIA OLIVEIRA",
+      "last_sync_at": "2025-12-08T20:12:46Z"
+    },
+    {
+      "imovel_sap": "20000059",
+      "codigo_sijur": "SIJUR-2026-00041",
+      "numero_processo_dijur": "08001.000041/2026-99",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-01-29T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-02-05T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000060",
+      "codigo_sijur": "SIJUR-2026-00042",
+      "numero_processo_dijur": "08001.000042/2026-83",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-01-02T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FERNANDA RODRIGUES ALMEIDA",
+      "last_sync_at": "2025-01-10T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000061",
+      "codigo_sijur": "SIJUR-2026-00043",
+      "numero_processo_dijur": "08001.000043/2026-10",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-08-24T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FERNANDA RODRIGUES ALMEIDA",
+      "last_sync_at": "2025-09-04T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000062",
+      "codigo_sijur": "SIJUR-2026-00044",
+      "numero_processo_dijur": "08001.000044/2026-67",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-09-29T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GERALDINA TOLEDO DE VASCONCELOS",
+      "last_sync_at": "2025-10-15T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000064",
+      "codigo_sijur": "SIJUR-2026-00045",
+      "numero_processo_dijur": "08001.000045/2026-87",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2026-01-15T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x CARLOS EDUARDO FERREIRA",
+      "last_sync_at": "2026-02-01T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000066",
+      "codigo_sijur": "SIJUR-2026-00046",
+      "numero_processo_dijur": "08001.000046/2026-57",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-10-23T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FERNANDA RODRIGUES ALMEIDA",
+      "last_sync_at": "2025-11-07T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000067",
+      "codigo_sijur": "SIJUR-2026-00047",
+      "numero_processo_dijur": "08001.000047/2026-48",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-11-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x RICARDO SANTOS BARBOSA",
+      "last_sync_at": "2025-11-17T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000068",
+      "codigo_sijur": "SIJUR-2026-00048",
+      "numero_processo_dijur": "08001.000048/2026-74",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-03-12T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x MARCOS VINÍCIUS SOUZA",
+      "last_sync_at": "2025-03-23T20:12:46Z"
+    },
+    {
+      "imovel_sap": "20000069",
+      "codigo_sijur": "SIJUR-2026-00049",
+      "numero_processo_dijur": "08001.000049/2026-99",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-06-22T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x RICARDO SANTOS BARBOSA",
+      "last_sync_at": "2025-07-01T22:12:46Z"
+    },
+    {
+      "imovel_sap": "20000070",
+      "codigo_sijur": "SIJUR-2026-00050",
+      "numero_processo_dijur": "08001.000050/2026-57",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-04-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x EMPREENDIMENTOS IMOBILIÁRIOS S/A",
+      "last_sync_at": "2025-04-19T00:12:46Z"
+    },
+    {
+      "imovel_sap": "20000071",
+      "codigo_sijur": "SIJUR-2026-00051",
+      "numero_processo_dijur": "08001.000051/2026-34",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-10-11T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x LUIZA FERNANDA COSTA",
+      "last_sync_at": "2025-10-27T15:12:46Z"
+    },
+    {
+      "imovel_sap": "20000072",
+      "codigo_sijur": "SIJUR-2026-00052",
+      "numero_processo_dijur": "08001.000052/2026-31",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-02-18T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FERNANDA RODRIGUES ALMEIDA",
+      "last_sync_at": "2025-03-05T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000073",
+      "codigo_sijur": "SIJUR-2026-00053",
+      "numero_processo_dijur": "08001.000053/2026-53",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-11-12T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-11-25T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000075",
+      "codigo_sijur": "SIJUR-2026-00054",
+      "numero_processo_dijur": "08001.000054/2026-23",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-10-29T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x MARCOS VINÍCIUS SOUZA",
+      "last_sync_at": "2025-11-10T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000076",
+      "codigo_sijur": "SIJUR-2026-00055",
+      "numero_processo_dijur": "08001.000055/2026-63",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-11-27T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x ADMINISTRADORA DE BENS IMÓVEIS LTDA",
+      "last_sync_at": "2025-12-12T02:12:46Z"
+    },
+    {
+      "imovel_sap": "20000077",
+      "codigo_sijur": "SIJUR-2026-00056",
+      "numero_processo_dijur": "08001.000056/2026-44",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2026-03-01T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x FERNANDA RODRIGUES ALMEIDA",
+      "last_sync_at": "2026-03-12T01:12:46Z"
+    },
+    {
+      "imovel_sap": "20000078",
+      "codigo_sijur": "SIJUR-2026-00057",
+      "numero_processo_dijur": "08001.000057/2026-58",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2026-01-25T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x BEATRIZ HELENA ALVES",
+      "last_sync_at": "2026-02-11T16:12:46Z"
+    },
+    {
+      "imovel_sap": "20000079",
+      "codigo_sijur": "SIJUR-2026-00058",
+      "numero_processo_dijur": "08001.000058/2026-94",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-07-13T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x EMPREENDIMENTOS IMOBILIÁRIOS S/A",
+      "last_sync_at": "2025-07-17T02:12:46Z"
+    },
+    {
+      "imovel_sap": "20000081",
+      "codigo_sijur": "SIJUR-2026-00059",
+      "numero_processo_dijur": "08001.000059/2026-45",
+      "situacao_sijur": "Em análise",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-09-17T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x JOÃO OLIVEIRA SOUZA",
+      "last_sync_at": "2025-10-08T00:12:46Z"
+    },
+    {
+      "imovel_sap": "20000082",
+      "codigo_sijur": "SIJUR-2026-00060",
+      "numero_processo_dijur": "08001.000060/2026-13",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2026-02-19T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x MARIA SILVA SANTOS",
+      "last_sync_at": "2026-02-24T15:12:46Z"
+    },
+    {
+      "imovel_sap": "20000084",
+      "codigo_sijur": "SIJUR-2026-00061",
+      "numero_processo_dijur": "08001.000061/2026-47",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-09-15T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-09-19T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000086",
+      "codigo_sijur": "SIJUR-2026-00062",
+      "numero_processo_dijur": "08001.000062/2026-18",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2026-03-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x EMPREENDIMENTOS IMOBILIÁRIOS S/A",
+      "last_sync_at": "2026-04-01T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000087",
+      "codigo_sijur": "SIJUR-2026-00063",
+      "numero_processo_dijur": "08001.000063/2026-47",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2025-05-04T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x CARLOS EDUARDO FERREIRA",
+      "last_sync_at": "2025-05-19T19:12:46Z"
+    },
+    {
+      "imovel_sap": "20000088",
+      "codigo_sijur": "SIJUR-2026-00064",
+      "numero_processo_dijur": "08001.000064/2026-34",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2024-12-12T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x MARCOS VINÍCIUS SOUZA",
+      "last_sync_at": "2024-12-16T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000089",
+      "codigo_sijur": "SIJUR-2026-00065",
+      "numero_processo_dijur": "08001.000065/2026-52",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-07-25T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x LUIZA FERNANDA COSTA",
+      "last_sync_at": "2025-07-30T15:12:46Z"
+    },
+    {
+      "imovel_sap": "20000090",
+      "codigo_sijur": "SIJUR-2026-00066",
+      "numero_processo_dijur": "08001.000066/2026-74",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Encaminhado para regularização",
+      "data_entrada_dijur": "2025-10-19T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x GALERIA COMERCIAL LTDA",
+      "last_sync_at": "2025-10-19T23:12:46Z"
+    },
+    {
+      "imovel_sap": "20000091",
+      "codigo_sijur": "SIJUR-2026-00067",
+      "numero_processo_dijur": "08001.000067/2026-98",
+      "situacao_sijur": "Distribuído",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-01-31T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x ADMINISTRADORA DE BENS IMÓVEIS LTDA",
+      "last_sync_at": "2025-02-18T17:12:46Z"
+    },
+    {
+      "imovel_sap": "20000092",
+      "codigo_sijur": "SIJUR-2026-00068",
+      "numero_processo_dijur": "08001.000068/2026-48",
+      "situacao_sijur": "Concluído",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2026-03-12T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x EMPREENDIMENTOS IMOBILIÁRIOS S/A",
+      "last_sync_at": "2026-04-01T18:12:46Z"
+    },
+    {
+      "imovel_sap": "20000093",
+      "codigo_sijur": "SIJUR-2026-00069",
+      "numero_processo_dijur": "08001.000069/2026-20",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Aguardando instrução",
+      "data_entrada_dijur": "2025-08-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x CARLOS EDUARDO FERREIRA",
+      "last_sync_at": "2025-08-19T00:12:46Z"
+    },
+    {
+      "imovel_sap": "20000095",
+      "codigo_sijur": "SIJUR-2026-00070",
+      "numero_processo_dijur": "08001.000070/2026-35",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2026-03-14T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x PATRICIA GOMES MARTINS",
+      "last_sync_at": "2026-03-25T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000096",
+      "codigo_sijur": "SIJUR-2026-00071",
+      "numero_processo_dijur": "08001.000071/2026-80",
+      "situacao_sijur": "Manifestação emitida",
+      "situacao_cefor": "Em acompanhamento",
+      "data_entrada_dijur": "2025-12-01T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x BEATRIZ HELENA ALVES",
+      "last_sync_at": "2025-12-20T21:12:46Z"
+    },
+    {
+      "imovel_sap": "20000097",
+      "codigo_sijur": "SIJUR-2026-00072",
+      "numero_processo_dijur": "08001.000072/2026-42",
+      "situacao_sijur": "Aguardando subsídios",
+      "situacao_cefor": "Finalizado",
+      "data_entrada_dijur": "2025-08-01T14:12:46Z",
+      "partes_dijur": "CAIXA ECONÔMICA FEDERAL x CARLOS EDUARDO FERREIRA",
+      "last_sync_at": "2025-08-12T20:12:46Z"
+    }
+  ]
+}

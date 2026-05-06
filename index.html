@@ -138,8 +138,8 @@
                         <div class="portfolio-filter-section-title">Identificação e Situação</div>
                         <div class="portfolio-filter-grid portfolio-filter-grid-identificacao">
                             <label class="filter-field">
-                                <span class="filter-field-label">Contrato (SAP)</span>
-                                <input type="text" id="painelContratoSapFiltro" class="filter-search" placeholder="Informe o contrato SAP">
+                                <span class="filter-field-label">Imóvel (SAP)</span>
+                                <input type="text" id="painelImovelSapFiltro" class="filter-search" placeholder="Informe o imóvel SAP">
                             </label>
 
                             <label class="filter-field">
@@ -217,7 +217,7 @@
                 <table class="imoveis-table">
                     <thead>
                         <tr>
-                            <th>Contrato (SAP)</th>
+                            <th>Imóvel (SAP)</th>
                             <th>Contrato (SICLG)</th>
                             <th>Locador</th>
                             <th>CPF/CNPJ</th>
@@ -355,7 +355,7 @@
             </div>
 
             <div class="operacional-panel-switcher" role="tablist" aria-label="Navegação da Jornada Operacional">
-                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Etapas</button>
+                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Informações do imóvel</button>
                 <button class="operacional-panel-tab" data-operacional-panel-target="aviso-vencimento" type="button">Aviso de Vencimento</button>
             </div>
 
@@ -363,14 +363,14 @@
 
             <div class="tabs profile-tabs">
                 <button class="tab-btn active" data-fase-target="fase3">RTA</button>
-                <button class="tab-btn" data-fase-target="fase4">Laudo</button>
-                <button class="tab-btn" data-fase-target="fase61">Negociações</button>
+                <button class="tab-btn" data-fase-target="fase4">Laudo de avaliação</button>
+                <button class="tab-btn" data-fase-target="fase61">Negociação</button>
             </div>
 
             <div id="fase3" class="tab-content active fase-pane">
                 <div class="mini-label">RTA - Relatório Técnico Administrativo</div>
                 <div class="etapa-form-card">
-                    <div id="rtaContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher os dados desta etapa.</div>
+                    <div id="rtaContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher as informações do imóvel no RTA.</div>
                     <div class="filter-group">
                         <input type="text" id="rtaContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
                         <div id="rtaContratoAtalhos" class="contrato-picker-shortcuts"></div>
@@ -452,7 +452,7 @@
             <div id="fase4" class="tab-content fase-pane">
                 <div class="mini-label">Laudo de Avaliação do Imóvel</div>
                 <div class="etapa-form-card">
-                    <div id="laudoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher os dados desta etapa.</div>
+                    <div id="laudoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher as informações do imóvel no laudo de avaliação.</div>
                     <div class="filter-group">
                         <input type="text" id="laudoContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
                         <div id="laudoContratoAtalhos" class="contrato-picker-shortcuts"></div>
@@ -536,9 +536,9 @@
                 </div>
             </div>
             <div id="fase61" class="tab-content fase-pane">
-                <div class="mini-label">Itens negociados</div>
+                <div class="mini-label">Negociação do imóvel</div>
                 <div class="etapa-form-card">
-                    <div id="negociacaoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher os dados desta etapa.</div>
+                    <div id="negociacaoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher as informações do imóvel na negociação.</div>
                     <div class="filter-group">
                         <input type="text" id="negociacaoContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
                         <div id="negociacaoContratoAtalhos" class="contrato-picker-shortcuts"></div>
@@ -612,7 +612,12 @@
                         </label>
                         <label class="etapa-field">
                             <span>Índice de reajuste pactuado</span>
-                            <input type="text" id="negociacaoIndiceReajuste" class="filter-input" placeholder="Ex.: IPCA, IGP-M, etc.">
+                            <select id="negociacaoIndiceReajuste" class="filter-select">
+                                <option value="">Selecione o índice</option>
+                                <option value="IGP-M">IGP-M (Índice Geral de Preços - Mercado)</option>
+                                <option value="IPCA">IPCA (Índice Nacional de Preços ao Consumidor Amplo)</option>
+                                <option value="INPC">INPC (Índice Nacional de Preços ao Consumidor)</option>
+                            </select>
                         </label>
                         <label class="etapa-field">
                             <span>Data do próximo reajuste</span>
@@ -845,15 +850,15 @@
                 <div class="filter-group">
                     <input type="text" id="formalCodigoSijurFiltro" class="filter-search" placeholder="Código SIJUR">
 
-                    <input type="text" id="formalContratoSapFiltro" class="filter-search" placeholder="Contrato SAP">
+                    <input type="text" id="formalImovelSapFiltro" class="filter-search" placeholder="Imóvel (SAP)">
 
-                    <input type="text" id="formalContratoSiclgFiltro" class="filter-search" placeholder="Contrato SICLG">
+                    <input type="text" id="formalContratoSiclgFiltro" class="filter-search" placeholder="Contrato (SICLG)">
 
                     <input type="text" id="formalProtocoloFormalFiltro" class="filter-search" placeholder="Protocolo Formal (SICLG)">
 
                     <input type="text" id="formalUnidadeFiltro" class="filter-search" placeholder="Unidade">
 
-                    <input type="text" id="formalProcessoFiltro" class="filter-search" placeholder="Número do Processo (SICLG)">
+                    <input type="text" id="formalProcessoFiltro" class="filter-search" placeholder="Processo (SICLG)">
 
                     <input type="date" id="formalVigenciaAteFiltro" class="filter-date" placeholder="Vigência até">
 
@@ -898,13 +903,13 @@
                     <thead>
                         <tr>
                             <th>Código SIJUR</th>
-                            <th>Contrato SAP</th>
-                            <th>Contrato SICLG</th>
+                            <th>Imóvel (SAP)</th>
+                            <th>Contrato (SICLG)</th>
                             <th>Protocolo Formal (SICLG)</th>
                             <th>Unidade</th>
                             <th>Vigência</th>
                             <th>Situação (SICLG)</th>
-                            <th>Número do Processo (SICLG)</th>
+                            <th>Processo (SICLG)</th>
                             <th>Situação SIJUR</th>
                             <th>Situação CEFOR</th>
                             <th>Ações</th>
@@ -962,7 +967,7 @@
                     <div id="avisoKpiRiscoAr87Detalhe" class="aviso-kpi-composicao" hidden></div>
                 </article>
                 <article class="aviso-faixa-card aviso-faixa-preparacao" data-aviso-faixa-filter="faixa_14_12" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Planejamento antecipado (14 a mais de 12 meses)</span>
+                    <span class="aviso-faixa-label">Planejamento antecipado (14 a +12 meses)</span>
                     <strong id="avisoFaixa1412">0</strong>
                     <small>Organizar estratégia de prorrogação e revisar laudo (somente locação).</small>
                 </article>
@@ -989,7 +994,7 @@
 
                 <div id="avisoFiltrosBody" hidden>
                 <div class="filter-group">
-                    <input type="text" id="avisoContratoSapFiltro" class="filter-search" placeholder="Contrato (SAP)">
+                    <input type="text" id="avisoImovelSapFiltro" class="filter-search" placeholder="Imóvel (SAP)">
 
                     <input type="text" id="avisoContratoSiclgFiltro" class="filter-search" placeholder="Contrato (SICLG)">
 
@@ -1075,12 +1080,13 @@
                 <table class="imoveis-table">
                     <thead>
                         <tr>
-                            <th rowspan="2">Contrato (SAP)</th>
+                            <th rowspan="2">Imóvel (SAP)</th>
                             <th rowspan="2">Final da vigência</th>
                             <th rowspan="2">Decisão de prorrogar</th>
                             <th rowspan="2">Decisão sobre ação renovatória</th>
                             <th rowspan="2">Status</th>
                             <th colspan="2" class="aviso-protocolo-group">Protocolo</th>
+                            <th rowspan="2">Laudo de avaliação (locação)</th>
                             <th rowspan="2">Ações</th>
                         </tr>
                         <tr>
@@ -1668,7 +1674,7 @@
                     <div class="info-section-title">Resumo do processo A-III</div>
                     <div class="summary-row">
                         <div class="summary-chip"><strong id="formalDetCodigoSijur"></strong></div>
-                        <div class="summary-chip"><strong id="formalDetContratoSap"></strong></div>
+                        <div class="summary-chip"><strong id="formalDetImovelSap"></strong></div>
                         <div class="summary-chip"><strong id="formalDetContratoSiclg"></strong></div>
                     </div>
                 </div>
@@ -1682,7 +1688,7 @@
                                 <span id="formalDetProtocolo"></span>
                             </div>
                             <div class="info-item">
-                                <label>Número do Processo (SICLG)</label>
+                                <label>Processo (SICLG)</label>
                                 <span id="formalDetProcesso"></span>
                             </div>
                             <div class="info-item">

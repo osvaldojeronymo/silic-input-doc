@@ -246,7 +246,7 @@ export interface DashboardStats {
  */
 export interface PainelVencimentosContrato {
   contratoId: string;                  // ID canônico do domínio
-  numeroContratoSap: string;           // ContratoSAP
+  numeroImovelSap: string;             // ImovelSAP
   numeroContratoSiclg: string;         // ContratoSICLG
   uf: string;                          // UF
   locadorSap: string;                  // LocadorSAP
@@ -285,7 +285,7 @@ export interface PainelVencimentosContrato {
 export interface PainelAcoesRenovatoriasRow {
   contratoId: string;
   codigoSijur: string;
-  contratoSap: string;
+  imovelSap: string;
   contratoSiclg: string;
   protocoloFormalSiclg: string;
   unidade: string;
@@ -307,7 +307,7 @@ export interface PainelAcoesRenovatoriasRow {
 
 export interface PainelAvisoVencimentoRow {
   contratoId: string;
-  contratoSap: string;
+  imovelSap: string;
   contratoSiclg: string;
   situacaoSiclg: string;
   modalidade: 'locacao' | 'cessao' | 'comodato' | 'nao_informada';

@@ -112,7 +112,7 @@ Documentos anexos/referencias:
 
 Premissas criticas:
 
-- Chave de conciliacao: `contrato_sap`
+- Chave de conciliacao: `imovel_sap`
 - Regra de prazo AR: janela legal 12-6 (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor 12-7
 - Inputs por perfil (Gestor Operacional e Gestor Formal)
 - Campos removidos não devem ser implementados

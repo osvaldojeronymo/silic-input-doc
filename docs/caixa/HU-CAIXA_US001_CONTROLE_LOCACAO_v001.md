@@ -29,7 +29,7 @@ para acompanhar vencimentos, reduzir inconsistencias de conciliacao e conduzir a
 ## 5. Pre-condicoes
 
 1. Dados de contratos disponiveis nas fontes SAP e SICLG.
-2. Chave de conciliacao por contrato definida em `contrato_sap`.
+2. Chave de conciliacao por imovel definida em `imovel_sap`.
 3. Ambiente com carga de dados ativa (`public/dados-sap.json` no prototipo).
 4. Estrutura de rastreabilidade de origem de dados habilitada.
 5. Escopo funcional e regras oficiais alinhados ao dicionario de dados v1.
@@ -62,7 +62,7 @@ para acompanhar vencimentos, reduzir inconsistencias de conciliacao e conduzir a
 
 ## 7. Regras de negocio obrigatorias
 
-1. Chave principal de conciliacao: `contrato_sap`.
+1. Chave principal de conciliacao: `imovel_sap`.
 2. Regra de prazo AR: janela legal de ingresso entre 12 e 6 meses (`limite_ar_go = fim_vigencia_sap - 6 meses`) e janela operacional do gestor entre 12 e 7 meses.
 3. Campos por perfil:
    - Gestor Operacional: `decisao_operacional`, `houve_acordo`, `incluir_no_siclg`

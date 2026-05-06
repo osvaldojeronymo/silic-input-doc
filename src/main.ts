@@ -3,266 +3,72 @@ import { Utils } from './utils/index.js';
 import { SAPDataLoader } from './utils/sapDataLoader.js';
 import { DIJURDataLoader, type DijurRegistro } from './utils/dijurDataLoader.js';
 import { labelCategoria, labelAcao, labelModalidade } from './labels.js';
+import type {
+  ContratoBuscaParams,
+  ContratoBuscaProvider,
+  ContratoBuscaResultado,
+  ContratoBuscaResponse,
+  ContratoBuscaUiState,
+  EstadoPainelAvisoPersistido,
+  EtapaLaudoRegistro,
+  EtapaNegociacaoRegistro,
+  EtapaRtaRegistro,
+  Fase1OperacionalRow,
+  Fase2OperacionalRow,
+  Fase3OperacionalRow,
+  Fase4OperacionalRow,
+  Fase5OperacionalRow,
+  Fase61OperacionalRow,
+  Fase62OperacionalRow,
+  Fase7OperacionalRow,
+  NegociacaoContextoTipo,
+  NegociacaoLocadorContexto,
+  NegociacaoLocadorPercentualEdit
+} from './transfer/operationalContracts.js';
+import {
+  buildPainelAcoesRenovatorias,
+  buildPainelAvisoVencimento,
+  buildPainelVencimentosReadModel,
+  calcularVencimentoReferencia as calcularVencimentoReferenciaPainel,
+  classificarDecisaoOperacional as classificarDecisaoOperacionalPainel,
+  classificarFaseVencimento as classificarFaseVencimentoPainel,
+  derivarModalidadeContrato as derivarModalidadeContratoPainel,
+  mergePainelFormalComDijur
+} from './transfer/panelBuilders.js';
+import {
+  filtrarFase1,
+  filtrarFase2,
+  filtrarFase3,
+  filtrarFase4,
+  filtrarFase5,
+  filtrarFase61,
+  filtrarFase62,
+  filtrarFase7,
+  filtrarImoveis,
+  filtrarPainelAcoesRenovatorias,
+  filtrarPainelAvisoVencimento,
+  filtrarPainelVencimentos
+} from './transfer/panelFilters.js';
+import {
+  adicionarMesesCivis as adicionarMesesCivisPrazo,
+  calcularDataLimiteAjuizamentoAr as calcularDataLimiteAjuizamentoArPrazo,
+  calcularDiasParaVencimentoAviso as calcularDiasParaVencimentoAvisoPrazo,
+  classificarFaixaSinalizacaoAviso as classificarFaixaSinalizacaoAvisoPrazo,
+  classificarJanelaAviso as classificarJanelaAvisoPrazo,
+  dateWithinRange as dateWithinRangePrazo,
+  estaAposPrazoDecadencialAr as estaAposPrazoDecadencialArPrazo,
+  estaEmRiscoAr87 as estaEmRiscoAr87Prazo,
+  estaNaFaixaAlertaAr87 as estaNaFaixaAlertaAr87Prazo,
+  estaNaJanelaLegalAcaoRenovatoria as estaNaJanelaLegalAcaoRenovatoriaPrazo,
+  estaNaJanelaPrudenteGestorAr as estaNaJanelaPrudenteGestorArPrazo,
+  estaNoEscopoAvisoVencimento as estaNoEscopoAvisoVencimentoPrazo,
+  obterDataBase,
+  ordenarPorCriticidadePrazo as ordenarPorCriticidadePrazoPrazo,
+  podeManterADecidirProrrogacao as podeManterADecidirProrrogacaoPrazo,
+  possuiDadosVigenciaInsuficientes as possuiDadosVigenciaInsuficientesPrazo,
+  subtrairMesesCivis as subtrairMesesCivisPrazo
+} from './transfer/prazoRules.js';
 import './styles/style.css';
-
-interface Fase1OperacionalRow {
-  dataNotificacao: string;
-  listaA: number;
-  listaB: number;
-  listaC: number;
-  listaD: number;
-  total: number;
-  contratoReferenciaId: string;
-}
-
-interface Fase2OperacionalRow {
-  contratoId: string;
-  contratoSap: string;
-  vigenciaSap: string;
-  contratoSiclg: string;
-  vigenciaSiclg: string;
-  fornecedor: string;
-  descricao: string;
-  limiteArGo: string;
-  uf: string;
-  fimVigenciaDate: Date | null;
-}
-
-interface Fase3OperacionalRow {
-  contratoId: string;
-  contratoSapSiclg: string;
-  fornecedor: string;
-  descricaoContrato: string;
-  inicioVigencia: string;
-  fimVigencia: string;
-  situacaoLaudo: string;
-  uf: string;
-  fimVigenciaDate: Date | null;
-}
-
-interface Fase4OperacionalRow {
-  contratoId: string;
-  contratoSapSiclg: string;
-  fornecedor: string;
-  descricaoContratoSap: string;
-  inicioVigencia: string;
-  fimVigencia: string;
-  valorMaximo: number;
-  incluirNoSiclg: string;
-  limiteArGo: string;
-  uf: string;
-  fimVigenciaDate: Date | null;
-}
-
-interface Fase5OperacionalRow {
-  contratoId: string;
-  contratoSapSiclg: string;
-  fornecedor: string;
-  descricaoContratoSap: string;
-  inicioVigencia: string;
-  fimVigencia: string;
-  decisaoOperacional: string;
-  houveAcordo: string;
-  incluirNoSiclg: string;
-  situacaoAr: string;
-  uf: string;
-  fimVigenciaDate: Date | null;
-}
-
-interface Fase61OperacionalRow {
-  contratoId: string;
-  contratoSapSiclg: string;
-  fornecedor: string;
-  objeto: string;
-  demandante: string;
-  equipeRemota: string;
-  responsavel: string;
-  protocoloSiclg: string;
-  modalidade: string;
-  progressoAtual: string;
-  situacaoPrazo: string;
-  incluidoEmDate: Date | null;
-  concluidoEmDate: Date | null;
-  tipoProcesso: string;
-  statusContratacao: string;
-  valorReferencia: number;
-  uf: string;
-  fimVigenciaDate: Date | null;
-}
-
-interface Fase62OperacionalRow {
-  contratoId: string;
-  contratoSapSiclg: string;
-  fornecedor: string;
-  objeto: string;
-  gestorOperacional: string;
-  protocoloSiclg: string;
-  tipoDemanda: string;
-  faseAtual: string;
-  situacaoPrazo: string;
-  incluidoEmDate: Date | null;
-  concluidoEmDate: Date | null;
-  statusRenovacao: string;
-  qtdAditivos: number;
-  prazoLimite: string;
-  uf: string;
-  fimVigenciaDate: Date | null;
-}
-
-interface Fase7OperacionalRow {
-  contratoId: string;
-  contratoSapSiclg: string;
-  fornecedor: string;
-  objeto: string;
-  dataNotificacao: string;
-  canal: string;
-  statusResposta: string;
-  uf: string;
-  fimVigenciaDate: Date | null;
-}
-
-interface EstadoPainelAvisoPersistido {
-  decisaoProrrogar: 'a_decidir' | 'prorrogar' | 'nao_prorrogar';
-  decisaoAcaoRenovatoria: 'a_decidir' | 'ingressar' | 'nao_ingressar';
-  protocoloFormal?: string;
-  demandaSiclg?: string;
-  situacaoLaudoAvaliacao?: 'nao_aplicavel' | 'nao_solicitado' | 'solicitado' | 'entregue';
-  laudoRequisicaoNumero?: string;
-  laudoRequisicaoData?: string;
-  laudoNumero?: string;
-  laudoPrazoEntregaDias?: number;
-  laudoPrazoFormalInformado?: boolean;
-  laudoDataEmissao?: string;
-  laudoValidoAte?: string;
-  historicoDecisaoProrrogacao?: string[];
-  historicoDecisaoAcaoRenovatoria?: string[];
-  protocoloContratacao?: string;
-}
-
-interface EtapaRtaRegistro {
-  areaContratada?: number;
-  benfeitoriasValor?: number;
-  possuiValorVenal?: 'sim' | 'nao' | '';
-  valorVenalImovel?: number;
-  parecerNumero?: string;
-  parecerData?: string;
-  percentualBenfeitorias?: number;
-  manifestacaoNegocio?: string;
-  manifestacaoInfra?: string;
-  uploadRelatorioArquivos?: string[];
-  uploadParecerArquivos?: string[];
-}
-
-interface EtapaLaudoRegistro {
-  uploadArquivos?: string[];
-  dataElaboracao?: string;
-  dataValidade?: string;
-  dataEmissao?: string;
-  numeroDocumento?: string;
-  empresaNome?: string;
-  empresaCnpj?: string;
-  endereco?: string;
-  area?: number;
-  valorMinimo?: number;
-  valorMedio?: number;
-  valorMaximo?: number;
-  assinado?: 'sim' | 'nao' | '';
-}
-
-type NegociacaoContextoTipo = 'com_contrato' | 'sem_contrato';
-
-interface NegociacaoLocadorContexto {
-  locadorId: string;
-  nome: string;
-  tipo: 'fisica' | 'juridica';
-  percentualBase: number;
-}
-
-interface NegociacaoLocadorPercentualEdit {
-  locadorId: string;
-  nome: string;
-  tipo: 'fisica' | 'juridica';
-  percentualBase: number;
-  percentualNegociado: number;
-}
-
-interface EtapaNegociacaoRegistro {
-  contextoContrato?: NegociacaoContextoTipo;
-  valorPropostoAluguel?: number;
-  valorAcordadoPartes?: number;
-  dataInicioNegociacao?: string;
-  dataFimNegociacao?: string;
-  vigenciaMeses?: number;
-  dataInicioVigencia?: string;
-  dataFinalVigencia?: string;
-  valorTotalPrevisto?: number;
-  temAlteracoesContratuais?: 'sim' | 'nao' | '';
-  dataInicioSupressaoAcrescimo?: string;
-  quitacaoAreaDevolvida?: 'sim' | 'nao' | '';
-  temArAndamento?: 'sim' | 'nao' | '';
-  arDesistenciaCondicoes?: string;
-  alterouDataPagamento?: 'sim' | 'nao' | '';
-  novaDataPagamento?: string;
-  temCarencia?: 'sim' | 'nao' | '';
-  carenciaDias?: number;
-  indiceReajuste?: string;
-  dataProximoReajuste?: string;
-  preverMultaRescisao?: 'sim' | 'nao' | '';
-  clausulaMultaRescisao?: string;
-  revogacaoMultaRescisao?: 'sim' | 'nao' | '';
-  resultadoNegociacaoMulta?: 'removida' | 'mantida_sem_acordo' | 'em_negociacao' | '';
-  justificativaRevogacaoMulta?: string;
-  aluguelAcimaLaudo?: 'sim' | 'nao' | '';
-  aluguelAcimaLaudoJustificativa?: string;
-  modalidade?: 'contrato_simplificado' | 'condicoes_suspensivas' | 'minuta_locador' | '';
-  temClausulaExtra?: 'sim' | 'nao' | '';
-  clausulaExtraTexto?: string;
-  alteracaoTitularidade?: 'sim' | 'nao' | '';
-  alteracaoTitularidadeDetalhe?: string;
-  alteracoesPercentualLocadores?: string;
-  alteracaoDadosBancarios?: 'sim' | 'nao' | '';
-  alteracaoDadosBancariosDetalhe?: string;
-  alteracaoContratoSocial?: 'sim' | 'nao' | '';
-  alteracaoContratoSocialDetalhe?: string;
-  locadoresPercentuais?: NegociacaoLocadorPercentualEdit[];
-  uploadAnexosArquivos?: string[];
-  uploadMinutaArquivos?: string[];
-  uploadContratoSocialArquivos?: string[];
-  uploadAutorizacaoAcimaLaudoArquivos?: string[];
-}
-
-interface ContratoBuscaResultado {
-  id: string;
-  sap: string;
-  fornecedor: string;
-  uf: string;
-  municipio: string;
-  label: string;
-  searchText: string;
-}
-
-interface ContratoBuscaParams {
-  query: string;
-  offset: number;
-  limit: number;
-}
-
-interface ContratoBuscaResponse {
-  items: ContratoBuscaResultado[];
-  total: number;
-  hasMore: boolean;
-}
-
-type ContratoBuscaProvider = (params: ContratoBuscaParams) => Promise<ContratoBuscaResponse>;
-
-interface ContratoBuscaUiState {
-  query: string;
-  offset: number;
-  total: number;
-  hasMore: boolean;
-  loading: boolean;
-  items: ContratoBuscaResultado[];
-}
 
 /**
  * Classe principal do Sistema SILIC 2.0
@@ -1062,11 +868,11 @@ export class SistemaSILIC {
   private abrirModalDetalhesPorAviso(item: PainelAvisoVencimentoRow): void {
     const imovel = this.imoveis.find((i) => i.id === item.contratoId)
       || this.imoveisOriginais.find((i) => i.id === item.contratoId)
-      || this.imoveis.find((i) => i.codigo === item.contratoSap)
-      || this.imoveisOriginais.find((i) => i.codigo === item.contratoSap);
+      || this.imoveis.find((i) => i.codigo === item.imovelSap)
+      || this.imoveisOriginais.find((i) => i.codigo === item.imovelSap);
 
     if (!imovel) {
-      this.showToast(`Não foi possível localizar os dados de detalhe para o contrato SAP ${item.contratoSap}.`);
+      this.showToast(`Não foi possível localizar os dados de detalhe para o imóvel SAP ${item.imovelSap}.`);
       return;
     }
 
@@ -2495,116 +2301,28 @@ export class SistemaSILIC {
   }
 
   private montarReadModelPainelVencimentos(imovel: Imovel): PainelVencimentosContrato {
-    const locador = this.locadores.find((l) => l.id === imovel.locadorId) || this.locadores.find((l) => l.status === 'ativo');
-    const historico = (imovel.historicoPagamentos || []).filter((p) => !!p.pagoEm);
-    const ultimoPgto = historico.sort((a, b) => {
-      const ta = this.parseDate(a.pagoEm || '')?.getTime() || 0;
-      const tb = this.parseDate(b.pagoEm || '')?.getTime() || 0;
-      return tb - ta;
-    })[0];
-
-    const vigenciaBase = imovel.fimValidade || imovel.contratoFimValidade || imovel.vigenciaFinal || '-';
-    const vigenciaSap = vigenciaBase;
-    const vigenciaSiclg = vigenciaBase;
-    const vencimentoReferencia = this.calcularVencimentoReferencia(vigenciaSap, vigenciaSiclg);
-    const dataRef = this.parseDate(vencimentoReferencia);
-    const diasParaVencimento = dataRef
-      ? Math.ceil((dataRef.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-      : null;
-
-    const conciliacaoStatus = this.obterConciliacaoStatusImovel(imovel);
-
-    const fase = this.classificarFaseVencimento(diasParaVencimento, imovel);
-    const decisaoOperacional = this.classificarDecisaoOperacional(diasParaVencimento, conciliacaoStatus);
-
-    const valorMensal = imovel.valorAluguelMensal || imovel.valor || 0;
-    const valorAnual = valorMensal * 12;
-    const valorAcordado = Number(imovel.valorGlobalAtualizado || imovel.valorOriginalContrato || valorAnual || 0);
-
-    const limiteAr = diasParaVencimento !== null && diasParaVencimento > 30 && dataRef
-      ? this.formatDate(new Date(dataRef.getTime() - (30 * 24 * 60 * 60 * 1000)).toISOString())
-      : this.formatDate(vencimentoReferencia);
-
-    const previsaoColegiado = diasParaVencimento !== null && diasParaVencimento > 60 && dataRef
-      ? this.formatDate(new Date(dataRef.getTime() - (60 * 24 * 60 * 60 * 1000)).toISOString())
-      : '-';
-
-    return {
-      contratoId: imovel.id,
-      numeroContratoSap: imovel.codigo || '-',
-      numeroContratoSiclg: imovel.numeroInstrumento || '-',
-      uf: imovel.estado || '-',
-      locadorSap: locador?.nome || imovel.parceiroNegocios || '-',
-
-      vigenciaSap,
-      descricaoSap: imovel.denominacao || '-',
-      ultimoValorPagoSap: Number(ultimoPgto?.valorPago || ultimoPgto?.valor || 0),
-      ultimoPgtoSap: ultimoPgto?.pagoEm ? this.formatDate(ultimoPgto.pagoEm) : '-',
-
-      vigenciaSiclg,
-      situacaoSiclg: imovel.situacao || this.formatarStatus(imovel.status),
-      modalidade: this.derivarModalidadeContrato(imovel),
-      descricaoSiclg: imovel.descricaoObjeto || '-',
-      demandaSiclg: (imovel.termosAditivos || []).length > 0 ? 'Aditivo' : '-',
-      situacaoDemanda: imovel.status === 'ativo' ? 'Em curso' : 'Pendente',
-      cnpjCpfLocadorSiclg: locador?.documento || imovel.numeroIdFiscal || '-',
-
-      decisaoOperacional,
-      fase,
-      valorProrrogacaoMensal: valorMensal,
-      valorProrrogacaoAnual: valorAnual,
-      valorAcordado,
-      previsaoColegiado,
-      colegiado: 'Colegiado Regional',
-      tipoColegiado: 'Ordinário',
-      situacaoColegiado: previsaoColegiado !== '-' ? 'Previsto' : 'Não previsto',
-      limiteAr,
-      codigoSijur: `SIJUR-${(imovel.codigo || '00000000').slice(-6)}`,
-      situacaoProcessoAr: fase === 'Encerramento' ? 'Concluir AR' : 'Acompanhar',
-
-      vencimentoReferencia,
-      diasParaVencimento,
-      conciliacaoStatus
-    };
+    return buildPainelVencimentosReadModel(imovel, this.locadores, {
+      parseDate: (value?: string) => this.parseDate(value),
+      formatDate: (value?: string) => this.formatDate(value),
+      obterConciliacaoStatusImovel: (item: Imovel) => this.obterConciliacaoStatusImovel(item),
+      formatarStatus: (status: string) => this.formatarStatus(status)
+    });
   }
 
   private calcularVencimentoReferencia(vigenciaSap: string, vigenciaSiclg: string): string {
-    const sap = this.parseDate(vigenciaSap);
-    const siclg = this.parseDate(vigenciaSiclg);
-    if (sap && siclg) return sap.getTime() <= siclg.getTime() ? vigenciaSap : vigenciaSiclg;
-    return vigenciaSap !== '-' ? vigenciaSap : vigenciaSiclg;
+    return calcularVencimentoReferenciaPainel(vigenciaSap, vigenciaSiclg, (value?: string) => this.parseDate(value));
   }
   
   private derivarModalidadeContrato(imovel: Imovel): 'locacao' | 'cessao' | 'comodato' | 'nao_informada' {
-    const modalidadeNormalizada = (imovel.modalidade || '').toLowerCase();
-    if (modalidadeNormalizada.includes('loca')) return 'locacao';
-    if (modalidadeNormalizada.includes('cess')) return 'cessao';
-    if (modalidadeNormalizada.includes('comod')) return 'comodato';
-    
-    const tipoContratoNormalizado = (imovel.tipoContrato || '').toLowerCase();
-    if (tipoContratoNormalizado.includes('loca')) return 'locacao';
-    if (tipoContratoNormalizado.includes('cess')) return 'cessao';
-    if (tipoContratoNormalizado.includes('comod')) return 'comodato';
-    
-    return 'nao_informada';
+    return derivarModalidadeContratoPainel(imovel);
   }
 
   private classificarFaseVencimento(diasParaVencimento: number | null, imovel: Imovel): string {
-    if (diasParaVencimento === null) return 'Monitoramento';
-    if (diasParaVencimento <= 0) return 'Encerramento';
-    if (diasParaVencimento <= 30) return 'Notificação';
-    if (diasParaVencimento <= 60) return 'Negociação';
-    if ((imovel.termosAditivos || []).length > 0) return 'Aditivo';
-    return 'Monitoramento';
+    return classificarFaseVencimentoPainel(diasParaVencimento, imovel);
   }
 
   private classificarDecisaoOperacional(diasParaVencimento: number | null, conciliacaoStatus: 'conciliado' | 'pendente_conciliacao'): string {
-    if (conciliacaoStatus === 'pendente_conciliacao') return 'Conciliação SAP/SICLG';
-    if (diasParaVencimento === null) return 'Acompanhar vigência';
-    if (diasParaVencimento <= 30) return 'Aguardar Notificação';
-    if (diasParaVencimento <= 60) return 'Preparar negociação';
-    if (diasParaVencimento <= 90) return 'Análise de prorrogação';
-    return 'Acompanhamento regular';
+    return classificarDecisaoOperacionalPainel(diasParaVencimento, conciliacaoStatus);
   }
 
   private async hidratarPainelAcoesRenovatoriasComDadosSAP(): Promise<void> {
@@ -2633,158 +2351,11 @@ export class SistemaSILIC {
   }
 
   private montarPainelAvisoVencimento(rows: PainelVencimentosContrato[]): PainelAvisoVencimentoRow[] {
-    const getDiasEmulados = (index: number): number => {
-      const diasPrimeiros10 = [420, 360, 360, 240, 235, 230, 90, 60, 30, -15];
-      if (index < diasPrimeiros10.length) return diasPrimeiros10[index];
-
-      // Emulação controlada para 100 contratos no escopo do aviso (<= 14 meses).
-      // 10-19: 10% vencidos em prazo indeterminado.
-      if (index < 20) return -15;
-
-      // 20-99: 80% em janela de decisão, composição ponderada 60/30/15/15/10.
-      // Com os primeiros 10 contratos, o KPI fica em: +1 ano (1), 1 ano (32), 6 meses (19), 3 meses (10), 2 meses (9), 1 mês (8).
-      if (index < 57) return 300; // 1 ano
-      if (index < 75) return 120; // 6 meses
-      if (index < 84) return 75;  // 3 meses
-      if (index < 93) return 45;  // 2 meses
-      if (index < 100) return 20; // 1 mês
-
-      // Restante fora do escopo de 14 meses.
-      return 510;
-    };
-
-    // Geração dos candidatos do painel, com ajuste de status conforme regra 95% Ativo, 5% Em Desmobilização
-    let countAtivo = 0;
-    let countDesmobilizacao = 0;
-    const totalCandidatos = rows.length;
-    const candidatos: PainelAvisoVencimentoRow[] = rows.map((row, index): PainelAvisoVencimentoRow => {
-      const fimVigenciaOriginal = row.vigenciaSiclg !== '-' ? row.vigenciaSiclg : row.vigenciaSap;
-      const diasEmulados = getDiasEmulados(index);
-      const dataEmulada = new Date();
-      dataEmulada.setDate(dataEmulada.getDate() + diasEmulados);
-
-      const fimVigencia = this.formatDate(dataEmulada.toISOString()) || fimVigenciaOriginal;
-      const fimVigenciaDate = this.parseDate(fimVigencia) || this.parseDate(fimVigenciaOriginal);
-      const ultimoPagamentoDate = this.parseDate(row.ultimoPgtoSap);
-      const limiteLegalArDate = fimVigenciaDate ? this.calcularDataLimiteAjuizamentoAr(fimVigenciaDate) : null;
-      const decisaoPrimeiros10: Array<'a_decidir' | 'prorrogar' | 'nao_prorrogar'> = [
-        'a_decidir',
-        'a_decidir',
-        'prorrogar',
-        'a_decidir',
-        'prorrogar',
-        'nao_prorrogar',
-        'prorrogar',
-        'prorrogar',
-        'nao_prorrogar',
-        'nao_prorrogar'
-      ];
-      const decisaoProrrogarEmulada: 'a_decidir' | 'prorrogar' | 'nao_prorrogar' = index < 10
-        ? decisaoPrimeiros10[index]
-        : (index < 20 ? 'nao_prorrogar' : (index < 26 ? 'prorrogar' : 'nao_prorrogar'));
-      const decisaoAcaoRenovatoriaPadrao = this.derivarDecisaoAcaoRenovatoriaAviso(fimVigenciaDate);
-      const decisaoAcaoRenovatoriaPrimeiros10: Array<'a_decidir' | 'ingressar' | 'nao_ingressar' | null> = [
-        null,
-        null,
-        null,
-        'ingressar',
-        'a_decidir',
-        'a_decidir',
-        null,
-        null,
-        null,
-        null
-      ];
-      const decisaoAcaoRenovatoriaEmulada: 'a_decidir' | 'ingressar' | 'nao_ingressar' =
-        (index < 10 && decisaoAcaoRenovatoriaPrimeiros10[index])
-          ? decisaoAcaoRenovatoriaPrimeiros10[index] as 'a_decidir' | 'ingressar' | 'nao_ingressar'
-          : decisaoAcaoRenovatoriaPadrao;
-
-      // Garantir status conforme regra: 95% Ativo, 5% Em Desmobilização
-      let statusAjustado = 'Ativo';
-      // 5% do total, arredondado para cima, será 'Em Desmobilização'
-      const maxDesmobilizacao = Math.ceil(totalCandidatos * 0.05);
-      if (countDesmobilizacao < maxDesmobilizacao && Math.random() < 0.05) {
-        statusAjustado = 'Em Desmobilização';
-        countDesmobilizacao++;
-      } else {
-        statusAjustado = 'Ativo';
-        countAtivo++;
-      }
-
-      return {
-        contratoId: row.contratoId,
-        contratoSap: row.numeroContratoSap,
-        contratoSiclg: row.numeroContratoSiclg,
-        situacaoSiclg: statusAjustado,
-        modalidade: row.modalidade,
-        descricao: row.descricaoSiclg !== '-' ? row.descricaoSiclg : row.descricaoSap,
-        ultimoValorPagoSap: row.ultimoValorPagoSap,
-        ultimoPagamentoSap: row.ultimoPgtoSap,
-        decisaoProrrogar: decisaoProrrogarEmulada,
-        decisaoAcaoRenovatoria: decisaoAcaoRenovatoriaEmulada,
-        situacaoLaudoAvaliacao: row.modalidade === 'locacao' ? 'nao_solicitado' : 'nao_aplicavel',
-        laudoPrazoEntregaDias: row.modalidade === 'locacao' ? 30 : undefined,
-        laudoPrazoFormalInformado: false,
-        fase: row.fase,
-        demandaSiclg: row.demandaSiclg,
-        colegiado: this.derivarColegiadoAviso(row, index),
-        limiteLegalAr: limiteLegalArDate ? this.formatDate(limiteLegalArDate.toISOString()) : row.limiteAr,
-        fimVigencia,
-        fimVigenciaDate,
-        ultimoPagamentoDate,
-        ordemCasoTeste: index < 10 ? index + 1 : undefined
-      };
+    return buildPainelAvisoVencimento(rows, {
+      parseDate: (value?: string) => this.parseDate(value),
+      formatDate: (value?: string) => this.formatDate(value),
+      derivarColegiadoAviso: (row: PainelVencimentosContrato, index: number) => this.derivarColegiadoAviso(row, index)
     });
-
-    // Garante pelo menos 3 contratos dentro da faixa 8-7 meses para didática do KPI de risco.
-    const hojeBase = this.obterDataBase(new Date());
-    const offsetDiasFaixaAr87 = [240, 236, 232];
-    const contratosFaixaAr87 = candidatos.filter((item) => this.estaNaFaixaAlertaAr87(item));
-    if (contratosFaixaAr87.length < 3) {
-      const faltantes = 3 - contratosFaixaAr87.length;
-      const reserva = candidatos
-        .filter((item) => !this.estaNaFaixaAlertaAr87(item))
-        .slice(0, faltantes);
-
-      [...contratosFaixaAr87, ...reserva].slice(0, 3).forEach((item, idx) => {
-        const fimAjustado = new Date(hojeBase);
-        fimAjustado.setDate(fimAjustado.getDate() + offsetDiasFaixaAr87[idx]);
-        item.fimVigenciaDate = fimAjustado;
-        item.fimVigencia = this.formatDate(fimAjustado.toISOString()) || item.fimVigencia;
-        const limiteAr = this.calcularDataLimiteAjuizamentoAr(fimAjustado);
-        item.limiteLegalAr = this.formatDate(limiteAr.toISOString()) || item.limiteLegalAr;
-      });
-    }
-
-    // Garante um exemplo em cada categoria da composição do risco 8-7 meses.
-    const exemplosFaixaAr87 = candidatos
-      .filter((item) => this.estaNaFaixaAlertaAr87(item))
-      .sort((a, b) => (a.ordemCasoTeste || Number.MAX_SAFE_INTEGER) - (b.ordemCasoTeste || Number.MAX_SAFE_INTEGER));
-    if (exemplosFaixaAr87[0]) {
-      exemplosFaixaAr87[0].decisaoProrrogar = 'a_decidir';
-      exemplosFaixaAr87[0].decisaoAcaoRenovatoria = 'ingressar';
-    }
-    if (exemplosFaixaAr87[1]) {
-      exemplosFaixaAr87[1].decisaoProrrogar = 'prorrogar';
-      exemplosFaixaAr87[1].decisaoAcaoRenovatoria = 'a_decidir';
-    }
-    if (exemplosFaixaAr87[2]) {
-      exemplosFaixaAr87[2].decisaoProrrogar = 'a_decidir';
-      exemplosFaixaAr87[2].decisaoAcaoRenovatoria = 'a_decidir';
-    }
-
-    return candidatos
-      .filter((item) => this.estaNoEscopoAvisoVencimento(item))
-      .sort((a, b) => {
-        if (typeof a.ordemCasoTeste === 'number' && typeof b.ordemCasoTeste === 'number') {
-          return a.ordemCasoTeste - b.ordemCasoTeste;
-        }
-        if (typeof a.ordemCasoTeste === 'number') return -1;
-        if (typeof b.ordemCasoTeste === 'number') return 1;
-        return (this.calcularDiasParaVencimentoAviso(a) ?? Number.MAX_SAFE_INTEGER) - (this.calcularDiasParaVencimentoAviso(b) ?? Number.MAX_SAFE_INTEGER);
-      })
-      .slice(0, 100);
   }
 
   private derivarDecisaoProrrogarAviso(row: PainelVencimentosContrato): 'a_decidir' | 'prorrogar' | 'nao_prorrogar' {
@@ -2795,10 +2366,6 @@ export class SistemaSILIC {
   }
 
   private derivarDecisaoAcaoRenovatoriaAviso(fimVigenciaDate: Date | null): 'a_decidir' | 'ingressar' | 'nao_ingressar' {
-    if (!fimVigenciaDate) return 'a_decidir';
-    const hojeBase = this.obterDataBase(new Date());
-    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(fimVigenciaDate);
-    if (hojeBase > prazoFinal) return 'nao_ingressar';
     return 'a_decidir';
   }
 
@@ -2923,24 +2490,18 @@ export class SistemaSILIC {
     return '';
   }
 
-  private gerarNumeroRequisicaoLaudo(contratoSap: string): string {
+  private gerarNumeroRequisicaoLaudo(imovelSap: string): string {
     const agora = new Date();
     const y = agora.getFullYear();
     const m = String(agora.getMonth() + 1).padStart(2, '0');
     const d = String(agora.getDate()).padStart(2, '0');
-    const base = (contratoSap || '').replace(/\D/g, '').slice(-4).padStart(4, '0');
+    const base = (imovelSap || '').replace(/\D/g, '').slice(-4).padStart(4, '0');
     const seq = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
     return `LAU-${y}${m}${d}-${base}-${seq}`;
   }
 
   private adicionarMesesCivis(data: Date, meses: number): Date {
-    const base = this.obterDataBase(data);
-    const diaOriginal = base.getDate();
-    const anoAlvo = base.getFullYear();
-    const mesAlvo = base.getMonth() + meses;
-    const ultimoDiaMesAlvo = new Date(anoAlvo, mesAlvo + 1, 0).getDate();
-    const diaAjustado = Math.min(diaOriginal, ultimoDiaMesAlvo);
-    return new Date(anoAlvo, mesAlvo, diaAjustado);
+    return adicionarMesesCivisPrazo(data, meses);
   }
 
   private sincronizarSituacaoLaudoAvaliacao(row: PainelAvisoVencimentoRow): void {
@@ -3127,50 +2688,103 @@ export class SistemaSILIC {
   }
 
   private sincronizarDecisaoAcaoRenovatoria(row: PainelAvisoVencimentoRow): void {
-    if (this.estaNaJanelaLegalAcaoRenovatoria(row)) return;
-    row.decisaoAcaoRenovatoria = this.estaAposPrazoDecadencialAr(row) ? 'nao_ingressar' : 'a_decidir';
+    if (row.decisaoProrrogar === 'nao_prorrogar') {
+      row.decisaoAcaoRenovatoria = 'nao_ingressar';
+      return;
+    }
+
+    if (row.decisaoProrrogar !== 'prorrogar') {
+      row.decisaoAcaoRenovatoria = 'a_decidir';
+      return;
+    }
   }
 
   private estaNaJanelaLegalAcaoRenovatoria(item: PainelAvisoVencimentoRow): boolean {
-    if (!item.fimVigenciaDate) return false;
-    const hojeBase = this.obterDataBase(new Date());
-    const inicioJanela = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
-    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(item.fimVigenciaDate);
-    return hojeBase >= inicioJanela && hojeBase <= prazoFinal;
+    return estaNaJanelaLegalAcaoRenovatoriaPrazo(item);
   }
 
   private podeManterADecidirProrrogacao(item: PainelAvisoVencimentoRow): boolean {
-    if (!item.fimVigenciaDate) return false;
-    const hojeBase = this.obterDataBase(new Date());
-    const inicioEscopo = this.subtrairMesesCivis(item.fimVigenciaDate, 14);
-    const limiteDecisaoObrigatoria = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
-    return hojeBase >= inicioEscopo && hojeBase < limiteDecisaoObrigatoria;
+    return podeManterADecidirProrrogacaoPrazo(item);
   }
 
   private possuiDadosVigenciaInsuficientes(item: PainelAvisoVencimentoRow): boolean {
-    return !item.fimVigenciaDate || !item.fimVigencia || item.fimVigencia === '-';
+    return possuiDadosVigenciaInsuficientesPrazo(item);
   }
 
   private estaNaJanelaPrudenteGestorAr(item: PainelAvisoVencimentoRow): boolean {
-    if (!item.fimVigenciaDate) return false;
-    const hojeBase = this.obterDataBase(new Date());
-    const inicioJanela = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
-    const limitePrudente = this.subtrairMesesCivis(item.fimVigenciaDate, 7);
-    return hojeBase >= inicioJanela && hojeBase <= limitePrudente;
+    return estaNaJanelaPrudenteGestorArPrazo(item);
   }
 
   private estaNaFaixaAlertaAr87(item: PainelAvisoVencimentoRow): boolean {
-    if (!item.fimVigenciaDate) return false;
-    const hojeBase = this.obterDataBase(new Date());
-    const inicioFaixa = this.subtrairMesesCivis(item.fimVigenciaDate, 8);
-    const fimFaixa = this.subtrairMesesCivis(item.fimVigenciaDate, 7);
-    return hojeBase >= inicioFaixa && hojeBase < fimFaixa;
+    return estaNaFaixaAlertaAr87Prazo(item);
   }
 
   private estaEmRiscoAr87(item: PainelAvisoVencimentoRow): boolean {
-    return this.estaNaFaixaAlertaAr87(item)
-      && item.decisaoProrrogar === 'a_decidir'
-      && item.decisaoAcaoRenovatoria === 'a_decidir';
+    return estaEmRiscoAr87Prazo(item);
+  }
+
+  private obterBloqueioDecisaoAcaoRenovatoria(row: PainelAvisoVencimentoRow): {
+    bloqueada: boolean;
+    titulo: string;
+    legenda: string;
+    classe: 'aviso-ar-hint is-open' | 'aviso-ar-hint is-closed';
+  } {
+    if (row.decisaoProrrogar === 'a_decidir') {
+      return {
+        bloqueada: true,
+        titulo: 'title="Defina primeiro a decisão de prorrogação para habilitar a ação renovatória."',
+        legenda: 'Ação renovatória bloqueada até a decisão de prorrogação deixar de estar em A decidir.',
+        classe: 'aviso-ar-hint is-closed'
+      };
+    }
+
+    if (row.decisaoProrrogar === 'nao_prorrogar') {
+      return {
+        bloqueada: true,
+        titulo: 'title="Com decisão de não prorrogar, a ação renovatória é travada em Não ingressar."',
+        legenda: 'Decisão de prorrogação definida como Não prorrogar; ação renovatória travada em Não ingressar.',
+        classe: 'aviso-ar-hint is-closed'
+      };
+    }
+
+    if (this.estaNoMarcoOuAposSeisMesesFimVigencia(row)) {
+      return {
+        bloqueada: true,
+        titulo: 'title="Com prazo igual ou inferior a 6 meses do fim da vigência, a decisão sobre a ação renovatória fica bloqueada."',
+        legenda: row.decisaoAcaoRenovatoria === 'a_decidir'
+          ? 'Prazo igual ou inferior a 6 meses do fim da vigência; não é mais possível decidir a ação renovatória nesta etapa.'
+          : 'Prazo igual ou inferior a 6 meses do fim da vigência; alterações na decisão da ação renovatória ficam bloqueadas nesta etapa.',
+        classe: 'aviso-ar-hint is-closed'
+      };
+    }
+
+    const podeDecidirAr = this.estaNaJanelaLegalAcaoRenovatoria(row);
+    const podeDecidirArComSeguranca = this.estaNaJanelaPrudenteGestorAr(row);
+
+    if (podeDecidirArComSeguranca) {
+      return {
+        bloqueada: false,
+        titulo: '',
+        legenda: 'Janela prudente do gestor ativa (12-7 meses)',
+        classe: 'aviso-ar-hint is-open'
+      };
+    }
+
+    if (podeDecidirAr) {
+      return {
+        bloqueada: false,
+        titulo: '',
+        legenda: 'Janela legal da AR ativa (12-6), mas fora da janela operacional do gestor (12-7); priorizar conclusão imediata.',
+        classe: 'aviso-ar-hint is-open'
+      };
+    }
+
+    return {
+      bloqueada: false,
+      titulo: '',
+      legenda: 'Posicionamento antecipado da AR permitido antes da janela legal; a decisão deve estar concluída antes de atingir 6 meses do fim da vigência.',
+      classe: 'aviso-ar-hint is-open'
+    };
   }
 
   private registrarReaberturaDecisaoProrrogacao(row: PainelAvisoVencimentoRow, decisaoAnterior: 'a_decidir' | 'prorrogar' | 'nao_prorrogar', novaDecisao: 'a_decidir' | 'prorrogar' | 'nao_prorrogar'): boolean {
@@ -3211,77 +2825,59 @@ export class SistemaSILIC {
   }
 
   private classificarFaixaSinalizacaoAviso(item: PainelAvisoVencimentoRow): 'faixa_14_12' | 'faixa_12_7' | 'faixa_menor_6' | 'dados_insuficientes' | 'fora_escopo' {
-    if (this.possuiDadosVigenciaInsuficientes(item)) return 'dados_insuficientes';
-    if (!item.fimVigenciaDate) return 'fora_escopo';
-    const hojeBase = this.obterDataBase(new Date());
-    const inicioEscopo = this.subtrairMesesCivis(item.fimVigenciaDate, 14);
-    const inicioJanelaLegal = this.subtrairMesesCivis(item.fimVigenciaDate, 12);
-    const limitePrudente = this.subtrairMesesCivis(item.fimVigenciaDate, 7);
-
-    if (hojeBase < inicioEscopo) return 'fora_escopo';
-    if (hojeBase < inicioJanelaLegal) return 'faixa_14_12';
-    if (hojeBase <= limitePrudente) return 'faixa_12_7';
-    return 'faixa_menor_6';
+    return classificarFaixaSinalizacaoAvisoPrazo(item);
   }
 
   private estaAposPrazoDecadencialAr(item: PainelAvisoVencimentoRow): boolean {
+    return estaAposPrazoDecadencialArPrazo(item);
+  }
+
+  private estaNoMarcoOuAposSeisMesesFimVigencia(item: PainelAvisoVencimentoRow): boolean {
     if (!item.fimVigenciaDate) return false;
     const hojeBase = this.obterDataBase(new Date());
-    const prazoFinal = this.calcularDataLimiteAjuizamentoAr(item.fimVigenciaDate);
-    return hojeBase > prazoFinal;
+    const marcoSeisMeses = this.subtrairMesesCivis(item.fimVigenciaDate, 6);
+    return hojeBase >= marcoSeisMeses;
   }
 
   private estaNoEscopoAvisoVencimento(item: PainelAvisoVencimentoRow): boolean {
-    return this.classificarFaixaSinalizacaoAviso(item) !== 'fora_escopo';
+    return estaNoEscopoAvisoVencimentoPrazo(item);
   }
 
   private obterDataBase(data: Date): Date {
-    return new Date(data.getFullYear(), data.getMonth(), data.getDate());
+    return obterDataBase(data);
   }
 
   private subtrairMesesCivis(data: Date, meses: number): Date {
-    const base = this.obterDataBase(data);
-    const diaOriginal = base.getDate();
-    const anoAlvo = base.getFullYear();
-    const mesAlvo = base.getMonth() - meses;
-    const ultimoDiaMesAlvo = new Date(anoAlvo, mesAlvo + 1, 0).getDate();
-    const diaAjustado = Math.min(diaOriginal, ultimoDiaMesAlvo);
-    return new Date(anoAlvo, mesAlvo, diaAjustado);
+    return subtrairMesesCivisPrazo(data, meses);
   }
 
   private calcularDataLimiteAjuizamentoAr(fimVigenciaDate: Date): Date {
-    const referenciaSeisMeses = this.subtrairMesesCivis(fimVigenciaDate, 6);
-    const houveAjustePorFimDeMes = referenciaSeisMeses.getDate() !== fimVigenciaDate.getDate();
-    if (houveAjustePorFimDeMes) return referenciaSeisMeses;
-    const limite = new Date(referenciaSeisMeses);
-    limite.setDate(limite.getDate() - 1);
-    return this.obterDataBase(limite);
+    return calcularDataLimiteAjuizamentoArPrazo(fimVigenciaDate);
   }
 
   private atualizarDecisaoAcaoRenovatoriaPainelAviso(contratoId: string, decisao: 'a_decidir' | 'ingressar' | 'nao_ingressar'): void {
     const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
     if (!row) return;
 
-    if (!this.estaNaJanelaLegalAcaoRenovatoria(row)) {
+    if (row.decisaoProrrogar === 'a_decidir') {
       this.sincronizarDecisaoAcaoRenovatoria(row);
       this.persistirEstadoAvisoRow(row);
-      this.showToast('Decisão de ação renovatória só pode ser alterada na janela legal entre 12 e 6 meses antes do fim da vigência.');
+      this.showToast('Defina primeiro a decisão de prorrogação para habilitar a ação renovatória.');
       this.aplicarFiltrosPainelAvisoVencimento();
       return;
     }
 
-    if (decisao === 'ingressar' && !this.estaNaJanelaPrudenteGestorAr(row)) {
-      this.showToast('Para o gestor operacional, o prazo prudente para decidir ingresso na ação renovatória é até 7 meses antes do fim da vigência. Escalone Gestão Formal/Jurídico.');
+    if (row.decisaoProrrogar === 'nao_prorrogar') {
+      this.sincronizarDecisaoAcaoRenovatoria(row);
+      this.persistirEstadoAvisoRow(row);
+      this.showToast('Com decisão de não prorrogar, a ação renovatória fica travada em "Não ingressar".');
       this.aplicarFiltrosPainelAvisoVencimento();
       return;
     }
 
-    if (decisao === 'ingressar' && !this.estaNaJanelaLegalAcaoRenovatoria(row)) {
-      if (this.estaAposPrazoDecadencialAr(row)) {
-        this.showToast('Prazo decadencial encerrado: após o marco legal de 6 meses antes do fim da vigência não é possível ingressar com ação renovatória.');
-      } else {
-        this.showToast('Ingresso na ação renovatória permitido apenas na janela legal entre 12 e 6 meses (contagem por mês civil). Na visão operacional, a decisão direta do gestor ocorre até 7 meses.');
-      }
+    if (this.estaNoMarcoOuAposSeisMesesFimVigencia(row)) {
+      this.persistirEstadoAvisoRow(row);
+      this.showToast('Com prazo igual ou inferior a 6 meses do fim da vigência, a decisão sobre a ação renovatória fica bloqueada.');
       this.aplicarFiltrosPainelAvisoVencimento();
       return;
     }
@@ -3298,14 +2894,14 @@ export class SistemaSILIC {
     this.aplicarFiltrosPainelAvisoVencimento();
   }
 
-  private gerarProtocoloSolicitacaoProrrogacao(contratoSap: string): string {
+  private gerarProtocoloSolicitacaoProrrogacao(imovelSap: string): string {
     const data = new Date();
     const y = data.getFullYear();
     const numero = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
     return `FORMAL - ${numero} - ${y}`;
   }
 
-  private gerarProtocoloContratacaoCECOT(contratoSap: string): string {
+  private gerarProtocoloContratacaoCECOT(imovelSap: string): string {
     const data = new Date();
     const y = data.getFullYear();
     const numero = String(Math.floor(Math.random() * 100000)).padStart(5, '0');
@@ -3313,16 +2909,14 @@ export class SistemaSILIC {
   }
 
   private podeSolicitarContratacao(item: PainelAvisoVencimentoRow): boolean {
-    const vencido = this.classificarJanelaAviso(item) === 'vencido';
-    const naoProrrogar = item.decisaoProrrogar === 'nao_prorrogar';
-    return vencido || naoProrrogar;
+    return this.classificarJanelaAviso(item) === 'vencido';
   }
 
   private solicitarContratacaoCecot(contratoId: string): void {
     const row = this.painelAvisoVencimento.find((item) => item.contratoId === contratoId);
     if (!row) return;
     if (!this.podeSolicitarContratacao(row)) {
-      this.showToast('Protocolo de contratação disponível apenas para contrato vencido ou decisão de não prorrogar.');
+      this.showToast('Solicitação de regularização disponível apenas para contrato com vigência vencida.');
       return;
     }
     if (row.protocoloContratacao) {
@@ -3330,7 +2924,7 @@ export class SistemaSILIC {
       return;
     }
 
-    row.protocoloContratacao = this.gerarProtocoloContratacaoCECOT(row.contratoSap);
+    row.protocoloContratacao = this.gerarProtocoloContratacaoCECOT(row.imovelSap);
     this.persistirEstadoAvisoRow(row);
     this.showToast(`Solicitação de nova contratação enviada à área responsável. Protocolo gerado: ${row.protocoloContratacao}.`);
     this.aplicarFiltrosPainelAvisoVencimento();
@@ -3390,6 +2984,7 @@ export class SistemaSILIC {
     }
 
     row.decisaoProrrogar = decisao;
+    this.sincronizarDecisaoAcaoRenovatoria(row);
     this.persistirEstadoAvisoRow(row);
 
     this.aplicarFiltrosPainelAvisoVencimento();
@@ -3414,7 +3009,7 @@ export class SistemaSILIC {
       return;
     }
 
-    const protocolo = this.gerarProtocoloSolicitacaoProrrogacao(row.contratoSap);
+    const protocolo = this.gerarProtocoloSolicitacaoProrrogacao(row.imovelSap);
     row.protocoloFormal = protocolo;
     row.demandaSiclg = 'Ato Formal - Prorrogação';
 
@@ -3442,77 +3037,18 @@ export class SistemaSILIC {
   }
 
   private montarPainelAcoesRenovatorias(imoveis: Imovel[], locadores: Locador[], dadosReais: boolean, dadosDijur?: DijurRegistro[]): PainelAcoesRenovatoriasRow[] {
-    const locadorMap = new Map(locadores.map((locador) => [locador.id, locador]));
-    const dijurMap = new Map((dadosDijur || []).map((registro) => [String(registro.contrato_sap), registro]));
-
-    return imoveis.slice(0, 60).map((imovel, index) => {
-      const contratoSap = imovel.codigo || `SEM-SAP-${String(index + 1).padStart(4, '0')}`;
-      const registroDijur = dijurMap.get(contratoSap);
-      const contratoSiclg = imovel.numeroInstrumento || this.gerarContratoSiclgFormal(contratoSap, index);
-      const protocoloFormalSiclg = this.gerarProtocoloFormalSiclg(contratoSap, index);
-      const numeroProcessoSiclg = imovel.numeroProcesso || this.gerarNumeroProcessoSiclg(contratoSap, index);
-      const numeroProcessoDijur = registroDijur?.numero_processo_dijur || this.gerarNumeroProcessoDijur(contratoSap, index);
-      const vigenciaBase = imovel.vigenciaFinal || imovel.contratoFimValidade || imovel.fimValidade || '-';
-      const vigenciaDate = this.parseDate(vigenciaBase);
-      const diasParaVigencia = vigenciaDate
-        ? Math.ceil((vigenciaDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-        : null;
-      const locador = locadorMap.get(imovel.locadorId || '');
-      const unidade = this.gerarDescricaoUnidadeFormal(imovel);
-      const situacaoSiclg = this.derivarSituacaoSiclgFormal(diasParaVigencia);
-      const situacaoSijur = registroDijur?.situacao_sijur || this.derivarSituacaoSijurFormal(diasParaVigencia);
-      const situacaoCefor = registroDijur?.situacao_cefor || this.derivarSituacaoCeforFormal(diasParaVigencia);
-      const radarSucot = this.derivarRadarSucotFormal(diasParaVigencia);
-      const lastSyncAt = registroDijur?.last_sync_at ? this.formatDateTime(registroDijur.last_sync_at) : new Date(Date.now() - index * 6 * 60 * 60 * 1000).toLocaleString('pt-BR');
-      const partesDijur = registroDijur?.partes_dijur || `CAIXA ECONÔMICA FEDERAL x ${locador?.nome || imovel.parceiroNegocios || 'Locador não identificado'}`;
-      const edicoes = this.carregarEdicoesPainelFormal();
-      const edicao = edicoes[imovel.id];
-
-      return {
-        contratoId: imovel.id,
-        codigoSijur: registroDijur?.codigo_sijur || `SIJUR-${contratoSap.replace(/\D/g, '').slice(-6).padStart(6, '0')}`,
-        contratoSap,
-        contratoSiclg,
-        protocoloFormalSiclg,
-        unidade,
-        vigenciaSiclg: this.formatDate(vigenciaBase),
-        situacaoSiclg,
-        numeroProcessoSiclg,
-        situacaoSijur,
-        situacaoCefor,
-        numeroProcessoDijur,
-        dataEntradaDijur: registroDijur?.data_entrada_dijur ? this.formatDate(registroDijur.data_entrada_dijur) : this.calcularDataEntradaDijur(vigenciaDate, index),
-        partesDijur,
-        lastSyncAt,
-        radarSucot: edicao?.radarSucot || radarSucot,
-        notas: edicao?.notas || this.derivarNotasGestorFormal(imovel, diasParaVigencia, dadosReais),
-        statusOperacional: this.derivarStatusOperacionalFormal(diasParaVigencia),
-        origemDados: registroDijur
-          ? (dadosReais ? 'SAP + DIJUR_API + INPUT_GESTOR_FORMAL' : 'BASE_LOCAL + DIJUR_API + INPUT_GESTOR_FORMAL')
-          : (dadosReais ? 'SAP + DIJUR_API (indisponível) + INPUT_GESTOR_FORMAL' : 'BASE_LOCAL + DIJUR_API (indisponível) + INPUT_GESTOR_FORMAL'),
-        vigenciaDate
-      };
+    return buildPainelAcoesRenovatorias(imoveis, locadores, dadosReais, dadosDijur, {
+      parseDate: (value?: string) => this.parseDate(value),
+      formatDate: (value?: string) => this.formatDate(value),
+      formatDateTime: (value?: string) => this.formatDateTime(value),
+      carregarEdicoesPainelFormal: () => this.carregarEdicoesPainelFormal()
     });
   }
 
   private aplicarDadosDijurNaMassaExistente(rows: PainelAcoesRenovatoriasRow[], dadosDijur: DijurRegistro[]): PainelAcoesRenovatoriasRow[] {
-    const mapa = new Map(dadosDijur.map((registro) => [String(registro.contrato_sap), registro]));
-
-    return rows.map((row) => {
-      const dijur = mapa.get(row.contratoSap);
-      if (!dijur) return row;
-
-      return {
-        ...row,
-        codigoSijur: dijur.codigo_sijur || row.codigoSijur,
-        numeroProcessoDijur: dijur.numero_processo_dijur || row.numeroProcessoDijur,
-        situacaoSijur: dijur.situacao_sijur || row.situacaoSijur,
-        situacaoCefor: dijur.situacao_cefor || row.situacaoCefor,
-        dataEntradaDijur: dijur.data_entrada_dijur ? this.formatDate(dijur.data_entrada_dijur) : row.dataEntradaDijur,
-        partesDijur: dijur.partes_dijur || row.partesDijur,
-        lastSyncAt: dijur.last_sync_at ? this.formatDateTime(dijur.last_sync_at) : row.lastSyncAt,
-        origemDados: row.origemDados.replace('DIJUR_API (indisponível)', 'DIJUR_API')
-      };
+    return mergePainelFormalComDijur(rows, dadosDijur, {
+      formatDate: (value?: string) => this.formatDate(value),
+      formatDateTime: (value?: string) => this.formatDateTime(value)
     });
   }
 
@@ -3541,22 +3077,22 @@ export class SistemaSILIC {
     return Number.isNaN(d.getTime()) ? value : d.toLocaleString('pt-BR');
   }
 
-  private gerarContratoSiclgFormal(contratoSap: string, index: number): string {
-    return `SICLG-${new Date().getFullYear()}-${(contratoSap.replace(/\D/g, '').slice(-5) || String(index + 1).padStart(5, '0'))}`;
+  private gerarContratoSiclgFormal(imovelSap: string, index: number): string {
+    return `SICLG-${new Date().getFullYear()}-${(imovelSap.replace(/\D/g, '').slice(-5) || String(index + 1).padStart(5, '0'))}`;
   }
 
-  private gerarProtocoloFormalSiclg(contratoSap: string, index: number): string {
-    const base = contratoSap.replace(/\D/g, '').slice(-6) || String(index + 1).padStart(6, '0');
+  private gerarProtocoloFormalSiclg(imovelSap: string, index: number): string {
+    const base = imovelSap.replace(/\D/g, '').slice(-6) || String(index + 1).padStart(6, '0');
     return `PF-${new Date().getFullYear()}-${base}`;
   }
 
-  private gerarNumeroProcessoSiclg(contratoSap: string, index: number): string {
-    const base = contratoSap.replace(/\D/g, '').slice(-4) || String(index + 1).padStart(4, '0');
+  private gerarNumeroProcessoSiclg(imovelSap: string, index: number): string {
+    const base = imovelSap.replace(/\D/g, '').slice(-4) || String(index + 1).padStart(4, '0');
     return `000.${base}/${new Date().getFullYear()}-${String((index % 89) + 10).padStart(2, '0')}`;
   }
 
-  private gerarNumeroProcessoDijur(contratoSap: string, index: number): string {
-    const base = contratoSap.replace(/\D/g, '').slice(-7).padStart(7, '0');
+  private gerarNumeroProcessoDijur(imovelSap: string, index: number): string {
+    const base = imovelSap.replace(/\D/g, '').slice(-7).padStart(7, '0');
     return `${base}-${String((index % 90) + 10).padStart(2, '0')}.${new Date().getFullYear()}.4.01.${String((index % 27) + 1).padStart(4, '0')}`;
   }
 
@@ -3671,7 +3207,7 @@ export class SistemaSILIC {
     this.atualizarOpcoesSituacaoPainelVencimentos();
 
     [
-      'painelContratoSapFiltro',
+      'painelImovelSapFiltro',
       'painelContratoSiclgFiltro',
       'painelLocadorFiltro',
       'painelCpfCnpjFiltro',
@@ -3860,10 +3396,11 @@ export class SistemaSILIC {
     const detalheProtocoloFormal = item.protocoloFormal || '-';
     const detalheProtocoloContratacao = item.protocoloContratacao || '-';
 
-    title.textContent = `Contexto do aviso - Contrato SAP ${item.contratoSap}`;
+    title.textContent = `Contexto do aviso - Imóvel (SAP) ${item.imovelSap}`;
     content.innerHTML = `
       <div class="info-section">
         <div class="info-grid">
+          <div class="info-item"><label>Imóvel (SAP)</label><span>${item.imovelSap || '-'}</span></div>
           <div class="info-item"><label>Contrato (SICLG)</label><span>${item.contratoSiclg || '-'}</span></div>
           <div class="info-item"><label>Fase</label><span>${item.fase}</span></div>
           <div class="info-item"><label>Demanda (SICLG)</label><span>${item.demandaSiclg}</span></div>
@@ -4011,13 +3548,13 @@ export class SistemaSILIC {
   private exportarPainelFormalCSV(): void {
     const headers = [
       'Codigo SIJUR',
-      'Contrato SAP',
-      'Contrato SICLG',
+      'Imovel (SAP)',
+      'Contrato (SICLG)',
       'Protocolo Formal (SICLG)',
       'Unidade',
       'Vigencia',
       'Situacao SICLG',
-      'Numero do Processo (SICLG)',
+      'Processo (SICLG)',
       'Situacao SIJUR',
       'Situacao CEFOR',
       'Numero do Processo DIJUR',
@@ -4048,13 +3585,13 @@ export class SistemaSILIC {
   private async exportarPainelFormalExcel(): Promise<void> {
     const rows = this.painelAcoesRenovatoriasFiltrado.map((item) => ({
       'Código SIJUR': item.codigoSijur,
-      'Contrato SAP': item.contratoSap,
-      'Contrato SICLG': item.contratoSiclg,
+      'Imóvel (SAP)': item.imovelSap,
+      'Contrato (SICLG)': item.contratoSiclg,
       'Protocolo Formal (SICLG)': item.protocoloFormalSiclg,
       'Unidade': item.unidade,
       'Vigência': item.vigenciaSiclg,
       'Situação SICLG': item.situacaoSiclg,
-      'Número do Processo (SICLG)': item.numeroProcessoSiclg,
+      'Processo (SICLG)': item.numeroProcessoSiclg,
       'Situação SIJUR': item.situacaoSijur,
       'Situação CEFOR': item.situacaoCefor,
       'Número do Processo DIJUR': item.numeroProcessoDijur,
@@ -4075,8 +3612,8 @@ export class SistemaSILIC {
 
   private exportarPainelAvisoCSV(): void {
     const headers = [
-      'Contrato SAP',
-      'Contrato SICLG',
+      'Imovel (SAP)',
+      'Contrato (SICLG)',
       'Situacao SICLG',
       'Descricao',
       'Ultimo valor pago no SAP',
@@ -4103,8 +3640,8 @@ export class SistemaSILIC {
 
   private async exportarPainelAvisoExcel(): Promise<void> {
     const rows = this.painelAvisoVencimentoFiltrado.map((item) => ({
-      'Contrato SAP': item.contratoSap,
-      'Contrato SICLG': item.contratoSiclg,
+      'Imóvel (SAP)': item.imovelSap,
+      'Contrato (SICLG)': item.contratoSiclg,
       'Situação SICLG': item.situacaoSiclg,
       'Descrição': item.descricao,
       'Último valor pago no SAP': item.ultimoValorPagoSap,
@@ -4133,7 +3670,7 @@ export class SistemaSILIC {
 
     return [
       item.codigoSijur,
-      item.contratoSap,
+      item.imovelSap,
       item.contratoSiclg,
       item.protocoloFormalSiclg,
       item.unidade,
@@ -4156,7 +3693,7 @@ export class SistemaSILIC {
     const escapeCSV = (value: string | number): string => `"${String(value).replace(/"/g, '""').replace(/\r?\n|\r/g, ' ')}"`;
 
     return [
-      item.contratoSap,
+      item.imovelSap,
       item.contratoSiclg,
       item.situacaoSiclg,
       item.descricao,
@@ -4225,7 +3762,7 @@ export class SistemaSILIC {
   }
 
   private aplicarFiltrosPainelVencimentos(): void {
-    const contratoSap = ((document.getElementById('painelContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const imovelSap = ((document.getElementById('painelImovelSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const contratoSiclg = ((document.getElementById('painelContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const locador = ((document.getElementById('painelLocadorFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const cpfCnpj = this.normalizarDocumentoFiltroPainelVencimentos((document.getElementById('painelCpfCnpjFiltro') as HTMLInputElement | null)?.value || '');
@@ -4237,41 +3774,19 @@ export class SistemaSILIC {
     const ultimoValorDe = this.parseValorFiltroPainelVencimentos((document.getElementById('painelUltimoValorDeFiltro') as HTMLInputElement | null)?.value || '');
     const ultimoValorAte = this.parseValorFiltroPainelVencimentos((document.getElementById('painelUltimoValorAteFiltro') as HTMLInputElement | null)?.value || '');
 
-    const vigenciaDeDate = vigenciaDe ? this.parseDate(vigenciaDe) : null;
-    const vigenciaAteDate = vigenciaAte ? this.parseDate(vigenciaAte) : null;
-    const ultimoPgtoDeDate = ultimoPgtoDe ? this.parseDate(ultimoPgtoDe) : null;
-    const ultimoPgtoAteDate = ultimoPgtoAte ? this.parseDate(ultimoPgtoAte) : null;
-
-    this.painelVencimentosFiltrado = this.painelVencimentos.filter((item) => {
-      if (contratoSap && !item.numeroContratoSap.toLowerCase().includes(contratoSap)) return false;
-      if (contratoSiclg && !item.numeroContratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
-      if (locador && !item.locadorSap.toLowerCase().includes(locador)) return false;
-      if (cpfCnpj && !this.normalizarDocumentoFiltroPainelVencimentos(item.cnpjCpfLocadorSiclg).includes(cpfCnpj)) return false;
-      if (status && item.situacaoSiclg !== status) return false;
-
-      const vigenciaDate = this.parseDate(item.vigenciaSap);
-      if (vigenciaDeDate) {
-        if (!vigenciaDate || vigenciaDate < vigenciaDeDate) return false;
-      }
-
-      if (vigenciaAteDate) {
-        if (!vigenciaDate || vigenciaDate > vigenciaAteDate) return false;
-      }
-
-      const ultimoPgtoDate = this.parseDate(item.ultimoPgtoSap);
-      if (ultimoPgtoDeDate) {
-        if (!ultimoPgtoDate || ultimoPgtoDate < ultimoPgtoDeDate) return false;
-      }
-
-      if (ultimoPgtoAteDate) {
-        if (!ultimoPgtoDate || ultimoPgtoDate > ultimoPgtoAteDate) return false;
-      }
-
-      if (ultimoValorDe !== null && item.ultimoValorPagoSap < ultimoValorDe) return false;
-      if (ultimoValorAte !== null && item.ultimoValorPagoSap > ultimoValorAte) return false;
-
-      return true;
-    });
+    this.painelVencimentosFiltrado = filtrarPainelVencimentos(this.painelVencimentos, {
+      imovelSap,
+      contratoSiclg,
+      locador,
+      cpfCnpj,
+      vigenciaDe,
+      vigenciaAte,
+      status,
+      ultimoPgtoDe,
+      ultimoPgtoAte,
+      ultimoValorDe,
+      ultimoValorAte
+    }, (value?: string) => this.parseDate(value), (value: string) => this.normalizarDocumentoFiltroPainelVencimentos(value));
 
     this.currentPagePainel = 1;
     this.atualizarRotuloFiltrosPainelVencimentos();
@@ -4282,7 +3797,7 @@ export class SistemaSILIC {
 
   private limparFiltrosPainelVencimentos(): void {
     [
-      'painelContratoSapFiltro',
+      'painelImovelSapFiltro',
       'painelContratoSiclgFiltro',
       'painelLocadorFiltro',
       'painelCpfCnpjFiltro',
@@ -4300,10 +3815,10 @@ export class SistemaSILIC {
       }
     });
 
-    this.painelVencimentosFiltrado = [...this.painelVencimentos];
     this.currentPagePainel = 1;
     this.atualizarRotuloFiltrosPainelVencimentos();
     this.sincronizarToggleFiltrosPainelVencimentos(false);
+    this.painelVencimentosFiltrado = [...this.painelVencimentos];
     this.atualizarPainelVencimentos(this.painelVencimentosFiltrado);
   }
 
@@ -4327,7 +3842,7 @@ export class SistemaSILIC {
     const label = document.getElementById('painelFiltroAtivoLabel');
     if (!label) return;
 
-    const contratoSap = ((document.getElementById('painelContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim();
+    const imovelSap = ((document.getElementById('painelImovelSapFiltro') as HTMLInputElement | null)?.value || '').trim();
     const contratoSiclg = ((document.getElementById('painelContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim();
     const locador = ((document.getElementById('painelLocadorFiltro') as HTMLInputElement | null)?.value || '').trim();
     const cpfCnpj = ((document.getElementById('painelCpfCnpjFiltro') as HTMLInputElement | null)?.value || '').trim();
@@ -4340,8 +3855,8 @@ export class SistemaSILIC {
     const ultimoValorAte = ((document.getElementById('painelUltimoValorAteFiltro') as HTMLInputElement | null)?.value || '').trim();
     const filtrosAtivos: string[] = [];
 
-    if (contratoSap) {
-      filtrosAtivos.push(`Contrato (SAP): ${contratoSap}`);
+    if (imovelSap) {
+      filtrosAtivos.push(`Imóvel (SAP): ${imovelSap}`);
     }
 
     if (contratoSiclg) {
@@ -4452,7 +3967,7 @@ export class SistemaSILIC {
 
   private aplicarFiltrosPainelAcoesRenovatorias(): void {
     const codigoSijur = ((document.getElementById('formalCodigoSijurFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
-    const contratoSap = ((document.getElementById('formalContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const imovelSap = ((document.getElementById('formalImovelSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const contratoSiclg = ((document.getElementById('formalContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const protocoloFormal = ((document.getElementById('formalProtocoloFormalFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const unidade = ((document.getElementById('formalUnidadeFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
@@ -4462,24 +3977,17 @@ export class SistemaSILIC {
     const situacaoSijur = (document.getElementById('formalSituacaoSijurFiltro') as HTMLSelectElement | null)?.value || '';
     const situacaoCefor = (document.getElementById('formalSituacaoCeforFiltro') as HTMLSelectElement | null)?.value || '';
 
-    const vigenciaAteDate = vigenciaAte ? new Date(vigenciaAte) : null;
-
-    this.painelAcoesRenovatoriasFiltrado = this.painelAcoesRenovatorias.filter((item) => {
-      if (codigoSijur && !item.codigoSijur.toLowerCase().includes(codigoSijur)) return false;
-      if (contratoSap && !item.contratoSap.toLowerCase().includes(contratoSap)) return false;
-      if (contratoSiclg && !item.contratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
-      if (protocoloFormal && !item.protocoloFormalSiclg.toLowerCase().includes(protocoloFormal)) return false;
-      if (unidade && !item.unidade.toLowerCase().includes(unidade)) return false;
-      if (numeroProcesso && !item.numeroProcessoSiclg.toLowerCase().includes(numeroProcesso)) return false;
-      if (situacaoSiclg && item.situacaoSiclg !== situacaoSiclg) return false;
-      if (situacaoSijur && item.situacaoSijur !== situacaoSijur) return false;
-      if (situacaoCefor && item.situacaoCefor !== situacaoCefor) return false;
-
-      if (vigenciaAteDate) {
-        if (!item.vigenciaDate || item.vigenciaDate > vigenciaAteDate) return false;
-      }
-
-      return true;
+    this.painelAcoesRenovatoriasFiltrado = filtrarPainelAcoesRenovatorias(this.painelAcoesRenovatorias, {
+      codigoSijur,
+      imovelSap,
+      contratoSiclg,
+      protocoloFormal,
+      unidade,
+      numeroProcesso,
+      vigenciaAte,
+      situacaoSiclg,
+      situacaoSijur,
+      situacaoCefor
     });
 
     this.currentPagePainelFormal = 1;
@@ -4488,7 +3996,7 @@ export class SistemaSILIC {
 
   private limparFiltrosPainelAcoesRenovatorias(): void {
     this.setInputValue('formalCodigoSijurFiltro', '');
-    this.setInputValue('formalContratoSapFiltro', '');
+    this.setInputValue('formalImovelSapFiltro', '');
     this.setInputValue('formalContratoSiclgFiltro', '');
     this.setInputValue('formalProtocoloFormalFiltro', '');
     this.setInputValue('formalUnidadeFiltro', '');
@@ -4650,7 +4158,7 @@ export class SistemaSILIC {
   private aplicarFiltrosPainelAvisoVencimento(): void {
     this.atualizarOpcoesDinamicasFiltrosPainelAviso();
 
-    const contratoSap = ((document.getElementById('avisoContratoSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+    const imovelSap = ((document.getElementById('avisoImovelSapFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const contratoSiclg = ((document.getElementById('avisoContratoSiclgFiltro') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
     const situacaoSiclg = (document.getElementById('avisoSituacaoSiclgFiltro') as HTMLSelectElement | null)?.value || '';
     const fimVigenciaAte = (document.getElementById('avisoFimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
@@ -4663,39 +4171,23 @@ export class SistemaSILIC {
     const janela = (document.getElementById('avisoJanelaFiltro') as HTMLSelectElement | null)?.value || '';
     const limiteArAte = (document.getElementById('avisoLimiteArFiltro') as HTMLInputElement | null)?.value || '';
 
-    const fimVigenciaDate = fimVigenciaAte ? new Date(fimVigenciaAte) : null;
-    const ultimoPagamentoDate = ultimoPagamentoAte ? new Date(ultimoPagamentoAte) : null;
-    const limiteArDate = limiteArAte ? new Date(limiteArAte) : null;
-
-    this.painelAvisoVencimentoFiltrado = this.painelAvisoVencimento.filter((item) => {
-      if (contratoSap && !item.contratoSap.toLowerCase().includes(contratoSap)) return false;
-      if (contratoSiclg && !item.contratoSiclg.toLowerCase().includes(contratoSiclg)) return false;
-      if (situacaoSiclg && item.situacaoSiclg !== situacaoSiclg) return false;
-      if (this.avisoStatusBadgeFiltroAtivo && item.situacaoSiclg !== this.avisoStatusBadgeFiltroAtivo) return false;
-      if (decisao && item.decisaoProrrogar !== decisao) return false;
-      if (decisaoAr && item.decisaoAcaoRenovatoria !== decisaoAr) return false;
-      if (fase && item.fase !== fase) return false;
-      if (demanda && item.demandaSiclg !== demanda) return false;
-      if (colegiado && item.colegiado !== colegiado) return false;
-      if (janela && this.classificarJanelaAviso(item) !== janela) return false;
-      if (this.avisoFaixaFiltroAtiva && this.classificarFaixaSinalizacaoAviso(item) !== this.avisoFaixaFiltroAtiva) return false;
-      if (this.avisoFiltroRiscoAr87Ativo && !this.estaEmRiscoAr87(item)) return false;
-
-      if (fimVigenciaDate) {
-        if (!item.fimVigenciaDate || item.fimVigenciaDate > fimVigenciaDate) return false;
-      }
-
-      if (ultimoPagamentoDate) {
-        if (!item.ultimoPagamentoDate || item.ultimoPagamentoDate > ultimoPagamentoDate) return false;
-      }
-
-      if (limiteArDate) {
-        const limite = this.parseDate(item.limiteLegalAr);
-        if (!limite || limite > limiteArDate) return false;
-      }
-
-      return true;
-    });
+    this.painelAvisoVencimentoFiltrado = filtrarPainelAvisoVencimento(this.painelAvisoVencimento, {
+      imovelSap,
+      contratoSiclg,
+      situacaoSiclg,
+      fimVigenciaAte,
+      ultimoPagamentoAte,
+      decisao,
+      decisaoAr,
+      fase,
+      demanda,
+      colegiado,
+      janela,
+      limiteArAte,
+      statusBadgeFiltroAtivo: this.avisoStatusBadgeFiltroAtivo,
+      faixaFiltroAtiva: this.avisoFaixaFiltroAtiva,
+      filtroRiscoAr87Ativo: this.avisoFiltroRiscoAr87Ativo
+    }, (value?: string) => this.parseDate(value));
 
     this.currentPagePainelAviso = 1;
     this.atualizarEstadoVisualFiltroFaixaAviso();
@@ -4705,7 +4197,7 @@ export class SistemaSILIC {
   }
 
   private limparFiltrosPainelAvisoVencimento(): void {
-    this.setInputValue('avisoContratoSapFiltro', '');
+    this.setInputValue('avisoImovelSapFiltro', '');
     this.setInputValue('avisoContratoSiclgFiltro', '');
     this.setInputValue('avisoFimVigenciaFiltro', '');
     this.setInputValue('avisoUltimoPagamentoFiltro', '');
@@ -4751,7 +4243,7 @@ export class SistemaSILIC {
       const tr = document.createElement('tr');
 
       tr.innerHTML = `
-        <td>${item.numeroContratoSap}</td>
+        <td>${item.numeroImovelSap}</td>
         <td>${item.numeroContratoSiclg}</td>
         <td>${item.locadorSap}</td>
         <td>${item.cnpjCpfLocadorSiclg}</td>
@@ -4798,7 +4290,7 @@ export class SistemaSILIC {
 
       tr.innerHTML = `
         <td>${item.codigoSijur}</td>
-        <td>${item.contratoSap}</td>
+        <td>${item.imovelSap}</td>
         <td>${item.contratoSiclg}</td>
         <td>${item.protocoloFormalSiclg}</td>
         <td>${item.unidade}</td>
@@ -4839,24 +4331,11 @@ export class SistemaSILIC {
   }
 
   private calcularDiasParaVencimentoAviso(item: PainelAvisoVencimentoRow): number | null {
-    if (!item.fimVigenciaDate) return null;
-    const hoje = new Date();
-    const hojeBase = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-    const fimBase = new Date(item.fimVigenciaDate.getFullYear(), item.fimVigenciaDate.getMonth(), item.fimVigenciaDate.getDate());
-    return Math.ceil((fimBase.getTime() - hojeBase.getTime()) / (1000 * 60 * 60 * 24));
+    return calcularDiasParaVencimentoAvisoPrazo(item);
   }
 
   private classificarJanelaAviso(item: PainelAvisoVencimentoRow): string {
-    const dias = this.calcularDiasParaVencimentoAviso(item);
-    if (dias === null) return '1_ano';
-    if (dias <= 0) return 'vencido';
-    if (dias <= 29) return 'menor_1_mes';
-    if (dias <= 30) return '1_mes';
-    if (dias <= 60) return '2_meses';
-    if (dias <= 90) return '3_meses';
-    if (dias <= 180) return '6_meses';
-    if (dias > 365) return 'mais_1_ano';
-    return '1_ano';
+    return classificarJanelaAvisoPrazo(item);
   }
 
   private obterRotuloJanelaAviso(item: PainelAvisoVencimentoRow): string {
@@ -4966,49 +4445,41 @@ export class SistemaSILIC {
       const seletorDesabilitado = decisaoTravada ? 'disabled' : '';
       const seletorTitulo = decisaoTravada ? 'title="Decisão bloqueada após solicitação de Ato Formal"' : '';
       const podeADecidirProrrogacao = this.podeManterADecidirProrrogacao(item);
+      const exibindoADecidirSomenteParaEscolhaExplicita = item.decisaoProrrogar === 'a_decidir' && !podeADecidirProrrogacao;
       const opcoesProrrogacao = podeADecidirProrrogacao
         ? `
             <option value="a_decidir" ${opcaoADecidir}>A decidir</option>
             <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
             <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
           `
-        : `
+        : (exibindoADecidirSomenteParaEscolhaExplicita
+          ? `
+            <option value="a_decidir" selected disabled>A decidir</option>
             <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
             <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
-          `;
-      const podeDecidirAr = this.estaNaJanelaLegalAcaoRenovatoria(item);
-      const podeDecidirArComSeguranca = this.estaNaJanelaPrudenteGestorAr(item);
-      const alertaAr87 = this.estaEmRiscoAr87(item);
-      const prazoDecadencialEncerrado = this.estaAposPrazoDecadencialAr(item);
-      const decisaoArTitulo = !podeDecidirAr
-        ? (prazoDecadencialEncerrado
-          ? 'title="Prazo legal encerrado para ingresso da ação renovatória"'
-          : 'title="Fora da janela legal da AR (12-6 meses): decisão indisponível no momento."')
-        : '';
-      const seletorArDesabilitado = !podeDecidirAr ? 'disabled' : '';
-      const opcaoIngressarMarkup = (podeDecidirAr && podeDecidirArComSeguranca)
-        ? `<option value="ingressar" ${opcaoArIngressar}>Ingressar</option>`
-        : '';
-      const opcoesAr = podeDecidirAr
-        ? `
-            <option value="a_decidir" ${opcaoArADecidir}>A decidir</option>
-            ${opcaoIngressarMarkup}
-            <option value="nao_ingressar" ${opcaoArNaoIngressar}>Não ingressar</option>
           `
-        : (prazoDecadencialEncerrado
-          ? '<option value="nao_ingressar" selected>Não ingressar</option>'
-          : '<option value="a_decidir" selected>A decidir</option>');
-      const legendaAr = podeDecidirArComSeguranca
-        ? 'Janela prudente do gestor ativa (12-7 meses)'
-        : (podeDecidirAr
-          ? 'Janela legal da AR ativa (12-6), mas fora da janela operacional do gestor (12-7); escalar Gestao Formal/Juridico'
-          : (prazoDecadencialEncerrado
-            ? 'Prazo legal de ingresso encerrado; decisão travada em Não ingressar.'
-            : 'Antes da janela legal da AR (12-6 meses); decisão ainda indisponível.'));
+          : `
+            <option value="prorrogar" ${opcaoProrrogar}>Prorrogar</option>
+            <option value="nao_prorrogar" ${opcaoNaoProrrogar}>Não prorrogar</option>
+          `);
+      const alertaAr87 = this.estaEmRiscoAr87(item);
+      const bloqueioAr = this.obterBloqueioDecisaoAcaoRenovatoria(item);
+      const decisaoArTitulo = bloqueioAr.titulo;
+      const seletorArDesabilitado = bloqueioAr.bloqueada ? 'disabled' : '';
+      const opcoesAr = item.decisaoProrrogar === 'nao_prorrogar'
+        ? '<option value="nao_ingressar" selected>Não ingressar</option>'
+        : (item.decisaoProrrogar === 'a_decidir'
+          ? '<option value="a_decidir" selected>A decidir</option>'
+          : `
+              <option value="a_decidir" ${opcaoArADecidir}>A decidir</option>
+              <option value="ingressar" ${opcaoArIngressar}>Ingressar</option>
+              <option value="nao_ingressar" ${opcaoArNaoIngressar}>Não ingressar</option>
+            `);
+      const legendaAr = bloqueioAr.legenda;
       const legendaArCompleta = alertaAr87
         ? `${legendaAr}. Alerta: contrato na faixa 8-7 meses com pendencia simultanea de prorrogacao e AR.`
         : legendaAr;
-      const legendaArClass = podeDecidirAr ? 'aviso-ar-hint is-open' : 'aviso-ar-hint is-closed';
+      const legendaArClass = bloqueioAr.classe;
       const exigeLaudo = this.exigeLaudoAvaliacao(item);
       const exibirPerguntaLaudo = exigeLaudo;
       const opcaoLaudoNaoSolicitado = item.situacaoLaudoAvaliacao === 'nao_solicitado' ? 'selected' : '';
@@ -5066,17 +4537,23 @@ export class SistemaSILIC {
           `
         : '';
       const podeContratacao = this.podeSolicitarContratacao(item);
+      const orientarDesmobilizacao = item.decisaoProrrogar === 'nao_prorrogar' && !podeContratacao;
+      const contratoVencido = this.classificarJanelaAviso(item) === 'vencido';
       const decisoesConcluidasAtoFormal = item.decisaoProrrogar !== 'a_decidir' && item.decisaoAcaoRenovatoria !== 'a_decidir';
-      const mostrarSolicitacaoAtoFormal = item.decisaoProrrogar === 'prorrogar' && decisoesConcluidasAtoFormal && !item.protocoloFormal;
+      const mostrarSolicitacaoAtoFormal = !contratoVencido && item.decisaoProrrogar === 'prorrogar' && decisoesConcluidasAtoFormal && !item.protocoloFormal;
       const protocoloContratacaoMarkup = item.protocoloContratacao
         ? `<span class="badge badge-info">${item.protocoloContratacao}</span>`
-        : (podeContratacao ? `<button class="btn-clear" type="button" data-aviso-solicitar-contratacao-id="${item.contratoId}">Solicitar contratação</button>` : '<span class="aviso-protocolo-vazio">-</span>');
+        : (podeContratacao
+          ? `<button class="btn-clear" type="button" data-aviso-solicitar-contratacao-id="${item.contratoId}">Solicitar regularização</button>`
+          : (orientarDesmobilizacao
+            ? '<small class="aviso-ar-hint is-closed">Providenciar a desmobilização do imóvel.</small>'
+            : '<span class="aviso-protocolo-vazio">-</span>'));
       const protocoloFormalMarkup = item.protocoloFormal
         ? `<span class="badge badge-info">${item.protocoloFormal}</span>`
-        : (mostrarSolicitacaoAtoFormal ? `<button class="btn-clear" type="button" data-aviso-solicitar-id="${item.contratoId}">Solicitar ato formal</button>` : '<span class="aviso-protocolo-vazio">-</span>');
+        : (mostrarSolicitacaoAtoFormal ? `<button class="btn-clear" type="button" data-aviso-solicitar-id="${item.contratoId}">Solicitar prorrogação</button>` : '<span class="aviso-protocolo-vazio">-</span>');
 
       tr.innerHTML = `
-        <td>${item.contratoSap}</td>
+        <td>${item.imovelSap}</td>
         <td>${item.fimVigencia}</td>
         <td>
           <select class="filter-select aviso-decisao-select" data-aviso-decisao-id="${item.contratoId}" ${seletorDesabilitado} ${seletorTitulo} ${dadosInsuficientes ? 'disabled' : ''}>
@@ -5093,9 +4570,11 @@ export class SistemaSILIC {
         <td class="aviso-protocolo-cell">${protocoloContratacaoMarkup}</td>
         <td class="aviso-protocolo-cell">${protocoloFormalMarkup}</td>
         <td>
+          ${blocoLaudo}
+        </td>
+        <td>
           <div class="aviso-acoes-coluna">
-            ${blocoLaudo}
-            <button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar contrato</button>
+            <button class="btn-table-action" data-formal-aviso-id="${item.contratoId}">Detalhar</button>
             ${dadosInsuficientes ? `<small class="aviso-ar-hint is-closed">Dados insuficientes de vigência: revisar cadastro do contrato.</small>` : ''}
           </div>
         </td>
@@ -5348,7 +4827,7 @@ export class SistemaSILIC {
     if (!registro || !modal) return;
 
     this.setElementText('formalDetCodigoSijur', registro.codigoSijur);
-    this.setElementText('formalDetContratoSap', registro.contratoSap);
+    this.setElementText('formalDetImovelSap', registro.imovelSap);
     this.setElementText('formalDetContratoSiclg', registro.contratoSiclg);
     this.setElementText('formalDetProtocolo', registro.protocoloFormalSiclg);
     this.setElementText('formalDetProcesso', registro.numeroProcessoSiclg);
@@ -5701,7 +5180,7 @@ export class SistemaSILIC {
         }
         return '-';
       })();
-      const sap = contrato.numeroContratoSap;
+      const sap = contrato.numeroImovelSap;
       const fornecedor = contrato.locadorSap;
       const uf = contrato.uf;
       const label = `${sap} | ${fornecedor} | ${uf} | ${municipio}`;
@@ -6176,7 +5655,7 @@ export class SistemaSILIC {
   private obterResumoContratoOperacional(contratoId: string): string {
     const contrato = this.painelVencimentos.find((item) => item.contratoId === contratoId);
     if (!contrato) return 'Contrato não encontrado na base atual.';
-    return `Contrato SAP ${contrato.numeroContratoSap} | SICLG ${contrato.numeroContratoSiclg} | Fornecedor ${contrato.locadorSap} | Vigência ${contrato.vigenciaSap}`;
+    return `Imóvel SAP ${contrato.numeroImovelSap} | SICLG ${contrato.numeroContratoSiclg} | Fornecedor ${contrato.locadorSap} | Vigência ${contrato.vigenciaSap}`;
   }
 
   private atualizarResumoContratoEtapa(selectId: string, resumoId: string): void {
@@ -6993,7 +6472,7 @@ export class SistemaSILIC {
       (document.getElementById('negociacaoNovaDataPagamento') as HTMLInputElement | null)!.value = registro?.novaDataPagamento || '';
       temCarenciaToggle.checked = registro?.temCarencia === 'sim';
       (document.getElementById('negociacaoCarenciaDias') as HTMLInputElement | null)!.value = registro?.carenciaDias !== undefined ? String(registro.carenciaDias) : '';
-      (document.getElementById('negociacaoIndiceReajuste') as HTMLInputElement | null)!.value = registro?.indiceReajuste || '';
+      (document.getElementById('negociacaoIndiceReajuste') as HTMLSelectElement | null)!.value = registro?.indiceReajuste || '';
       (document.getElementById('negociacaoDataProximoReajuste') as HTMLInputElement | null)!.value = registro?.dataProximoReajuste || '';
       if (preverMultaRescisao) {
         preverMultaRescisao.value = registro?.preverMultaRescisao || '';
@@ -7264,7 +6743,7 @@ export class SistemaSILIC {
         novaDataPagamento: (temAlteracoesContratuaisToggle.checked && alterarDataPagamentoToggle.checked) ? novaDataPagamento : '',
         temCarencia: temCarenciaToggle.checked ? 'sim' : 'nao',
         carenciaDias: temCarenciaToggle.checked ? this.lerNumeroInput('negociacaoCarenciaDias') : undefined,
-        indiceReajuste: (document.getElementById('negociacaoIndiceReajuste') as HTMLInputElement | null)?.value.trim() || '',
+        indiceReajuste: (document.getElementById('negociacaoIndiceReajuste') as HTMLSelectElement | null)?.value || '',
         dataProximoReajuste,
         preverMultaRescisao: (preverMultaRescisao?.value || '') as 'sim' | 'nao' | '',
         clausulaMultaRescisao,
@@ -7314,7 +6793,7 @@ export class SistemaSILIC {
       const fimDate = this.parseDate(item.vigenciaSap) || this.parseDate(item.vigenciaSiclg);
       return {
         contratoId: item.contratoId,
-        contratoSap: item.numeroContratoSap,
+        imovelSap: item.numeroImovelSap,
         vigenciaSap: item.vigenciaSap,
         contratoSiclg: item.numeroContratoSiclg,
         vigenciaSiclg: item.vigenciaSiclg,
@@ -7333,12 +6812,12 @@ export class SistemaSILIC {
       const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
       const inicio = imovel?.inicioRelacao || this.formatDate(imovel?.dataRegistro) || '-';
       const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
-        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
-        : item.numeroContratoSap;
+        ? `${item.numeroImovelSap} - ${item.numeroContratoSiclg}`
+        : item.numeroImovelSap;
 
       return {
         contratoId: item.contratoId,
-        contratoSapSiclg: contratoComposto,
+        identificacaoImovelContrato: contratoComposto,
         fornecedor: item.locadorSap,
         descricaoContrato: item.descricaoSap,
         inicioVigencia: inicio,
@@ -7356,14 +6835,14 @@ export class SistemaSILIC {
       const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
       const inicio = imovel?.inicioRelacao || this.formatDate(imovel?.dataRegistro) || '-';
       const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
-        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
-        : item.numeroContratoSap;
+        ? `${item.numeroImovelSap} - ${item.numeroContratoSiclg}`
+        : item.numeroImovelSap;
 
       return {
         contratoId: item.contratoId,
-        contratoSapSiclg: contratoComposto,
+        identificacaoImovelContrato: contratoComposto,
         fornecedor: item.locadorSap,
-        descricaoContratoSap: item.descricaoSap,
+        descricaoImovelSap: item.descricaoSap,
         inicioVigencia: inicio,
         fimVigencia: item.vigenciaSap,
         valorMaximo: Math.max(item.valorProrrogacaoMensal, item.valorAcordado),
@@ -7382,8 +6861,8 @@ export class SistemaSILIC {
       const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
       const inicio = imovel?.inicioRelacao || this.formatDate(imovel?.dataRegistro) || '-';
       const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
-        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
-        : item.numeroContratoSap;
+        ? `${item.numeroImovelSap} - ${item.numeroContratoSiclg}`
+        : item.numeroImovelSap;
       const decisao = item.decisaoOperacional || 'Reavaliar';
       const houveAcordo = item.valorAcordado > 0 ? 'Sim' : 'Não';
       const incluirNoSiclg = (item.numeroContratoSiclg !== '-' || decisao === 'Prorrogar') ? 'Sim' : 'Não';
@@ -7391,9 +6870,9 @@ export class SistemaSILIC {
 
       return {
         contratoId: item.contratoId,
-        contratoSapSiclg: contratoComposto,
+        identificacaoImovelContrato: contratoComposto,
         fornecedor: item.locadorSap,
-        descricaoContratoSap: item.descricaoSap,
+        descricaoImovelSap: item.descricaoSap,
         inicioVigencia: inicio,
         fimVigencia: item.vigenciaSap,
         decisaoOperacional: decisao,
@@ -7411,8 +6890,8 @@ export class SistemaSILIC {
     const fase61: Fase61OperacionalRow[] = this.painelVencimentos.map((item) => {
       const imovel = this.imoveisOriginais.find((i) => i.id === item.contratoId);
       const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
-        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
-        : item.numeroContratoSap;
+        ? `${item.numeroImovelSap} - ${item.numeroContratoSiclg}`
+        : item.numeroImovelSap;
       const tipoProcesso = item.numeroContratoSiclg === '-' ? 'Nova contratação' : 'Contratação complementar';
       const fimDate = this.parseDate(item.vigenciaSap);
       const diasParaFim = fimDate ? Math.ceil((fimDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
@@ -7424,7 +6903,7 @@ export class SistemaSILIC {
 
       return {
         contratoId: item.contratoId,
-        contratoSapSiclg: contratoComposto,
+        identificacaoImovelContrato: contratoComposto,
         fornecedor: item.locadorSap,
         objeto: imovel?.descricaoObjeto || item.descricaoSap,
         demandante: item.demandaSiclg || 'Rede de Atendimento',
@@ -7453,8 +6932,8 @@ export class SistemaSILIC {
       const prazoLimite = fimDate ? new Date(fimDate.getTime()) : null;
       if (prazoLimite) prazoLimite.setDate(prazoLimite.getDate() - 120);
       const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
-        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
-        : item.numeroContratoSap;
+        ? `${item.numeroImovelSap} - ${item.numeroContratoSiclg}`
+        : item.numeroImovelSap;
       const qtdAditivos = imovel?.termosAditivos?.length || 0;
       const diasParaFim = fimDate ? Math.ceil((fimDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
       const situacaoPrazo = diasParaFim === null ? 'Sem prazo' : diasParaFim <= 30 ? 'Crítico' : diasParaFim <= 90 ? 'Atenção' : 'No prazo';
@@ -7465,7 +6944,7 @@ export class SistemaSILIC {
 
       return {
         contratoId: item.contratoId,
-        contratoSapSiclg: contratoComposto,
+        identificacaoImovelContrato: contratoComposto,
         fornecedor: item.locadorSap,
         objeto: imovel?.descricaoObjeto || item.descricaoSap,
         gestorOperacional: imovel?.gestaoOperacional || 'Gestor Operacional',
@@ -7493,12 +6972,12 @@ export class SistemaSILIC {
       const dataNotificacao = fimDate ? new Date(fimDate.getTime()) : null;
       if (dataNotificacao) dataNotificacao.setDate(dataNotificacao.getDate() - 60);
       const contratoComposto = item.numeroContratoSiclg && item.numeroContratoSiclg !== '-'
-        ? `${item.numeroContratoSap} - ${item.numeroContratoSiclg}`
-        : item.numeroContratoSap;
+        ? `${item.numeroImovelSap} - ${item.numeroContratoSiclg}`
+        : item.numeroImovelSap;
 
       return {
         contratoId: item.contratoId,
-        contratoSapSiclg: contratoComposto,
+        identificacaoImovelContrato: contratoComposto,
         fornecedor: item.locadorSap,
         objeto: imovel?.descricaoObjeto || item.descricaoSap,
         dataNotificacao: dataNotificacao ? this.formatDate(dataNotificacao.toISOString()) : '-',
@@ -7630,10 +7109,7 @@ export class SistemaSILIC {
 
   private aplicarFiltrosFase1Operacional(): void {
     const procurar = ((document.getElementById('fase1ProcurarFiltro') as HTMLInputElement | null)?.value || '').toLowerCase();
-    this.fase1RowsFiltradas = this.fase1Rows.filter((row) => {
-      if (!procurar) return true;
-      return row.dataNotificacao.toLowerCase().includes(procurar);
-    });
+    this.fase1RowsFiltradas = filtrarFase1(this.fase1Rows, procurar);
     this.atualizarTabelaFase1Operacional(this.fase1RowsFiltradas);
   }
 
@@ -7647,13 +7123,7 @@ export class SistemaSILIC {
   private aplicarFiltrosFase2Operacional(): void {
     const uf = (document.getElementById('fase2UfFiltro') as HTMLSelectElement | null)?.value || '';
     const fimVigencia = (document.getElementById('fase2FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
-    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
-
-    this.fase2RowsFiltradas = this.fase2Rows.filter((row) => {
-      if (uf && row.uf !== uf) return false;
-      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
-      return true;
-    });
+    this.fase2RowsFiltradas = filtrarFase2(this.fase2Rows, { uf, fimVigencia });
 
     this.salvarFiltrosFaseSessao('2');
 
@@ -7675,13 +7145,7 @@ export class SistemaSILIC {
   private aplicarFiltrosFase3Operacional(): void {
     const uf = (document.getElementById('fase3UfFiltro') as HTMLSelectElement | null)?.value || '';
     const fimVigencia = (document.getElementById('fase3FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
-    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
-
-    this.fase3RowsFiltradas = this.fase3Rows.filter((row) => {
-      if (uf && row.uf !== uf) return false;
-      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
-      return true;
-    });
+    this.fase3RowsFiltradas = filtrarFase3(this.fase3Rows, { uf, fimVigencia });
 
     this.salvarFiltrosFaseSessao('3');
 
@@ -7703,13 +7167,7 @@ export class SistemaSILIC {
   private aplicarFiltrosFase4Operacional(): void {
     const uf = (document.getElementById('fase4UfFiltro') as HTMLSelectElement | null)?.value || '';
     const fimVigencia = (document.getElementById('fase4FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
-    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
-
-    this.fase4RowsFiltradas = this.fase4Rows.filter((row) => {
-      if (uf && row.uf !== uf) return false;
-      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
-      return true;
-    });
+    this.fase4RowsFiltradas = filtrarFase4(this.fase4Rows, { uf, fimVigencia });
 
     this.salvarFiltrosFaseSessao('4');
 
@@ -7732,14 +7190,7 @@ export class SistemaSILIC {
     const uf = (document.getElementById('fase5UfFiltro') as HTMLSelectElement | null)?.value || '';
     const fimVigencia = (document.getElementById('fase5FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
     const decisao = (document.getElementById('fase5DecisaoFiltro') as HTMLSelectElement | null)?.value || '';
-    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
-
-    this.fase5RowsFiltradas = this.fase5Rows.filter((row) => {
-      if (uf && row.uf !== uf) return false;
-      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
-      if (decisao && row.decisaoOperacional !== decisao) return false;
-      return true;
-    });
+    this.fase5RowsFiltradas = filtrarFase5(this.fase5Rows, { uf, fimVigencia, decisao });
 
     this.salvarFiltrosFaseSessao('5');
 
@@ -7774,25 +7225,22 @@ export class SistemaSILIC {
     const incluidoAte = this.lerDataFiltro('fase61IncluidoAteFiltro');
     const concluidoDe = this.lerDataFiltro('fase61ConcluidoDeFiltro');
     const concluidoAte = this.lerDataFiltro('fase61ConcluidoAteFiltro');
-    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
-
-    this.fase61RowsFiltradas = this.fase61Rows.filter((row) => {
-      if (uf && row.uf !== uf) return false;
-      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
-      if (demandante && !row.demandante.toLowerCase().includes(demandante)) return false;
-      if (equipe && !row.equipeRemota.toLowerCase().includes(equipe)) return false;
-      if (responsavel && !row.responsavel.toLowerCase().includes(responsavel)) return false;
-      if (situacao && row.statusContratacao !== situacao) return false;
-      if (modalidade && row.modalidade !== modalidade) return false;
-      if (protocolo && !row.protocoloSiclg.toLowerCase().includes(protocolo)) return false;
-      if (objeto && !row.objeto.toLowerCase().includes(objeto)) return false;
-      if (!this.dateWithinRange(row.incluidoEmDate, incluidoDe, incluidoAte)) return false;
-      if (!this.dateWithinRange(row.concluidoEmDate, concluidoDe, concluidoAte)) return false;
-      if (this.fase61PrazoSelecionado && row.situacaoPrazo !== this.fase61PrazoSelecionado) return false;
-      return true;
+    this.fase61RowsFiltradas = filtrarFase61(this.fase61Rows, {
+      uf,
+      fimVigencia,
+      demandante,
+      equipe,
+      responsavel,
+      situacao,
+      modalidade,
+      protocolo,
+      objeto,
+      incluidoDe,
+      incluidoAte,
+      concluidoDe,
+      concluidoAte,
+      prazoSelecionado: this.fase61PrazoSelecionado
     });
-
-    this.fase61RowsFiltradas = this.ordenarPorCriticidadePrazo(this.fase61RowsFiltradas);
     this.salvarFiltrosFaseSessao('61');
 
     this.atualizarTabelaFase61Operacional(this.fase61RowsFiltradas);
@@ -7848,24 +7296,21 @@ export class SistemaSILIC {
     const incluidoAte = this.lerDataFiltro('fase62IncluidoAteFiltro');
     const concluidoDe = this.lerDataFiltro('fase62ConcluidoDeFiltro');
     const concluidoAte = this.lerDataFiltro('fase62ConcluidoAteFiltro');
-    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
-
-    this.fase62RowsFiltradas = this.fase62Rows.filter((row) => {
-      if (uf && row.uf !== uf) return false;
-      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
-      if (gestor && !row.gestorOperacional.toLowerCase().includes(gestor)) return false;
-      if (fornecedor && !row.fornecedor.toLowerCase().includes(fornecedor)) return false;
-      if (protocolo && !row.protocoloSiclg.toLowerCase().includes(protocolo)) return false;
-      if (situacao && row.statusRenovacao !== situacao) return false;
-      if (tipoDemanda && row.tipoDemanda !== tipoDemanda) return false;
-      if (objeto && !row.objeto.toLowerCase().includes(objeto)) return false;
-      if (!this.dateWithinRange(row.incluidoEmDate, incluidoDe, incluidoAte)) return false;
-      if (!this.dateWithinRange(row.concluidoEmDate, concluidoDe, concluidoAte)) return false;
-      if (this.fase62PrazoSelecionado && row.situacaoPrazo !== this.fase62PrazoSelecionado) return false;
-      return true;
+    this.fase62RowsFiltradas = filtrarFase62(this.fase62Rows, {
+      uf,
+      fimVigencia,
+      gestor,
+      fornecedor,
+      protocolo,
+      situacao,
+      tipoDemanda,
+      objeto,
+      incluidoDe,
+      incluidoAte,
+      concluidoDe,
+      concluidoAte,
+      prazoSelecionado: this.fase62PrazoSelecionado
     });
-
-    this.fase62RowsFiltradas = this.ordenarPorCriticidadePrazo(this.fase62RowsFiltradas);
     this.salvarFiltrosFaseSessao('62');
 
     this.atualizarTabelaFase62Operacional(this.fase62RowsFiltradas);
@@ -7909,13 +7354,7 @@ export class SistemaSILIC {
   private aplicarFiltrosFase7Operacional(): void {
     const uf = (document.getElementById('fase7UfFiltro') as HTMLSelectElement | null)?.value || '';
     const fimVigencia = (document.getElementById('fase7FimVigenciaFiltro') as HTMLInputElement | null)?.value || '';
-    const fimDate = fimVigencia ? new Date(fimVigencia) : null;
-
-    this.fase7RowsFiltradas = this.fase7Rows.filter((row) => {
-      if (uf && row.uf !== uf) return false;
-      if (fimDate && row.fimVigenciaDate && row.fimVigenciaDate > fimDate) return false;
-      return true;
-    });
+    this.fase7RowsFiltradas = filtrarFase7(this.fase7Rows, { uf, fimVigencia });
 
     this.salvarFiltrosFaseSessao('7');
 
@@ -7968,7 +7407,7 @@ export class SistemaSILIC {
     rows.forEach((row) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${row.contratoSap}</td>
+        <td>${row.imovelSap}</td>
         <td>${row.vigenciaSap}</td>
         <td>${row.contratoSiclg}</td>
         <td>${row.vigenciaSiclg}</td>
@@ -7995,7 +7434,7 @@ export class SistemaSILIC {
     rows.forEach((row) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${row.contratoSapSiclg}</td>
+        <td>${row.identificacaoImovelContrato}</td>
         <td>${row.fornecedor}</td>
         <td>${row.descricaoContrato}</td>
         <td>${row.inicioVigencia}</td>
@@ -8019,9 +7458,9 @@ export class SistemaSILIC {
     rows.forEach((row) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${row.contratoSapSiclg}</td>
+        <td>${row.identificacaoImovelContrato}</td>
         <td>${row.fornecedor}</td>
-        <td>${row.descricaoContratoSap}</td>
+        <td>${row.descricaoImovelSap}</td>
         <td>${row.inicioVigencia}</td>
         <td>${row.fimVigencia}</td>
         <td>${this.formatCurrency(row.valorMaximo)}</td>
@@ -8045,9 +7484,9 @@ export class SistemaSILIC {
     rows.forEach((row) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${row.contratoSapSiclg}</td>
+        <td>${row.identificacaoImovelContrato}</td>
         <td>${row.fornecedor}</td>
-        <td>${row.descricaoContratoSap}</td>
+        <td>${row.descricaoImovelSap}</td>
         <td>${row.inicioVigencia}</td>
         <td>${row.fimVigencia}</td>
         <td><span class="badge ${this.getStatusBadgeClass(row.decisaoOperacional)}">${row.decisaoOperacional}</span></td>
@@ -8076,7 +7515,7 @@ export class SistemaSILIC {
       const favorito = this.favoritosFase61.has(row.contratoId);
       tr.innerHTML = `
         <td><button class="btn-favorite${favorito ? ' active' : ''}" data-action="favorite" data-id="${row.contratoId}" title="Favoritar">${favorito ? '★' : '☆'}</button></td>
-        <td>${row.contratoSapSiclg}</td>
+        <td>${row.identificacaoImovelContrato}</td>
         <td>${row.fornecedor}</td>
         <td>${row.objeto}</td>
         <td>${row.tipoProcesso}</td>
@@ -8112,7 +7551,7 @@ export class SistemaSILIC {
       const favorito = this.favoritosFase62.has(row.contratoId);
       tr.innerHTML = `
         <td><button class="btn-favorite${favorito ? ' active' : ''}" data-action="favorite" data-id="${row.contratoId}" title="Favoritar">${favorito ? '★' : '☆'}</button></td>
-        <td>${row.contratoSapSiclg}</td>
+        <td>${row.identificacaoImovelContrato}</td>
         <td>${row.fornecedor}</td>
         <td>${row.objeto}</td>
         <td><span class="badge ${this.getStatusBadgeClass(row.statusRenovacao)}">${row.statusRenovacao}</span></td>
@@ -8144,7 +7583,7 @@ export class SistemaSILIC {
     rows.forEach((row) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${row.contratoSapSiclg}</td>
+        <td>${row.identificacaoImovelContrato}</td>
         <td>${row.fornecedor}</td>
         <td>${row.objeto}</td>
         <td>${row.dataNotificacao}</td>
@@ -8417,28 +7856,11 @@ export class SistemaSILIC {
   }
 
   private dateWithinRange(value: Date | null, start: Date | null, end: Date | null): boolean {
-    if (!start && !end) return true;
-    if (!value) return false;
-
-    const base = this.obterDataBase(value);
-    if (start && base.getTime() < start.getTime()) return false;
-    if (end && base.getTime() > end.getTime()) return false;
-    return true;
+    return dateWithinRangePrazo(value, start, end);
   }
 
-  private ordenarPorCriticidadePrazo<T extends { situacaoPrazo: string }>(rows: T[]): T[] {
-    const order: Record<string, number> = {
-      'Crítico': 0,
-      'Atenção': 1,
-      'No prazo': 2
-    };
-
-    return [...rows].sort((left, right) => {
-      const leftOrder = order[left.situacaoPrazo] ?? 99;
-      const rightOrder = order[right.situacaoPrazo] ?? 99;
-      if (leftOrder !== rightOrder) return leftOrder - rightOrder;
-      return left.situacaoPrazo.localeCompare(right.situacaoPrazo, 'pt-BR');
-    });
+  private ordenarPorCriticidadePrazo(rows: any[]): any[] {
+    return ordenarPorCriticidadePrazoPrazo(rows);
   }
 
   private getStatusBadgeClass(value: string): string {
@@ -8610,59 +8032,13 @@ export class SistemaSILIC {
     const filtroDataInicio = (document.getElementById('filtroDataInicio') as HTMLInputElement)?.value || '';
     const filtroDataFim = (document.getElementById('filtroDataFim') as HTMLInputElement)?.value || '';
 
-    this.imoveis = this.imoveisOriginais.filter(imovel => {
-      // Filtro por código de contrato
-      if (filtroContrato && !imovel.codigo.toLowerCase().includes(filtroContrato)) {
-        return false;
-      }
-
-      // Filtro por utilização
-      if (filtroUtilizacao && imovel.utilizacaoPrincipal !== filtroUtilizacao) {
-        return false;
-      }
-
-      // Filtro por status
-      if (filtroStatus) {
-        const statusMap: { [key: string]: string } = {
-          'Ativo': 'ativo',
-          'Em Prospecção': 'prospeccao',
-          'Em Mobilização': 'mobilizacao',
-          'Em Desmobilização': 'desmobilizacao',
-          'Desativado': 'desativado'
-        };
-        if (imovel.status !== statusMap[filtroStatus]) {
-          return false;
-        }
-      }
-
-      // Filtro por denominação
-      if (filtroDenominacao && !imovel.denominacao.toLowerCase().includes(filtroDenominacao)) {
-        return false;
-      }
-
-      // Filtro por data (se fimValidade estiver disponível)
-      if (filtroDataInicio || filtroDataFim) {
-        if (imovel.fimValidade) {
-          // Converter dd/mm/aaaa para Date
-          const [dia, mes, ano] = imovel.fimValidade.split('/');
-          const dataValidade = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
-
-          if (filtroDataInicio) {
-            const dataInicio = new Date(filtroDataInicio);
-            if (dataValidade < dataInicio) return false;
-          }
-
-          if (filtroDataFim) {
-            const dataFim = new Date(filtroDataFim);
-            if (dataValidade > dataFim) return false;
-          }
-        } else {
-          // Se não tem data de validade, não passa no filtro de data
-          if (filtroDataInicio || filtroDataFim) return false;
-        }
-      }
-
-      return true;
+    this.imoveis = filtrarImoveis(this.imoveisOriginais, {
+      contrato: filtroContrato,
+      utilizacao: filtroUtilizacao,
+      status: filtroStatus,
+      denominacao: filtroDenominacao,
+      dataInicio: filtroDataInicio,
+      dataFim: filtroDataFim
     });
 
     this.imoveis = this.ordenarImoveisPortfolio(this.imoveis);
