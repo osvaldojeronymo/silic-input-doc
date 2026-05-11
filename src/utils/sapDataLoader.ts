@@ -177,17 +177,19 @@ export class SAPDataLoader {
       else if (tipoEdificio.includes('casa')) tipo = 'residencial';
       
       // Mapear status
-      let status: 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao' = 'ativo';
+      let status: 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao' | 'desativado' = 'ativo';
       // Forçar mapeamento robusto para qualquer fonte
       let statusRaw = im.edificio.status || '';
       statusRaw = statusRaw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       if (statusRaw.includes('prospeccao')) status = 'prospeccao';
       else if (statusRaw.includes('mobilizacao') && !statusRaw.includes('des')) status = 'mobilizacao';
       else if (statusRaw.includes('desmobilizacao')) status = 'desmobilizacao';
+      else if (statusRaw.includes('desativado')) status = 'desativado';
       else if (statusRaw.includes('ativo')) status = 'ativo';
       else if (statusRaw.includes('prospec')) status = 'prospeccao';
       else if (statusRaw.includes('mobiliz')) status = 'mobilizacao';
       else if (statusRaw.includes('desmobiliz')) status = 'desmobilizacao';
+      else if (statusRaw.includes('desativ')) status = 'desativado';
       else status = 'ativo'; // fallback
       
       return {

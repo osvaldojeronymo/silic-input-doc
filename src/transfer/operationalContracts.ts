@@ -181,6 +181,7 @@ export interface NegociacaoLocadorPercentualEdit {
 
 export interface EtapaNegociacaoRegistro {
   contextoContrato?: NegociacaoContextoTipo;
+  temTermosNegociados?: 'sim' | 'nao' | '';
   valorPropostoAluguel?: number;
   valorAcordadoPartes?: number;
   dataInicioNegociacao?: string;
@@ -218,11 +219,14 @@ export interface EtapaNegociacaoRegistro {
   alteracaoContratoSocial?: 'sim' | 'nao' | '';
   alteracaoContratoSocialDetalhe?: string;
   locadoresPercentuais?: NegociacaoLocadorPercentualEdit[];
+  temUploadsNegociacao?: 'sim' | 'nao' | '';
   uploadAnexosArquivos?: string[];
   uploadMinutaArquivos?: string[];
   uploadContratoSocialArquivos?: string[];
   uploadAutorizacaoAcimaLaudoArquivos?: string[];
 }
+
+export type ContratoBuscaStatus = 'todos' | 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao' | 'desativado';
 
 export interface ContratoBuscaResultado {
   id: string;
@@ -230,6 +234,7 @@ export interface ContratoBuscaResultado {
   fornecedor: string;
   uf: string;
   municipio: string;
+  status: Exclude<ContratoBuscaStatus, 'todos'>;
   label: string;
   searchText: string;
 }
@@ -238,6 +243,7 @@ export interface ContratoBuscaParams {
   query: string;
   offset: number;
   limit: number;
+  statusFilter?: ContratoBuscaStatus;
 }
 
 export interface ContratoBuscaResponse {
@@ -250,6 +256,7 @@ export type ContratoBuscaProvider = (params: ContratoBuscaParams) => Promise<Con
 
 export interface ContratoBuscaUiState {
   query: string;
+  selectedStatus: ContratoBuscaStatus;
   offset: number;
   total: number;
   hasMore: boolean;

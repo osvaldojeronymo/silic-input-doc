@@ -1104,6 +1104,11 @@ body {
     color: var(--color-info);
 }
 
+.badge-desativado {
+    background: #fde8e8;
+    color: #b42318;
+}
+
 .badge-ok {
     background: #e8f7ee;
     color: #166534;
@@ -1985,6 +1990,23 @@ body {
 .etapa-contrato-resumo {
     margin: 0.35rem 0 0.7rem;
     color: var(--color-gray-700);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.contrato-resumo-chip {
+    font-size: 0.67rem;
+    padding: 0.22rem 0.5rem;
+    border-radius: 999px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.contrato-resumo-texto {
+    min-width: 260px;
+    flex: 1 1 320px;
 }
 
 .etapa-form-grid {
@@ -2078,6 +2100,25 @@ body {
     border-radius: 8px;
     padding: 0.65rem;
 }
+.etapa-gate-hint {
+    margin: 0.25rem 0 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #d6c3a1;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #fffaf0 0%, #f8efe0 100%);
+    color: #6b4f2a;
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.etapa-context-lock.is-locked {
+    opacity: 0.62;
+}
+
+.etapa-context-lock {
+    transition: opacity 0.18s ease;
+}
 
 .etapa-upload-info {
     margin-top: 0.15rem;
@@ -2094,6 +2135,56 @@ body {
     align-items: center;
     gap: 0.35rem;
     min-height: 1.6rem;
+}
+
+.contrato-picker-status-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0.35rem 0 0.45rem;
+}
+
+.contrato-picker-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #334155;
+    padding: 0.28rem 0.62rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.contrato-picker-status-chip:hover,
+.contrato-picker-status-chip:focus-visible {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    outline: none;
+}
+
+.contrato-picker-status-chip.is-active {
+    border-color: #2563eb;
+    background: #dbeafe;
+    color: #1d4ed8;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.contrato-picker-status-chip-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 0.32rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    color: inherit;
+    font-size: 0.68rem;
+    font-weight: 800;
 }
 
 .contrato-picker-loading {
@@ -2194,6 +2285,22 @@ body {
     margin-top: 0.14rem;
     font-size: 0.72rem;
     color: var(--color-gray-700);
+}
+
+.contrato-picker-item-meta-rich {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.32rem 0.5rem;
+}
+
+.contrato-picker-status-badge {
+    border-radius: 999px;
+    padding: 0.16rem 0.46rem;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: none;
 }
 
 .contrato-picker-highlight {

@@ -382,70 +382,76 @@
                         </select>
                     </div>
 
-                    <div class="etapa-form-grid">
-                        <label class="etapa-field">
-                            <span>Área a ser contratada (m²)</span>
-                            <input type="number" id="rtaAreaContratada" class="filter-input" min="0" step="0.01" placeholder="Ex.: 620.50">
-                        </label>
+                    <div id="rtaSelecaoObrigatoriaHint" class="etapa-gate-hint etapa-field-full" role="status" aria-live="polite">
+                        Selecione o imóvel/contrato SAP para liberar o preenchimento do RTA. Os campos e anexos ficam bloqueados até o vínculo com o registro correto.
                     </div>
 
-                    <div id="rtaBenfeitoriasSection" class="etapa-form-subsection" hidden>
-                        <div class="mini-label">Detalhamento de benfeitorias não-recuperáveis (área acima de 550m²)</div>
+                    <div id="rtaContextoBloqueadoSection" class="etapa-context-lock is-locked">
                         <div class="etapa-form-grid">
                             <label class="etapa-field">
-                                <span>Valor das benfeitorias não-recuperáveis (R$)</span>
-                                <input type="number" id="rtaBenfeitoriasValor" class="filter-input" min="0" step="0.01" placeholder="Ex.: 200000">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Possui valor venal do imóvel?</span>
-                                <select id="rtaPossuiValorVenal" class="filter-select">
-                                    <option value="">Selecione</option>
-                                    <option value="sim">Sim</option>
-                                    <option value="nao">Não</option>
-                                </select>
-                            </label>
-                            <label class="etapa-field">
-                                <span>Valor venal do imóvel (R$)</span>
-                                <input type="number" id="rtaValorVenalImovel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 800000">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Parecer CAIXA - número</span>
-                                <input type="text" id="rtaParecerNumero" class="filter-input" placeholder="Número do parecer">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Parecer CAIXA - data</span>
-                                <input type="date" id="rtaParecerData" class="filter-date">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Percentual benfeitorias x valor venal (%)</span>
-                                <input type="number" id="rtaPercentualBenfeitorias" class="filter-input" min="0" step="0.01" readonly>
-                            </label>
-                            <label class="etapa-field etapa-field-full">
-                                <span>Manifestação do negócio</span>
-                                <textarea id="rtaManifestacaoNegocio" class="filter-search" rows="3" placeholder="Descreva a manifestação da área de negócio"></textarea>
-                            </label>
-                            <label class="etapa-field etapa-field-full">
-                                <span>Manifestação da infraestrutura</span>
-                                <textarea id="rtaManifestacaoInfra" class="filter-search" rows="3" placeholder="Descreva a manifestação da infraestrutura"></textarea>
+                                <span>Área a ser contratada (m²)</span>
+                                <input type="number" id="rtaAreaContratada" class="filter-input" min="0" step="0.01" placeholder="Ex.: 620.50">
                             </label>
                         </div>
-                    </div>
 
-                    <div class="etapa-form-grid">
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload do Relatório Técnico Administrativo (RTA)</span>
-                            <input type="file" id="rtaUploadRelatorio" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
-                            <small id="rtaUploadRelatorioInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload do Parecer da Arquitetura/Engenharia CAIXA</span>
-                            <input type="file" id="rtaUploadParecer" class="filter-input" accept=".pdf,.doc,.docx">
-                            <small id="rtaUploadParecerInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
-                    </div>
+                        <div id="rtaBenfeitoriasSection" class="etapa-form-subsection" hidden>
+                            <div class="mini-label">Detalhamento de benfeitorias não-recuperáveis (área acima de 550m²)</div>
+                            <div class="etapa-form-grid">
+                                <label class="etapa-field">
+                                    <span>Valor das benfeitorias não-recuperáveis (R$)</span>
+                                    <input type="number" id="rtaBenfeitoriasValor" class="filter-input" min="0" step="0.01" placeholder="Ex.: 200000">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Possui valor venal do imóvel?</span>
+                                    <select id="rtaPossuiValorVenal" class="filter-select">
+                                        <option value="">Selecione</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Valor venal do imóvel (R$)</span>
+                                    <input type="number" id="rtaValorVenalImovel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 800000">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Parecer CAIXA - número</span>
+                                    <input type="text" id="rtaParecerNumero" class="filter-input" placeholder="Número do parecer">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Parecer CAIXA - data</span>
+                                    <input type="date" id="rtaParecerData" class="filter-date">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Percentual benfeitorias x valor venal (%)</span>
+                                    <input type="number" id="rtaPercentualBenfeitorias" class="filter-input" min="0" step="0.01" readonly>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Manifestação do negócio</span>
+                                    <textarea id="rtaManifestacaoNegocio" class="filter-search" rows="3" placeholder="Descreva a manifestação da área de negócio"></textarea>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Manifestação da infraestrutura</span>
+                                    <textarea id="rtaManifestacaoInfra" class="filter-search" rows="3" placeholder="Descreva a manifestação da infraestrutura"></textarea>
+                                </label>
+                            </div>
+                        </div>
 
-                    <div class="filter-actions">
-                        <button id="rtaSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        <div class="etapa-form-grid">
+                            <label class="etapa-field etapa-field-full">
+                                <span>Upload do Relatório Técnico Administrativo (RTA)</span>
+                                <input type="file" id="rtaUploadRelatorio" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                                <small id="rtaUploadRelatorioInfo" class="mini-label etapa-upload-info"></small>
+                            </label>
+                            <label class="etapa-field etapa-field-full">
+                                <span>Upload do Parecer da Arquitetura/Engenharia CAIXA</span>
+                                <input type="file" id="rtaUploadParecer" class="filter-input" accept=".pdf,.doc,.docx">
+                                <small id="rtaUploadParecerInfo" class="mini-label etapa-upload-info"></small>
+                            </label>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button id="rtaSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -464,74 +470,80 @@
                         </select>
                     </div>
 
-                    <div class="etapa-form-grid">
-                        <label class="etapa-field">
-                            <span>Valor mínimo (R$)</span>
-                            <input type="text" id="laudoValorMinimo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Valor médio (R$)</span>
-                            <input type="text" id="laudoValorMedio" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Valor máximo (R$)</span>
-                            <input type="text" id="laudoValorMaximo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Endereço</span>
-                            <input type="text" id="laudoEndereco" class="filter-input" placeholder="Endereço do imóvel avaliado">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Área</span>
-                            <input type="number" id="laudoArea" class="filter-input" min="0" step="0.01" placeholder="Ex.: 350.75">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Data de emissão</span>
-                            <input type="date" id="laudoDataEmissao" class="filter-date">
-                        </label>
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload do laudo do imóvel</span>
-                            <input type="file" id="laudoUploadArquivo" class="filter-input" accept=".pdf,.doc,.docx,.xlsx,.xls">
-                            <small id="laudoUploadInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
+                    <div id="laudoSelecaoObrigatoriaHint" class="etapa-gate-hint etapa-field-full" role="status" aria-live="polite">
+                        Selecione o imóvel/contrato SAP para liberar o preenchimento do laudo. Os campos e o envio do documento permanecem bloqueados até a associação correta.
                     </div>
 
-                    <div id="laudoDadosSection" class="etapa-form-subsection" hidden>
-                        <div class="mini-label">Informações do laudo</div>
+                    <div id="laudoContextoBloqueadoSection" class="etapa-context-lock is-locked">
                         <div class="etapa-form-grid">
                             <label class="etapa-field">
-                                <span>Data de elaboração</span>
-                                <input type="date" id="laudoDataElaboracao" class="filter-date">
+                                <span>Valor mínimo (R$)</span>
+                                <input type="text" id="laudoValorMinimo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
                             </label>
                             <label class="etapa-field">
-                                <span>Data de validade do laudo</span>
-                                <input type="date" id="laudoDataValidade" class="filter-date">
+                                <span>Valor médio (R$)</span>
+                                <input type="text" id="laudoValorMedio" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
                             </label>
                             <label class="etapa-field">
-                                <span>Número do documento</span>
-                                <input type="text" id="laudoNumeroDocumento" class="filter-input" placeholder="Ex.: LAUDO-2026-001">
+                                <span>Valor máximo (R$)</span>
+                                <input type="text" id="laudoValorMaximo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
                             </label>
                             <label class="etapa-field">
-                                <span>Empresa responsável</span>
-                                <input type="text" id="laudoEmpresaNome" class="filter-input" placeholder="Nome da empresa">
+                                <span>Endereço</span>
+                                <input type="text" id="laudoEndereco" class="filter-input" placeholder="Endereço do imóvel avaliado">
                             </label>
                             <label class="etapa-field">
-                                <span>CNPJ da empresa</span>
-                                <input type="text" id="laudoEmpresaCnpj" class="filter-input" placeholder="Somente números" maxlength="18">
+                                <span>Área</span>
+                                <input type="number" id="laudoArea" class="filter-input" min="0" step="0.01" placeholder="Ex.: 350.75">
                             </label>
                             <label class="etapa-field">
-                                <span>Laudo assinado?</span>
-                                <select id="laudoAssinado" class="filter-select">
-                                    <option value="">Selecione</option>
-                                    <option value="sim">Sim</option>
-                                    <option value="nao">Não</option>
-                                </select>
+                                <span>Data de emissão</span>
+                                <input type="date" id="laudoDataEmissao" class="filter-date">
+                            </label>
+                            <label class="etapa-field etapa-field-full">
+                                <span>Upload do laudo do imóvel</span>
+                                <input type="file" id="laudoUploadArquivo" class="filter-input" accept=".pdf,.doc,.docx,.xlsx,.xls">
+                                <small id="laudoUploadInfo" class="mini-label etapa-upload-info"></small>
                             </label>
                         </div>
-                    </div>
 
-                    <div class="filter-actions">
-                        <button id="laudoSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        <div id="laudoDadosSection" class="etapa-form-subsection" hidden>
+                            <div class="mini-label">Informações do laudo</div>
+                            <div class="etapa-form-grid">
+                                <label class="etapa-field">
+                                    <span>Data de elaboração</span>
+                                    <input type="date" id="laudoDataElaboracao" class="filter-date">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Data de validade do laudo</span>
+                                    <input type="date" id="laudoDataValidade" class="filter-date">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Número do documento</span>
+                                    <input type="text" id="laudoNumeroDocumento" class="filter-input" placeholder="Ex.: LAUDO-2026-001">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Empresa responsável</span>
+                                    <input type="text" id="laudoEmpresaNome" class="filter-input" placeholder="Nome da empresa">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>CNPJ da empresa</span>
+                                    <input type="text" id="laudoEmpresaCnpj" class="filter-input" placeholder="Somente números" maxlength="18">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Laudo assinado?</span>
+                                    <select id="laudoAssinado" class="filter-select">
+                                        <option value="">Selecione</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button id="laudoSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -565,7 +577,23 @@
                         </div>
                     </details>
 
+                    <div id="negociacaoSelecaoObrigatoriaHint" class="etapa-gate-hint etapa-field-full" role="status" aria-live="polite">
+                        Selecione o imóvel/contrato SAP para liberar os blocos abaixo. Os controles permanecem indisponíveis até que a negociação esteja vinculada ao registro correto.
+                    </div>
+
                     <div class="etapa-form-grid">
+                        <label class="etapa-field etapa-field-full">
+                            <span>Condições negociadas com o locador</span>
+                            <small class="mini-label etapa-upload-info">Use este bloco para registrar valores, vigência, cláusulas excepcionais e decisões já consolidadas na rodada de negociação.</small>
+                            <span class="etapa-toggle-control">
+                                <input type="checkbox" id="negociacaoTemTermosNegociadosToggle" class="etapa-toggle-input" aria-label="Habilitar seção de termos negociados">
+                                <span class="etapa-toggle-slider" aria-hidden="true"></span>
+                                <span class="etapa-toggle-text">Liberar registro das condições negociadas</span>
+                            </span>
+                        </label>
+                        <div id="negociacaoTermosNegociadosSection" class="etapa-form-subsection etapa-field-full" hidden>
+                            <div class="mini-label">Condições negociadas</div>
+                            <div class="etapa-form-grid">
                         <label class="etapa-field">
                             <span>Valor proposto de aluguel (R$/mês)</span>
                             <input type="number" id="negociacaoValorPropostoAluguel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 18500.00">
@@ -693,19 +721,15 @@
                             <span>Justifique a negociação acima do laudo.</span>
                             <textarea id="negociacaoAluguelAcimaLaudoJustificativa" class="filter-search" rows="3" placeholder="Informe motivo, excepcionalidade, impacto operacional e responsável pela decisão"></textarea>
                         </label>
-                        <label id="negociacaoUploadAutorizacaoAcimaLaudoWrap" class="etapa-field etapa-field-full" hidden>
-                            <span>Anexar autorização para valor acima do laudo</span>
-                            <input type="file" id="negociacaoUploadAutorizacaoAcimaLaudo" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" multiple>
-                            <small class="mini-label etapa-upload-info">Anexe despacho, parecer ou aprovação formal.</small>
-                            <small id="negociacaoUploadAutorizacaoAcimaLaudoInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
+                            </div>
+                        </div>
                         <label class="etapa-field etapa-field-full">
-                            <span>Informações necessárias para atendimento da solicitação de serviço</span>
-                            <small class="mini-label etapa-upload-info">Preencha para solicitações de prorrogação, rescisão, alteração de titularidade, antecipação de parcela, recebimento de imóvel, revisão de aluguel, reajuste de aluguel, apostilamento, acréscimo ou supressão de área do imóvel de uso.</small>
+                            <span>Dados complementares para instrução da solicitação</span>
+                            <small class="mini-label etapa-upload-info">Use este bloco quando a negociação também demandar ajustes cadastrais, contratuais ou operacionais para formalização da solicitação.</small>
                             <span class="etapa-toggle-control">
                                 <input type="checkbox" id="negociacaoTemAlteracoesContratuaisToggle" class="etapa-toggle-input" aria-label="Habilitar seção de informações necessárias para atendimento da solicitação de serviço">
                                 <span class="etapa-toggle-slider" aria-hidden="true"></span>
-                                <span class="etapa-toggle-text">Habilitar preenchimento das informações</span>
+                                <span class="etapa-toggle-text">Liberar dados da instrução operacional</span>
                             </span>
                         </label>
                         <div id="negociacaoAlteracoesContratuaisSection" class="etapa-form-subsection etapa-field-full" hidden>
@@ -794,21 +818,41 @@
                             <div id="negociacaoLocadoresLista" class="etapa-form-grid"></div>
                             <small id="negociacaoLocadoresInfo" class="mini-label etapa-upload-info">O total dos percentuais deve ser 100%.</small>
                         </div>
-                        <label id="negociacaoUploadContratoSocialWrap" class="etapa-field etapa-field-full" hidden>
-                            <span id="negociacaoUploadContratoSocialLabel">Upload do contrato social do locador</span>
-                            <input type="file" id="negociacaoUploadContratoSocial" class="filter-input" accept=".pdf,.doc,.docx,.zip" multiple>
-                            <small id="negociacaoUploadContratoSocialInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
                         <label class="etapa-field etapa-field-full">
-                            <span>Upload das responsabilidades acordadas entre as partes</span>
-                            <input type="file" id="negociacaoUploadAnexos" class="filter-input" multiple>
-                            <small id="negociacaoUploadAnexosInfo" class="mini-label etapa-upload-info"></small>
+                            <span>Documentos comprobatórios da negociação</span>
+                            <small class="mini-label etapa-upload-info">Use este bloco para anexar minuta, responsabilidades pactuadas, aprovações formais e demais evidências da tratativa.</small>
+                            <span class="etapa-toggle-control">
+                                <input type="checkbox" id="negociacaoTemUploadsToggle" class="etapa-toggle-input" aria-label="Habilitar seção de uploads da negociação">
+                                <span class="etapa-toggle-slider" aria-hidden="true"></span>
+                                <span class="etapa-toggle-text">Liberar anexação de documentos</span>
+                            </span>
                         </label>
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload da minuta contratual negociada entre as partes</span>
-                            <input type="file" id="negociacaoUploadMinuta" class="filter-input" accept=".pdf,.doc,.docx">
-                            <small id="negociacaoUploadMinutaInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
+                        <div id="negociacaoUploadsSection" class="etapa-form-subsection etapa-field-full" hidden>
+                            <div class="mini-label">Documentos de suporte</div>
+                            <div class="etapa-form-grid">
+                                <label id="negociacaoUploadContratoSocialWrap" class="etapa-field etapa-field-full" hidden>
+                                    <span id="negociacaoUploadContratoSocialLabel">Upload do contrato social do locador</span>
+                                    <input type="file" id="negociacaoUploadContratoSocial" class="filter-input" accept=".pdf,.doc,.docx,.zip" multiple>
+                                    <small id="negociacaoUploadContratoSocialInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                                <label id="negociacaoUploadAutorizacaoAcimaLaudoWrap" class="etapa-field etapa-field-full" hidden>
+                                    <span>Anexar autorização para valor acima do laudo</span>
+                                    <input type="file" id="negociacaoUploadAutorizacaoAcimaLaudo" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" multiple>
+                                    <small class="mini-label etapa-upload-info">Anexe despacho, parecer ou aprovação formal.</small>
+                                    <small id="negociacaoUploadAutorizacaoAcimaLaudoInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Upload das responsabilidades acordadas entre as partes</span>
+                                    <input type="file" id="negociacaoUploadAnexos" class="filter-input" multiple>
+                                    <small id="negociacaoUploadAnexosInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Upload da minuta contratual negociada entre as partes</span>
+                                    <input type="file" id="negociacaoUploadMinuta" class="filter-input" accept=".pdf,.doc,.docx">
+                                    <small id="negociacaoUploadMinutaInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="filter-actions">

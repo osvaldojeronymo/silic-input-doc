@@ -13,7 +13,7 @@ export interface Imovel {
   cep: string;
   estado: string;
   tipo: 'residencial' | 'comercial' | 'terreno' | 'industrial';
-  status: 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao';
+  status: 'ativo' | 'prospeccao' | 'mobilizacao' | 'desmobilizacao' | 'desativado';
   conciliacaoDemo?: 'conciliado' | 'pendente_conciliacao';
   area?: number;
   valor?: number;
