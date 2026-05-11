@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SILIC 2.0 - Gestão de Imóveis</title>
-  <script type="module" crossorigin src="/silic-input-doc/assets/main-DiMsLv3F.js"></script>
+  <script type="module" crossorigin src="/silic-input-doc/assets/main-BfdniSDq.js"></script>
   <link rel="modulepreload" crossorigin href="/silic-input-doc/assets/modulepreload-polyfill-B5Qt9EMX.js">
-  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-BIjVsUKt.css">
+  <link rel="stylesheet" crossorigin href="/silic-input-doc/assets/main-CO6FahKg.css">
 </head>
 <body>
     <header class="modern-header">
@@ -127,36 +127,89 @@
         <section id="portfolioSection" class="table-section">
             <div class="section-header">
                 <h3 class="section-subtitle">Portfólio</h3>
+                <button id="painelToggleFiltrosBtn" class="collapse-toggle" type="button" aria-expanded="false" aria-controls="painelFiltrosBody">Mostrar filtros</button>
             </div>
 
-            <div class="filters-container">
-                <div class="filter-group">
-                    <select id="painelUfFiltro" class="filter-select">
-                        <option value="">Todas as UFs</option>
-                        <option value="SP">SP</option>
-                        <option value="RJ">RJ</option>
-                        <option value="DF">DF</option>
-                        <option value="BA">BA</option>
-                        <option value="CE">CE</option>
-                        <option value="MG">MG</option>
-                        <option value="AM">AM</option>
-                        <option value="PR">PR</option>
-                        <option value="PE">PE</option>
-                        <option value="GO">GO</option>
-                    </select>
+            <div class="mini-label" id="painelFiltroAtivoLabel" style="margin-bottom: 8px; display: none;"></div>
 
-                    <input type="date" id="painelAteFiltro" class="filter-date" placeholder="Vencimento até">
+            <div id="painelFiltrosBody" class="filters-container" hidden>
+                <div class="portfolio-filter-layout">
+                    <section class="portfolio-filter-section" aria-label="Filtros de identificação e situação">
+                        <div class="portfolio-filter-section-title">Identificação e Situação</div>
+                        <div class="portfolio-filter-grid portfolio-filter-grid-identificacao">
+                            <label class="filter-field">
+                                <span class="filter-field-label">Imóvel (SAP)</span>
+                                <input type="text" id="painelImovelSapFiltro" class="filter-search" placeholder="Informe o imóvel SAP">
+                            </label>
 
-                    <select id="painelStatusFiltro" class="filter-select">
-                        <option value="">Todos os status de conciliação</option>
-                        <option value="conciliado">Conciliado</option>
-                        <option value="pendente_conciliacao">Pendente de conciliação</option>
-                    </select>
+                            <label class="filter-field">
+                                <span class="filter-field-label">Contrato (SICLG)</span>
+                                <input type="text" id="painelContratoSiclgFiltro" class="filter-search" placeholder="Informe o contrato SICLG">
+                            </label>
+
+                            <label class="filter-field filter-field-span-2">
+                                <span class="filter-field-label">Locador</span>
+                                <input type="text" id="painelLocadorFiltro" class="filter-search" placeholder="Informe o nome do locador">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">CPF/CNPJ</span>
+                                <input type="text" id="painelCpfCnpjFiltro" class="filter-search" inputmode="numeric" placeholder="Digite CPF ou CNPJ">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Situação</span>
+                                <select id="painelStatusFiltro" class="filter-select">
+                                    <option value="">Todas as situações</option>
+                                </select>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="portfolio-filter-section" aria-label="Filtros de vigência">
+                        <div class="portfolio-filter-section-title">Vigência</div>
+                        <div class="portfolio-filter-grid portfolio-filter-grid-faixa">
+                            <label class="filter-field">
+                                <span class="filter-field-label">Vigência de</span>
+                                <input type="date" id="painelVigenciaDeFiltro" class="filter-date" aria-label="Vigência de">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Vigência até</span>
+                                <input type="date" id="painelVigenciaAteFiltro" class="filter-date" aria-label="Vigência até">
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="portfolio-filter-section" aria-label="Filtros de pagamento">
+                        <div class="portfolio-filter-section-title">Pagamento</div>
+                        <div class="portfolio-filter-grid portfolio-filter-grid-pagamento">
+                            <label class="filter-field">
+                                <span class="filter-field-label">Data Últ. Pgto de</span>
+                                <input type="date" id="painelUltimoPgtoDeFiltro" class="filter-date" aria-label="Data Último Pagamento de">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Data Últ. Pgto até</span>
+                                <input type="date" id="painelUltimoPgtoAteFiltro" class="filter-date" aria-label="Data Último Pagamento até">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Últ. Valor Pago de</span>
+                                <input type="text" id="painelUltimoValorDeFiltro" class="filter-input" inputmode="numeric" placeholder="R$ 0,00">
+                            </label>
+
+                            <label class="filter-field">
+                                <span class="filter-field-label">Últ. Valor Pago até</span>
+                                <input type="text" id="painelUltimoValorAteFiltro" class="filter-input" inputmode="numeric" placeholder="R$ 0,00">
+                            </label>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="filter-actions">
-                    <button id="painelLimparBtn" class="btn-clear">Limpar</button>
-                    <button id="painelBuscarBtn" class="btn-primary">Aplicar filtros</button>
+                    <button id="painelLimparBtn" class="btn-clear" type="button">Limpar</button>
+                    <button id="painelBuscarBtn" class="btn-primary" type="button">Aplicar filtros</button>
                 </div>
             </div>
 
@@ -164,19 +217,14 @@
                 <table class="imoveis-table">
                     <thead>
                         <tr>
-                            <th>Contrato SAP</th>
-                            <th>Contrato SICLG</th>
-                            <th>UF</th>
+                            <th>Imóvel (SAP)</th>
+                            <th>Contrato (SICLG)</th>
                             <th>Locador</th>
-                            <th>Vigência SAP</th>
-                            <th>Vigência SICLG</th>
-                            <th>Situação SICLG</th>
-                            <th>Últ. Pgto SAP</th>
-                            <th>Últ. Valor Pago SAP</th>
-                            <th>Decisão Operacional</th>
-                            <th>Fase</th>
-                            <th>Situação Processo AR</th>
-                            <th>Conciliação</th>
+                            <th>CPF/CNPJ</th>
+                            <th>Vigência</th>
+                            <th>Situação</th>
+                            <th>Data Últ. Pgto</th>
+                            <th>Últ. Valor Pago</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -186,7 +234,7 @@
 
             <div class="pagination-container">
                 <div class="pagination-info">
-                    <span id="painelPaginationStart">0</span> a <span id="painelPaginationEnd">0</span> de <span id="painelPaginationTotal">0</span>
+                    Mostrando <span id="painelPaginationStart">0</span> a <span id="painelPaginationEnd">0</span> de <span id="painelPaginationTotal">0</span> registros
                 </div>
                 <div class="pagination-actions">
                     <select id="painelItensPorPaginaSelect" class="items-per-page">
@@ -307,7 +355,7 @@
             </div>
 
             <div class="operacional-panel-switcher" role="tablist" aria-label="Navegação da Jornada Operacional">
-                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Etapas</button>
+                <button class="operacional-panel-tab is-active" data-operacional-panel-target="passos-jornada" type="button">Informações do imóvel</button>
                 <button class="operacional-panel-tab" data-operacional-panel-target="aviso-vencimento" type="button">Aviso de Vencimento</button>
             </div>
 
@@ -315,14 +363,14 @@
 
             <div class="tabs profile-tabs">
                 <button class="tab-btn active" data-fase-target="fase3">RTA</button>
-                <button class="tab-btn" data-fase-target="fase4">Laudo</button>
-                <button class="tab-btn" data-fase-target="fase61">Negociações</button>
+                <button class="tab-btn" data-fase-target="fase4">Laudo de avaliação</button>
+                <button class="tab-btn" data-fase-target="fase61">Negociação</button>
             </div>
 
             <div id="fase3" class="tab-content active fase-pane">
                 <div class="mini-label">RTA - Relatório Técnico Administrativo</div>
                 <div class="etapa-form-card">
-                    <div id="rtaContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher os dados desta etapa.</div>
+                    <div id="rtaContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher as informações do imóvel no RTA.</div>
                     <div class="filter-group">
                         <input type="text" id="rtaContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
                         <div id="rtaContratoAtalhos" class="contrato-picker-shortcuts"></div>
@@ -334,77 +382,83 @@
                         </select>
                     </div>
 
-                    <div class="etapa-form-grid">
-                        <label class="etapa-field">
-                            <span>Área a ser contratada (m²)</span>
-                            <input type="number" id="rtaAreaContratada" class="filter-input" min="0" step="0.01" placeholder="Ex.: 620.50">
-                        </label>
+                    <div id="rtaSelecaoObrigatoriaHint" class="etapa-gate-hint etapa-field-full" role="status" aria-live="polite">
+                        Selecione o imóvel/contrato SAP para liberar o preenchimento do RTA. Os campos e anexos ficam bloqueados até o vínculo com o registro correto.
                     </div>
 
-                    <div id="rtaBenfeitoriasSection" class="etapa-form-subsection" hidden>
-                        <div class="mini-label">Detalhamento de benfeitorias não-recuperáveis (área acima de 550m²)</div>
+                    <div id="rtaContextoBloqueadoSection" class="etapa-context-lock is-locked">
                         <div class="etapa-form-grid">
                             <label class="etapa-field">
-                                <span>Valor das benfeitorias não-recuperáveis (R$)</span>
-                                <input type="number" id="rtaBenfeitoriasValor" class="filter-input" min="0" step="0.01" placeholder="Ex.: 200000">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Possui valor venal do imóvel?</span>
-                                <select id="rtaPossuiValorVenal" class="filter-select">
-                                    <option value="">Selecione</option>
-                                    <option value="sim">Sim</option>
-                                    <option value="nao">Não</option>
-                                </select>
-                            </label>
-                            <label class="etapa-field">
-                                <span>Valor venal do imóvel (R$)</span>
-                                <input type="number" id="rtaValorVenalImovel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 800000">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Parecer CAIXA - número</span>
-                                <input type="text" id="rtaParecerNumero" class="filter-input" placeholder="Número do parecer">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Parecer CAIXA - data</span>
-                                <input type="date" id="rtaParecerData" class="filter-date">
-                            </label>
-                            <label class="etapa-field">
-                                <span>Percentual benfeitorias x valor venal (%)</span>
-                                <input type="number" id="rtaPercentualBenfeitorias" class="filter-input" min="0" step="0.01" readonly>
-                            </label>
-                            <label class="etapa-field etapa-field-full">
-                                <span>Manifestação do negócio</span>
-                                <textarea id="rtaManifestacaoNegocio" class="filter-search" rows="3" placeholder="Descreva a manifestação da área de negócio"></textarea>
-                            </label>
-                            <label class="etapa-field etapa-field-full">
-                                <span>Manifestação da infraestrutura</span>
-                                <textarea id="rtaManifestacaoInfra" class="filter-search" rows="3" placeholder="Descreva a manifestação da infraestrutura"></textarea>
+                                <span>Área a ser contratada (m²)</span>
+                                <input type="number" id="rtaAreaContratada" class="filter-input" min="0" step="0.01" placeholder="Ex.: 620.50">
                             </label>
                         </div>
-                    </div>
 
-                    <div class="etapa-form-grid">
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload do Relatório Técnico Administrativo (RTA)</span>
-                            <input type="file" id="rtaUploadRelatorio" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
-                            <small id="rtaUploadRelatorioInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload do Parecer da Arquitetura/Engenharia CAIXA</span>
-                            <input type="file" id="rtaUploadParecer" class="filter-input" accept=".pdf,.doc,.docx">
-                            <small id="rtaUploadParecerInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
-                    </div>
+                        <div id="rtaBenfeitoriasSection" class="etapa-form-subsection" hidden>
+                            <div class="mini-label">Detalhamento de benfeitorias não-recuperáveis (área acima de 550m²)</div>
+                            <div class="etapa-form-grid">
+                                <label class="etapa-field">
+                                    <span>Valor das benfeitorias não-recuperáveis (R$)</span>
+                                    <input type="number" id="rtaBenfeitoriasValor" class="filter-input" min="0" step="0.01" placeholder="Ex.: 200000">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Possui valor venal do imóvel?</span>
+                                    <select id="rtaPossuiValorVenal" class="filter-select">
+                                        <option value="">Selecione</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Valor venal do imóvel (R$)</span>
+                                    <input type="number" id="rtaValorVenalImovel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 800000">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Parecer CAIXA - número</span>
+                                    <input type="text" id="rtaParecerNumero" class="filter-input" placeholder="Número do parecer">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Parecer CAIXA - data</span>
+                                    <input type="date" id="rtaParecerData" class="filter-date">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Percentual benfeitorias x valor venal (%)</span>
+                                    <input type="number" id="rtaPercentualBenfeitorias" class="filter-input" min="0" step="0.01" readonly>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Manifestação do negócio</span>
+                                    <textarea id="rtaManifestacaoNegocio" class="filter-search" rows="3" placeholder="Descreva a manifestação da área de negócio"></textarea>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Manifestação da infraestrutura</span>
+                                    <textarea id="rtaManifestacaoInfra" class="filter-search" rows="3" placeholder="Descreva a manifestação da infraestrutura"></textarea>
+                                </label>
+                            </div>
+                        </div>
 
-                    <div class="filter-actions">
-                        <button id="rtaSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        <div class="etapa-form-grid">
+                            <label class="etapa-field etapa-field-full">
+                                <span>Upload do Relatório Técnico Administrativo (RTA)</span>
+                                <input type="file" id="rtaUploadRelatorio" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                                <small id="rtaUploadRelatorioInfo" class="mini-label etapa-upload-info"></small>
+                            </label>
+                            <label class="etapa-field etapa-field-full">
+                                <span>Upload do Parecer da Arquitetura/Engenharia CAIXA</span>
+                                <input type="file" id="rtaUploadParecer" class="filter-input" accept=".pdf,.doc,.docx">
+                                <small id="rtaUploadParecerInfo" class="mini-label etapa-upload-info"></small>
+                            </label>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button id="rtaSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        </div>
                     </div>
                 </div>
             </div>
             <div id="fase4" class="tab-content fase-pane">
                 <div class="mini-label">Laudo de Avaliação do Imóvel</div>
                 <div class="etapa-form-card">
-                    <div id="laudoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher os dados desta etapa.</div>
+                    <div id="laudoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher as informações do imóvel no laudo de avaliação.</div>
                     <div class="filter-group">
                         <input type="text" id="laudoContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
                         <div id="laudoContratoAtalhos" class="contrato-picker-shortcuts"></div>
@@ -416,69 +470,87 @@
                         </select>
                     </div>
 
-                    <div class="etapa-form-grid">
-                        <label class="etapa-field">
-                            <span>Valor mínimo (R$)</span>
-                            <input type="text" id="laudoValorMinimo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Valor médio (R$)</span>
-                            <input type="text" id="laudoValorMedio" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
-                        </label>
-                        <label class="etapa-field">
-                            <span>Valor máximo (R$)</span>
-                            <input type="text" id="laudoValorMaximo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
-                        </label>
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload do laudo do imóvel</span>
-                            <input type="file" id="laudoUploadArquivo" class="filter-input" accept=".pdf,.doc,.docx,.xlsx,.xls">
-                            <small id="laudoUploadInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
+                    <div id="laudoSelecaoObrigatoriaHint" class="etapa-gate-hint etapa-field-full" role="status" aria-live="polite">
+                        Selecione o imóvel/contrato SAP para liberar o preenchimento do laudo. Os campos e o envio do documento permanecem bloqueados até a associação correta.
                     </div>
 
-                    <div id="laudoDadosSection" class="etapa-form-subsection" hidden>
-                        <div class="mini-label">Informações do laudo</div>
+                    <div id="laudoContextoBloqueadoSection" class="etapa-context-lock is-locked">
                         <div class="etapa-form-grid">
                             <label class="etapa-field">
-                                <span>Data de elaboração</span>
-                                <input type="date" id="laudoDataElaboracao" class="filter-date">
+                                <span>Valor mínimo (R$)</span>
+                                <input type="text" id="laudoValorMinimo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
                             </label>
                             <label class="etapa-field">
-                                <span>Data de validade do laudo</span>
-                                <input type="date" id="laudoDataValidade" class="filter-date">
+                                <span>Valor médio (R$)</span>
+                                <input type="text" id="laudoValorMedio" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
                             </label>
                             <label class="etapa-field">
-                                <span>Número do documento</span>
-                                <input type="text" id="laudoNumeroDocumento" class="filter-input" placeholder="Ex.: LAUDO-2026-001">
+                                <span>Valor máximo (R$)</span>
+                                <input type="text" id="laudoValorMaximo" class="filter-input" inputmode="decimal" placeholder="R$ 0,00">
                             </label>
                             <label class="etapa-field">
-                                <span>Empresa responsável</span>
-                                <input type="text" id="laudoEmpresaNome" class="filter-input" placeholder="Nome da empresa">
+                                <span>Endereço</span>
+                                <input type="text" id="laudoEndereco" class="filter-input" placeholder="Endereço do imóvel avaliado">
                             </label>
                             <label class="etapa-field">
-                                <span>CNPJ da empresa</span>
-                                <input type="text" id="laudoEmpresaCnpj" class="filter-input" placeholder="Somente números" maxlength="18">
+                                <span>Área</span>
+                                <input type="number" id="laudoArea" class="filter-input" min="0" step="0.01" placeholder="Ex.: 350.75">
                             </label>
                             <label class="etapa-field">
-                                <span>Laudo assinado?</span>
-                                <select id="laudoAssinado" class="filter-select">
-                                    <option value="">Selecione</option>
-                                    <option value="sim">Sim</option>
-                                    <option value="nao">Não</option>
-                                </select>
+                                <span>Data de emissão</span>
+                                <input type="date" id="laudoDataEmissao" class="filter-date">
+                            </label>
+                            <label class="etapa-field etapa-field-full">
+                                <span>Upload do laudo do imóvel</span>
+                                <input type="file" id="laudoUploadArquivo" class="filter-input" accept=".pdf,.doc,.docx,.xlsx,.xls">
+                                <small id="laudoUploadInfo" class="mini-label etapa-upload-info"></small>
                             </label>
                         </div>
-                    </div>
 
-                    <div class="filter-actions">
-                        <button id="laudoSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        <div id="laudoDadosSection" class="etapa-form-subsection" hidden>
+                            <div class="mini-label">Informações do laudo</div>
+                            <div class="etapa-form-grid">
+                                <label class="etapa-field">
+                                    <span>Data de elaboração</span>
+                                    <input type="date" id="laudoDataElaboracao" class="filter-date">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Data de validade do laudo</span>
+                                    <input type="date" id="laudoDataValidade" class="filter-date">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Número do documento</span>
+                                    <input type="text" id="laudoNumeroDocumento" class="filter-input" placeholder="Ex.: LAUDO-2026-001">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Empresa responsável</span>
+                                    <input type="text" id="laudoEmpresaNome" class="filter-input" placeholder="Nome da empresa">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>CNPJ da empresa</span>
+                                    <input type="text" id="laudoEmpresaCnpj" class="filter-input" placeholder="Somente números" maxlength="18">
+                                </label>
+                                <label class="etapa-field">
+                                    <span>Laudo assinado?</span>
+                                    <select id="laudoAssinado" class="filter-select">
+                                        <option value="">Selecione</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="filter-actions">
+                            <button id="laudoSalvarBtn" class="btn-primary" type="button">Salvar</button>
+                        </div>
                     </div>
                 </div>
             </div>
             <div id="fase61" class="tab-content fase-pane">
-                <div class="mini-label">Itens negociados</div>
+                <div class="mini-label">Negociação do imóvel</div>
                 <div class="etapa-form-card">
-                    <div id="negociacaoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher os dados desta etapa.</div>
+                    <div id="negociacaoContratoResumo" class="mini-label etapa-contrato-resumo">Selecione um contrato para preencher as informações do imóvel na negociação.</div>
                     <div class="filter-group">
                         <input type="text" id="negociacaoContratoBusca" class="filter-search" placeholder="Busque por SAP, fornecedor ou UF (mín. 2 caracteres)">
                         <div id="negociacaoContratoAtalhos" class="contrato-picker-shortcuts"></div>
@@ -505,10 +577,38 @@
                         </div>
                     </details>
 
+                    <div id="negociacaoSelecaoObrigatoriaHint" class="etapa-gate-hint etapa-field-full" role="status" aria-live="polite">
+                        Selecione o imóvel/contrato SAP para liberar os blocos abaixo. Os controles permanecem indisponíveis até que a negociação esteja vinculada ao registro correto.
+                    </div>
+
                     <div class="etapa-form-grid">
+                        <label class="etapa-field etapa-field-full">
+                            <span>Condições negociadas com o locador</span>
+                            <small class="mini-label etapa-upload-info">Use este bloco para registrar valores, vigência, cláusulas excepcionais e decisões já consolidadas na rodada de negociação.</small>
+                            <span class="etapa-toggle-control">
+                                <input type="checkbox" id="negociacaoTemTermosNegociadosToggle" class="etapa-toggle-input" aria-label="Habilitar seção de termos negociados">
+                                <span class="etapa-toggle-slider" aria-hidden="true"></span>
+                                <span class="etapa-toggle-text">Liberar registro das condições negociadas</span>
+                            </span>
+                        </label>
+                        <div id="negociacaoTermosNegociadosSection" class="etapa-form-subsection etapa-field-full" hidden>
+                            <div class="mini-label">Condições negociadas</div>
+                            <div class="etapa-form-grid">
                         <label class="etapa-field">
                             <span>Valor proposto de aluguel (R$/mês)</span>
                             <input type="number" id="negociacaoValorPropostoAluguel" class="filter-input" min="0" step="0.01" placeholder="Ex.: 18500.00">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Valor acordado entre as partes (R$/mês)</span>
+                            <input type="number" id="negociacaoValorAcordadoPartes" class="filter-input" min="0" step="0.01" placeholder="Ex.: 17900.00">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data de início da negociação</span>
+                            <input type="date" id="negociacaoDataInicioNegociacao" class="filter-date">
+                        </label>
+                        <label class="etapa-field">
+                            <span>Data fim da negociação</span>
+                            <input type="date" id="negociacaoDataFimNegociacao" class="filter-date">
                         </label>
                         <label class="etapa-field">
                             <span>Vigência do contrato a firmar (meses)</span>
@@ -540,7 +640,12 @@
                         </label>
                         <label class="etapa-field">
                             <span>Índice de reajuste pactuado</span>
-                            <input type="text" id="negociacaoIndiceReajuste" class="filter-input" placeholder="Ex.: IPCA, IGP-M, etc.">
+                            <select id="negociacaoIndiceReajuste" class="filter-select">
+                                <option value="">Selecione o índice</option>
+                                <option value="IGP-M">IGP-M (Índice Geral de Preços - Mercado)</option>
+                                <option value="IPCA">IPCA (Índice Nacional de Preços ao Consumidor Amplo)</option>
+                                <option value="INPC">INPC (Índice Nacional de Preços ao Consumidor)</option>
+                            </select>
                         </label>
                         <label class="etapa-field">
                             <span>Data do próximo reajuste</span>
@@ -616,19 +721,15 @@
                             <span>Justifique a negociação acima do laudo.</span>
                             <textarea id="negociacaoAluguelAcimaLaudoJustificativa" class="filter-search" rows="3" placeholder="Informe motivo, excepcionalidade, impacto operacional e responsável pela decisão"></textarea>
                         </label>
-                        <label id="negociacaoUploadAutorizacaoAcimaLaudoWrap" class="etapa-field etapa-field-full" hidden>
-                            <span>Anexar autorização para valor acima do laudo</span>
-                            <input type="file" id="negociacaoUploadAutorizacaoAcimaLaudo" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" multiple>
-                            <small class="mini-label etapa-upload-info">Anexe despacho, parecer ou aprovação formal.</small>
-                            <small id="negociacaoUploadAutorizacaoAcimaLaudoInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
+                            </div>
+                        </div>
                         <label class="etapa-field etapa-field-full">
-                            <span>Informações necessárias para atendimento da solicitação de serviço</span>
-                            <small class="mini-label etapa-upload-info">Preencha para solicitações de prorrogação, rescisão, alteração de titularidade, antecipação de parcela, recebimento de imóvel, revisão de aluguel, reajuste de aluguel, apostilamento, acréscimo ou supressão de área do imóvel de uso.</small>
+                            <span>Dados complementares para instrução da solicitação</span>
+                            <small class="mini-label etapa-upload-info">Use este bloco quando a negociação também demandar ajustes cadastrais, contratuais ou operacionais para formalização da solicitação.</small>
                             <span class="etapa-toggle-control">
                                 <input type="checkbox" id="negociacaoTemAlteracoesContratuaisToggle" class="etapa-toggle-input" aria-label="Habilitar seção de informações necessárias para atendimento da solicitação de serviço">
                                 <span class="etapa-toggle-slider" aria-hidden="true"></span>
-                                <span class="etapa-toggle-text">Habilitar preenchimento das informações</span>
+                                <span class="etapa-toggle-text">Liberar dados da instrução operacional</span>
                             </span>
                         </label>
                         <div id="negociacaoAlteracoesContratuaisSection" class="etapa-form-subsection etapa-field-full" hidden>
@@ -717,21 +818,41 @@
                             <div id="negociacaoLocadoresLista" class="etapa-form-grid"></div>
                             <small id="negociacaoLocadoresInfo" class="mini-label etapa-upload-info">O total dos percentuais deve ser 100%.</small>
                         </div>
-                        <label id="negociacaoUploadContratoSocialWrap" class="etapa-field etapa-field-full" hidden>
-                            <span id="negociacaoUploadContratoSocialLabel">Upload do contrato social do locador</span>
-                            <input type="file" id="negociacaoUploadContratoSocial" class="filter-input" accept=".pdf,.doc,.docx,.zip" multiple>
-                            <small id="negociacaoUploadContratoSocialInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
                         <label class="etapa-field etapa-field-full">
-                            <span>Upload das responsabilidades acordadas entre as partes</span>
-                            <input type="file" id="negociacaoUploadAnexos" class="filter-input" multiple>
-                            <small id="negociacaoUploadAnexosInfo" class="mini-label etapa-upload-info"></small>
+                            <span>Documentos comprobatórios da negociação</span>
+                            <small class="mini-label etapa-upload-info">Use este bloco para anexar minuta, responsabilidades pactuadas, aprovações formais e demais evidências da tratativa.</small>
+                            <span class="etapa-toggle-control">
+                                <input type="checkbox" id="negociacaoTemUploadsToggle" class="etapa-toggle-input" aria-label="Habilitar seção de uploads da negociação">
+                                <span class="etapa-toggle-slider" aria-hidden="true"></span>
+                                <span class="etapa-toggle-text">Liberar anexação de documentos</span>
+                            </span>
                         </label>
-                        <label class="etapa-field etapa-field-full">
-                            <span>Upload da minuta contratual negociada entre as partes</span>
-                            <input type="file" id="negociacaoUploadMinuta" class="filter-input" accept=".pdf,.doc,.docx">
-                            <small id="negociacaoUploadMinutaInfo" class="mini-label etapa-upload-info"></small>
-                        </label>
+                        <div id="negociacaoUploadsSection" class="etapa-form-subsection etapa-field-full" hidden>
+                            <div class="mini-label">Documentos de suporte</div>
+                            <div class="etapa-form-grid">
+                                <label id="negociacaoUploadContratoSocialWrap" class="etapa-field etapa-field-full" hidden>
+                                    <span id="negociacaoUploadContratoSocialLabel">Upload do contrato social do locador</span>
+                                    <input type="file" id="negociacaoUploadContratoSocial" class="filter-input" accept=".pdf,.doc,.docx,.zip" multiple>
+                                    <small id="negociacaoUploadContratoSocialInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                                <label id="negociacaoUploadAutorizacaoAcimaLaudoWrap" class="etapa-field etapa-field-full" hidden>
+                                    <span>Anexar autorização para valor acima do laudo</span>
+                                    <input type="file" id="negociacaoUploadAutorizacaoAcimaLaudo" class="filter-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" multiple>
+                                    <small class="mini-label etapa-upload-info">Anexe despacho, parecer ou aprovação formal.</small>
+                                    <small id="negociacaoUploadAutorizacaoAcimaLaudoInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Upload das responsabilidades acordadas entre as partes</span>
+                                    <input type="file" id="negociacaoUploadAnexos" class="filter-input" multiple>
+                                    <small id="negociacaoUploadAnexosInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                                <label class="etapa-field etapa-field-full">
+                                    <span>Upload da minuta contratual negociada entre as partes</span>
+                                    <input type="file" id="negociacaoUploadMinuta" class="filter-input" accept=".pdf,.doc,.docx">
+                                    <small id="negociacaoUploadMinutaInfo" class="mini-label etapa-upload-info"></small>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="filter-actions">
@@ -773,15 +894,15 @@
                 <div class="filter-group">
                     <input type="text" id="formalCodigoSijurFiltro" class="filter-search" placeholder="Código SIJUR">
 
-                    <input type="text" id="formalContratoSapFiltro" class="filter-search" placeholder="Contrato SAP">
+                    <input type="text" id="formalImovelSapFiltro" class="filter-search" placeholder="Imóvel (SAP)">
 
-                    <input type="text" id="formalContratoSiclgFiltro" class="filter-search" placeholder="Contrato SICLG">
+                    <input type="text" id="formalContratoSiclgFiltro" class="filter-search" placeholder="Contrato (SICLG)">
 
                     <input type="text" id="formalProtocoloFormalFiltro" class="filter-search" placeholder="Protocolo Formal (SICLG)">
 
                     <input type="text" id="formalUnidadeFiltro" class="filter-search" placeholder="Unidade">
 
-                    <input type="text" id="formalProcessoFiltro" class="filter-search" placeholder="Número do Processo (SICLG)">
+                    <input type="text" id="formalProcessoFiltro" class="filter-search" placeholder="Processo (SICLG)">
 
                     <input type="date" id="formalVigenciaAteFiltro" class="filter-date" placeholder="Vigência até">
 
@@ -826,13 +947,13 @@
                     <thead>
                         <tr>
                             <th>Código SIJUR</th>
-                            <th>Contrato SAP</th>
-                            <th>Contrato SICLG</th>
+                            <th>Imóvel (SAP)</th>
+                            <th>Contrato (SICLG)</th>
                             <th>Protocolo Formal (SICLG)</th>
                             <th>Unidade</th>
-                            <th>Vigência (SICLG)</th>
+                            <th>Vigência</th>
                             <th>Situação (SICLG)</th>
-                            <th>Número do Processo (SICLG)</th>
+                            <th>Processo (SICLG)</th>
                             <th>Situação SIJUR</th>
                             <th>Situação CEFOR</th>
                             <th>Ações</th>
@@ -858,8 +979,10 @@
 
             </section>
 
-            <section class="formal-panel-view" data-formal-panel="aviso-vencimento" hidden>
-            <div class="mini-label" style="margin-bottom: 10px;">Resumo Executivo</div>
+            <section class="formal-panel-view executivo-neutro" data-formal-panel="aviso-vencimento" hidden>
+            <div class="aviso-topo-header">
+                <div class="mini-label" style="margin-bottom: 0;">Resumo Executivo</div>
+            </div>
 
             <div class="aviso-kpi-grid aviso-kpi-grid-principal">
                 <article class="aviso-kpi-card aviso-kpi-total">
@@ -881,27 +1004,27 @@
                 </article>
             </div>
 
-            <div class="aviso-kpi-grid aviso-kpi-grid-risco">
-                <article id="avisoKpiRiscoAr87Card" class="aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses)">
+            <div class="aviso-faixa-grid aviso-faixa-grid-prioridade">
+                <article id="avisoKpiRiscoAr87Card" class="aviso-faixa-card aviso-faixa-risco aviso-kpi-card aviso-kpi-risco-ar87" role="button" tabindex="0" aria-pressed="false" title="Filtrar contratos em risco AR (8-7 meses)">
                     <span class="aviso-kpi-label">Risco AR 8-7 meses</span>
                     <strong id="avisoKpiRiscoAr87" class="aviso-kpi-total-toggle" role="button" tabindex="0" aria-expanded="false" aria-controls="avisoKpiRiscoAr87Detalhe">0</strong>
                     <div id="avisoKpiRiscoAr87Detalhe" class="aviso-kpi-composicao" hidden></div>
                 </article>
-            </div>
-
-            <div class="aviso-faixa-grid">
                 <article class="aviso-faixa-card aviso-faixa-preparacao" data-aviso-faixa-filter="faixa_14_12" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Preparação (14-12 meses)</span>
+                    <span class="aviso-faixa-label">Planejamento antecipado (14 a +12 meses)</span>
                     <strong id="avisoFaixa1412">0</strong>
-                    <small>Definir prorrogação, estratégia de AR e confirmar laudo (somente locação).</small>
+                    <small>Organizar estratégia de prorrogação e revisar laudo (somente locação).</small>
                 </article>
                 <article class="aviso-faixa-card aviso-faixa-janela-legal" data-aviso-faixa-filter="faixa_12_7" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Janela AR (12 - 7 meses)</span>
+                    <span class="aviso-faixa-label">Momento de decidir sobre a AR (12 a 7 meses)</span>
                     <strong id="avisoFaixa126">0</strong>
                     <small>Prazo prudente para decidir ingresso na ação renovatória.</small>
                 </article>
+            </div>
+
+            <div class="aviso-faixa-grid aviso-faixa-grid-critica">
                 <article class="aviso-faixa-card aviso-faixa-critica" data-aviso-faixa-filter="faixa_menor_6" role="button" tabindex="0" aria-pressed="false">
-                    <span class="aviso-faixa-label">Abaixo de 7 meses</span>
+                    <span class="aviso-faixa-label">Atenção imediata (menos de 7 meses)</span>
                     <strong id="avisoFaixaMenor6">0</strong>
                     <small>Faixa de risco operacional; abaixo de 6 meses, há encerramento do prazo decadencial.</small>
                 </article>
@@ -915,7 +1038,7 @@
 
                 <div id="avisoFiltrosBody" hidden>
                 <div class="filter-group">
-                    <input type="text" id="avisoContratoSapFiltro" class="filter-search" placeholder="Contrato (SAP)">
+                    <input type="text" id="avisoImovelSapFiltro" class="filter-search" placeholder="Imóvel (SAP)">
 
                     <input type="text" id="avisoContratoSiclgFiltro" class="filter-search" placeholder="Contrato (SICLG)">
 
@@ -974,6 +1097,7 @@
 
                     <select id="avisoJanelaFiltro" class="filter-select">
                         <option value="">Janela de vencimento: todas</option>
+                        <option value="mais_1_ano">+1 ano</option>
                         <option value="1_ano">1 ano</option>
                         <option value="6_meses">6 meses</option>
                         <option value="3_meses">3 meses</option>
@@ -1000,12 +1124,13 @@
                 <table class="imoveis-table">
                     <thead>
                         <tr>
-                            <th rowspan="2">Contrato (SAP)</th>
+                            <th rowspan="2">Imóvel (SAP)</th>
                             <th rowspan="2">Final da vigência</th>
                             <th rowspan="2">Decisão de prorrogar</th>
                             <th rowspan="2">Decisão sobre ação renovatória</th>
                             <th rowspan="2">Status</th>
                             <th colspan="2" class="aviso-protocolo-group">Protocolo</th>
+                            <th rowspan="2">Laudo de avaliação (locação)</th>
                             <th rowspan="2">Ações</th>
                         </tr>
                         <tr>
@@ -1593,7 +1718,7 @@
                     <div class="info-section-title">Resumo do processo A-III</div>
                     <div class="summary-row">
                         <div class="summary-chip"><strong id="formalDetCodigoSijur"></strong></div>
-                        <div class="summary-chip"><strong id="formalDetContratoSap"></strong></div>
+                        <div class="summary-chip"><strong id="formalDetImovelSap"></strong></div>
                         <div class="summary-chip"><strong id="formalDetContratoSiclg"></strong></div>
                     </div>
                 </div>
@@ -1607,7 +1732,7 @@
                                 <span id="formalDetProtocolo"></span>
                             </div>
                             <div class="info-item">
-                                <label>Número do Processo (SICLG)</label>
+                                <label>Processo (SICLG)</label>
                                 <span id="formalDetProcesso"></span>
                             </div>
                             <div class="info-item">
@@ -1615,7 +1740,7 @@
                                 <span id="formalDetUnidade"></span>
                             </div>
                             <div class="info-item">
-                                <label>Vigência (SICLG)</label>
+                                <label>Vigência</label>
                                 <span id="formalDetVigencia"></span>
                             </div>
                             <div class="info-item">
